@@ -19,6 +19,10 @@ main(void)
   dup(0);  // stdout
   dup(0);  // stderr
 
+  int fd = open("PATH", O_CREATE | O_WRONLY);
+  write(fd, "/:/bin/:\0", 9);
+  close(fd);
+
   for(;;){
     printf(1, "init: starting sh\n");
     pid = fork();

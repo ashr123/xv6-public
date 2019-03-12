@@ -1,3 +1,5 @@
+#define BUFSIZE 1024
+
 struct stat;
 struct rtcdate;
 
