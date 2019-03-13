@@ -60,13 +60,6 @@ int fork1(void); // Fork but panics on failure.
 void panic(char *);
 struct cmd *parsecmd(char *);
 
-int isFileExists(const char *str)
-{
-	const int fd = open(str, O_RDONLY);
-	close(fd);
-	return fd >= 0;
-}
-
 // Execute cmd.  Never returns.
 void runcmd(struct cmd *cmd)
 {

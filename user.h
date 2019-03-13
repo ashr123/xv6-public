@@ -39,3 +39,10 @@ void *memset(void *, int, uint);
 void *malloc(uint);
 void free(void *);
 int atoi(const char *);
+
+int isFileExists(const char *str)
+{
+    const int fd = open(str, 0);
+    close(fd);
+    return fd >= 0;
+}
