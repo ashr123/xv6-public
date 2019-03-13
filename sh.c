@@ -92,8 +92,6 @@ void runcmd(struct cmd *cmd)
 		if (isFileExists(ecmd->argv[0]))
 			exec(ecmd->argv[0], ecmd->argv);
 		
-		
-
 		struct stat st;
 		int fd, tempBufIndx = 0;
 		if ((fd = open("path", O_RDONLY)) < 0)
