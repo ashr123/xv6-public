@@ -75,27 +75,25 @@ runcmd(struct cmd *cmd)
     ecmd = (struct execcmd*)cmd;
     if(ecmd->argv[0] == 0)
       exit();
-    
-    
-    char buf[BUFSIZE], tempBuf[BUFSIZE];
+	  char buf[BUFSIZE], tempBuf[BUFSIZE];
     int fd = open("PATH", O_RDONLY), tempBufIndx=0;
     read(fd, buf, BUFSIZE);
     close(fd);
-    
-    for(int i =0; buf[i]!='\0'; i++){
-      char c = buf[i];
-      if(c==':'){
-        tempBuf[tempBufIndx] ='\0';
-        tempBufIndx = 0;
-        //exec
-         printf(1, "TEMPPATH is: %s\n", tempBuf);
-      }
-      else{
-        tempBuf[tempBufIndx] =c;
-        tempBufIndx++;
-      }
-    }
-     
+
+  for(int i =0; buf[i]!='\0'; i++){
+	char c = buf[i];
+	if(c==':'){
+	  tempBuf[tempBufIndx] ='\0';
+	  tempBufIndx = 0;
+	  //exec
+	   printf(1, "TEMPPATH is: %s\n", tempBuf);
+	}
+	else{
+	  tempBuf[tempBufIndx] =c;
+	  tempBufIndx++;
+	}
+  }
+
     exec(ecmd->argv[0], ecmd->argv);
     printf(2, "exec %s failed\n", ecmd->argv[0]);
     break;

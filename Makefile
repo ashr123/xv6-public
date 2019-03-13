@@ -15,6 +15,7 @@ OBJS = \
 	picirq.o\
 	pipe.o\
 	proc.o\
+	ass1ds.o\
 	sleeplock.o\
 	spinlock.o\
 	string.o\
@@ -28,27 +29,26 @@ OBJS = \
 	vectors.o\
 	vm.o\
 
-# Cross-compiling (e.g., on Mac OS X)
-# TOOLPREFIX = i386-jos-elf
+# To compile and run on mac OS uncumment the following line.
+TOOLPREFIX = i386-elf-
 
 # Using native tools (e.g., on X86 Linux)
-#TOOLPREFIX = 
+#TOOLPREFIX =
 
 # Try to infer the correct TOOLPREFIX if not set
 ifndef TOOLPREFIX
-TOOLPREFIX := i386-elf-
-# TOOLPREFIX := $(shell if i386-jos-elf-objdump -i 2>&1 | grep '^elf32-i386$$' >/dev/null 2>&1; \
-# 	then echo 'i386-jos-elf-'; \
-# 	elif objdump -i 2>&1 | grep 'elf32-i386' >/dev/null 2>&1; \
-# 	then echo ''; \
-# 	else echo "***" 1>&2; \
-# 	echo "*** Error: Couldn't find an i386-*-elf version of GCC/binutils." 1>&2; \
-# 	echo "*** Is the directory with i386-jos-elf-gcc in your PATH?" 1>&2; \
-# 	echo "*** If your i386-*-elf toolchain is installed with a command" 1>&2; \
-# 	echo "*** prefix other than 'i386-jos-elf-', set your TOOLPREFIX" 1>&2; \
-# 	echo "*** environment variable to that prefix and run 'make' again." 1>&2; \
-# 	echo "*** To turn off this error, run 'gmake TOOLPREFIX= ...'." 1>&2; \
-# 	echo "***" 1>&2; exit 1; fi)
+TOOLPREFIX := $(shell if i386-jos-elf-objdump -i 2>&1 | grep '^elf32-i386$$' >/dev/null 2>&1; \
+	then echo 'i386-jos-elf-'; \
+	elif objdump -i 2>&1 | grep 'elf32-i386' >/dev/null 2>&1; \
+	then echo ''; \
+	else echo "***" 1>&2; \
+	echo "*** Error: Couldn't find an i386-*-elf version of GCC/binutils." 1>&2; \
+	echo "*** Is the directory with i386-jos-elf-gcc in your PATH?" 1>&2; \
+	echo "*** If your i386-*-elf toolchain is installed with a command" 1>&2; \
+	echo "*** prefix other than 'i386-jos-elf-', set your TOOLPREFIX" 1>&2; \
+	echo "*** environment variable to that prefix and run 'make' again." 1>&2; \
+	echo "*** To turn off this error, run 'gmake TOOLPREFIX= ...'." 1>&2; \
+	echo "***" 1>&2; exit 1; fi)
 endif
 
 # If the makefile can't find QEMU, specify its path here
@@ -56,29 +56,32 @@ endif
 
 # Try to infer the correct QEMU
 ifndef QEMU
-QEMU = /opt/local/bin/qemu-system-i386
-# QEMU = $(shell if which qemu > /dev/null; \
-# 	then echo qemu; exit; \
-# 	elif which qemu-system-i386 > /dev/null; \
-# 	then echo qemu-system-i386; exit; \
-# 	elif which qemu-system-x86_64 > /dev/null; \
-# 	then echo qemu-system-x86_64; exit; \
-# 	else \
-# 	qemu=/Applications/Q.app/Contents/MacOS/i386-softmmu.app/Contents/MacOS/i386-softmmu; \
-# 	if test -x $$qemu; then echo $$qemu; exit; fi; fi; \
-# 	echo "***" 1>&2; \
-# 	echo "*** Error: Couldn't find a working QEMU executable." 1>&2; \
-# 	echo "*** Is the directory containing the qemu binary in your PATH" 1>&2; \
-# 	echo "*** or have you tried setting the QEMU variable in Makefile?" 1>&2; \
-# 	echo "***" 1>&2; exit 1)
+# QEMU = /opt/local/bin/qemu-system-i386
+QEMU = $(shell if which qemu > /dev/null; \
+	then echo qemu; exit; \
+	elif which qemu-system-i386 > /dev/null; \
+	then echo qemu-system-i386; exit; \
+	elif which qemu-system-x86_64 > /dev/null; \
+	then echo qemu-system-x86_64; exit; \
+	else \
+	qemu=/Applications/Q.app/Contents/MacOS/i386-softmmu.app/Contents/MacOS/i386-softmmu; \
+	if test -x $$qemu; then echo $$qemu; exit; fi; fi; \
+	echo "***" 1>&2; \
+	echo "*** Error: Couldn't find a working QEMU executable." 1>&2; \
+	echo "*** Is the directory containing the qemu binary in your PATH" 1>&2; \
+	echo "*** or have you tried setting the QEMU variable in Makefile?" 1>&2; \
+	echo "***" 1>&2; exit 1)
 endif
 
+GPP = $(TOOLPREFIX)g++
 CC = $(TOOLPREFIX)gcc
 AS = $(TOOLPREFIX)gas
 LD = $(TOOLPREFIX)ld
 OBJCOPY = $(TOOLPREFIX)objcopy
 OBJDUMP = $(TOOLPREFIX)objdump
 CFLAGS = -fno-pic -std=gnu99 -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -march=i686 -Werror -fno-omit-frame-pointer
+CPPFLAGS = -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -march=i686 -Werror -fno-omit-frame-pointer
+CPPFLAGS += $(shell $(GPP) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
 # CFLAGS = -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
 ASFLAGS = -m32 -gdwarf-2 -Wa,-divide
@@ -89,8 +92,17 @@ LDFLAGS += -m $(shell $(LD) -V | grep elf_i386 2>/dev/null | head -n 1)
 ifneq ($(shell $(CC) -dumpspecs 2>/dev/null | grep -e '[^f]no-pie'),)
 CFLAGS += -fno-pie -no-pie
 endif
+
+ifneq ($(shell $(GPP) -dumpspecs 2>/dev/null | grep -e '[^f]no-pie'),)
+CPPFLAGS += -fno-pie -no-pie
+endif
+
 ifneq ($(shell $(CC) -dumpspecs 2>/dev/null | grep -e '[^f]nopie'),)
 CFLAGS += -fno-pie -nopie
+endif
+
+ifneq ($(shell $(GPP) -dumpspecs 2>/dev/null | grep -e '[^f]nopie'),)
+CPPFLAGS += -fno-pie -nopie
 endif
 
 xv6.img: bootblock kernel
@@ -127,6 +139,9 @@ kernel: $(OBJS) entry.o entryother initcode kernel.ld
 	$(LD) $(LDFLAGS) -T kernel.ld -o kernel entry.o $(OBJS) -b binary initcode entryother
 	$(OBJDUMP) -S kernel > kernel.asm
 	$(OBJDUMP) -t kernel | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > kernel.sym
+
+ass1ds.o:
+	$(GPP) $(CPPFLAGS) -c ass1ds.cpp -o ass1ds.o
 
 # kernelmemfs is a copy of kernel that maintains the
 # disk image in memory instead of writing to a disk.
@@ -183,14 +198,13 @@ UPROGS=\
 	_stressfs\
 	_wc\
 	_zombie\
-	# _usertests\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
 
 -include *.d
 
-clean: 
+clean:
 	rm -f *.tex *.dvi *.idx *.aux *.log *.ind *.ilg \
 	*.o *.d *.asm *.sym vectors.S bootblock entryother \
 	initcode initcode.out kernel xv6.img fs.img kernelmemfs \

@@ -1,3 +1,4 @@
+#include "schedulinginterface.h"
 #include "types.h"
 #include "defs.h"
 #include "param.h"
@@ -6,6 +7,15 @@
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
+
+extern PriorityQueue pq;
+extern RoundRobinQueue rrq;
+extern RunningProcessesHolder rpholder;
+
+long long getAccumulator(struct proc *p) {
+	//Implement this function, remove the panic line.
+	panic("getAccumulator: not implemented\n");
+}
 
 struct {
   struct spinlock lock;
