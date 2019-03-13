@@ -7,6 +7,13 @@
 
 char *argv[] = {"sh", 0};
 
+int isFileExists(const char *str)
+{
+	const int fd = open(str, O_RDONLY);
+	close(fd);
+	return fd >= 0;
+}
+
 int main(void)
 {
 	int pid, wpid;
@@ -33,15 +40,15 @@ int main(void)
 		if (pid < 0)
 		{
 			printf(1, "init: fork failed\n");
-			exit();
+			exit(0);
 		}
 		if (pid == 0)
 		{
 			exec("sh", argv);
 			printf(1, "init: exec sh failed\n");
-			exit();
+			exit(0);
 		}
-		while ((wpid = wait()) >= 0 && wpid != pid)
+		while ((wpid = wait(null)) >= 0 && wpid != pid)
 			printf(1, "zombie!\n");
 	}
 }

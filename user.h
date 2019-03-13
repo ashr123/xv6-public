@@ -5,8 +5,8 @@ struct rtcdate;
 
 // system calls
 int fork(void);
-int exit(void) __attribute__((noreturn));
-int wait(void);
+int exit(int) __attribute__((noreturn)); // changed
+int wait(int *); // changed
 int pipe(int *);
 int write(int, const void *, int);
 int read(int, void *, int);
@@ -39,10 +39,3 @@ void *memset(void *, int, uint);
 void *malloc(uint);
 void free(void *);
 int atoi(const char *);
-
-int isFileExists(const char *str)
-{
-    const int fd = open(str, 0);
-    close(fd);
-    return fd >= 0;
-}

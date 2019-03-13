@@ -60,6 +60,13 @@ int fork1(void); // Fork but panics on failure.
 void panic(char *);
 struct cmd *parsecmd(char *);
 
+int isFileExists(const char *str)
+{
+	const int fd = open(str, O_RDONLY);
+	close(fd);
+	return fd >= 0;
+}
+
 // Execute cmd.  Never returns.
 void runcmd(struct cmd *cmd)
 {
@@ -71,7 +78,7 @@ void runcmd(struct cmd *cmd)
 	struct redircmd *rcmd;
 
 	if (cmd == 0)
-		exit();
+		exit(0);
 
 	switch (cmd->type)
 	{
@@ -81,27 +88,27 @@ void runcmd(struct cmd *cmd)
 	case EXEC:
 		ecmd = (struct execcmd *)cmd;
 		if (ecmd->argv[0] == 0)
-			exit();
+			exit(0);
 		if (isFileExists(ecmd->argv[0]))
 			exec(ecmd->argv[0], ecmd->argv);
-		
+
 		struct stat st;
 		int fd, tempBufIndx = 0;
-		if ((fd = open("path", O_RDONLY)) < 0)
+		if ((fd = open("/path", O_RDONLY)) < 0)
 		{
-			printf(2, "ls: cannot open path\n");
+			printf(2, "sh: cannot open PATH\n");
 			return;
 		}
 
 		if (fstat(fd, &st) < 0)
 		{
-			printf(2, "ls: cannot stat path\n");
+			printf(2, "sh: cannot stat PATH\n");
 			close(fd);
 			return;
 		}
 
-		char *buf = (char *)malloc(st.size * sizeof(char)),
-			 *tempBuf = (char *)malloc(st.size * sizeof(char)); //no need for free
+		char *buf = (char *)malloc((st.size + 10) * sizeof(char)),
+			 *tempBuf = (char *)malloc((st.size + 10) * sizeof(char)); //no need for free
 		read(fd, buf, st.size);
 		close(fd);
 		for (int i = 0; i < st.size; i++)
@@ -112,7 +119,7 @@ void runcmd(struct cmd *cmd)
 				// printf(1, "TEMPPATH is: %s\n", tempBuf);
 				if (isFileExists(tempBuf))
 					exec(tempBuf, ecmd->argv);
-				
+
 				tempBufIndx = 0; //continue searching if exec failed
 			}
 			else
@@ -131,7 +138,7 @@ void runcmd(struct cmd *cmd)
 		if (open(rcmd->file, rcmd->mode) < 0)
 		{
 			printf(2, "open %s failed\n", rcmd->file);
-			exit();
+			exit(0);
 		}
 		runcmd(rcmd->cmd);
 		break;
@@ -140,7 +147,7 @@ void runcmd(struct cmd *cmd)
 		lcmd = (struct listcmd *)cmd;
 		if (fork1() == 0)
 			runcmd(lcmd->left);
-		wait();
+		wait(null);
 		runcmd(lcmd->right);
 		break;
 
@@ -166,8 +173,8 @@ void runcmd(struct cmd *cmd)
 		}
 		close(p[0]);
 		close(p[1]);
-		wait();
-		wait();
+		wait(null);
+		wait(null);
 		break;
 
 	case BACK:
@@ -176,7 +183,7 @@ void runcmd(struct cmd *cmd)
 			runcmd(bcmd->cmd);
 		break;
 	}
-	exit();
+	exit(0);
 }
 
 int getcmd(char *buf, int nbuf)
@@ -217,15 +224,15 @@ int main(void)
 		}
 		if (fork1() == 0)
 			runcmd(parsecmd(buf));
-		wait();
+		wait(null);
 	}
-	exit();
+	exit(0);
 }
 
 void panic(char *s)
 {
 	printf(2, "%s\n", s);
-	exit();
+	exit(0);
 }
 
 int fork1(void)

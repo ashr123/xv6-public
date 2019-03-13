@@ -1,10 +1,10 @@
 #pragma once
 
-typedef unsigned int      uint;
-typedef unsigned short  ushort;
-typedef unsigned char    uchar;
-typedef uint             pde_t;
-typedef int            boolean;
+typedef unsigned int uint;
+typedef unsigned short ushort;
+typedef unsigned char uchar;
+typedef uint pde_t;
+typedef int boolean;
 
 #define null 0
 
