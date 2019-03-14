@@ -1,11 +1,12 @@
-#define BUFSIZE 1024
+//#define BUFSIZE 1024
+#include "types.h"
 
 struct stat;
 struct rtcdate;
 
 // system calls
 int fork(void);
-int exit(int) __attribute__((noreturn)); // changed
+void exit(int) __attribute__((noreturn)); // changed (also ret type)
 int wait(int *); // changed
 int pipe(int *);
 int write(int, const void *, int);
@@ -25,6 +26,7 @@ int getpid(void);
 char *sbrk(int);
 int sleep(int);
 int uptime(void);
+int detach(int); // added
 
 // ulib.c
 int stat(const char *, struct stat *);

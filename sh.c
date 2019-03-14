@@ -107,7 +107,7 @@ void runcmd(struct cmd *cmd)
 			return;
 		}
 
-		char *buf = (char *)malloc((st.size + 10) * sizeof(char)),
+		char *buf = (char *)malloc(st.size * sizeof(char)),
 			 *tempBuf = (char *)malloc((st.size + 10) * sizeof(char)); //no need for free
 		read(fd, buf, st.size);
 		close(fd);

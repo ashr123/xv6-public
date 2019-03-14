@@ -20,19 +20,19 @@ int sys_detach(void)
 	return detach(pid);
 }
 
-int sys_exit(void)
+void sys_exit(void)
 {
 	int status;
 	argint(0, &status);
 	exit(status);
-	return 0; // not reached
+	// return 0; // not reached
 }
 
 int sys_wait(void)
 {
-	int status;
-	argint(0, &status);
-	return wait((int *)status);
+	int *status;
+	argptr(0, (void *)&status, sizeof(int *));
+	return wait(status);
 }
 
 int sys_kill(void)

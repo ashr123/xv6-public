@@ -32,9 +32,8 @@ extern void trapret(void);
 
 static void wakeup1(void *chan);
 
-int detach(int pid) //TODO implement
+int detach(int pid)
 {
-
 	struct proc *p, *curproc = myproc();
 
 	acquire(&ptable.lock);
@@ -44,13 +43,15 @@ int detach(int pid) //TODO implement
 	{
 		if (p->parent != curproc)
 			continue;
-		
-		if (p->state!= UNUSED &&pid == p->pid)
+
+		if (p->state != UNUSED && pid == p->pid)
 		{
 			// Found one.
-			p->parent=initproc;
+			p->parent = initproc; // ???
+			if (p->state == ZOMBIE)
+				wakeup1(initproc);
 			release(&ptable.lock);
-			
+
 			return 0;
 		}
 	}
@@ -319,7 +320,7 @@ void exit(int status)
 // Return -1 if this process has no children.
 int wait(int *status)
 {
-	
+
 	struct proc *p;
 	int havekids, pid;
 	struct proc *curproc = myproc();
