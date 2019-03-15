@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
 	{
 		assert(index(argv[i], '/') == 0);
 
-		if ((fd = open(argv[i], 0)) < 0)
+		if ((fd = open(argv[i], O_RDONLY)) < 0)
 		{
 			perror(argv[i]);
 			exit(1);

@@ -32,6 +32,8 @@ struct inode
 };
 
 // table mapping major device number to
+#pragma once
+
 // device functions
 struct devsw
 {

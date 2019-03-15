@@ -1,3 +1,4 @@
+#pragma once
 enum fflags
 {
     O_RDONLY,

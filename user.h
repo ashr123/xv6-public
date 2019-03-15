@@ -1,4 +1,4 @@
-//#define BUFSIZE 1024
+#pragma once
 #include "types.h"
 
 struct stat;

@@ -34,7 +34,15 @@ struct context {
 	uint eip;
 };
 
-enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
+enum procstate
+{
+	UNUSED,
+	EMBRYO,
+	SLEEPING,
+	RUNNABLE,
+	RUNNING,
+	ZOMBIE
+};
 
 // Per-process state
 struct proc {
@@ -49,7 +57,7 @@ struct proc {
 	void *chan;                    // If non-zero, sleeping on chan
 	int killed;                    // If non-zero, have been killed
 	struct file *ofile[NOFILE];    // Open files
-	struct inode *cwd;             // Current directory  
+	struct inode *cwd;             // Current directory
 	char name[16];                 // Process name (debugging)
 	int status;                    // Exit status
 };

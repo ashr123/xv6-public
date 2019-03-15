@@ -1,4 +1,7 @@
 // Long-term locks for processes
+#pragma once
+#include "spinlock.h"
+
 struct sleeplock
 {
 	uint locked;		// Is the lock held?

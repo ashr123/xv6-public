@@ -4,11 +4,12 @@
 #include "user.h"
 #include "fcntl.h"
 #include "stat.h"
+#include "isFileExists.h"
 
 // Parsed command representation
 enum commandType
 {
-	EXEC,
+	EXEC/* = 1*/,
 	REDIR,
 	PIPE,
 	LIST,
@@ -67,13 +68,6 @@ struct backcmd
 int fork1(void); // Fork but panics on failure.
 void panic(char *);
 struct cmd *parsecmd(char *);
-
-int isFileExists(const char *str)
-{
-	const int fd = open(str, O_RDONLY);
-	close(fd);
-	return fd >= 0;
-}
 
 // Execute cmd.  Never returns.
 void runcmd(struct cmd *cmd)

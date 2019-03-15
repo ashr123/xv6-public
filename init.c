@@ -4,15 +4,9 @@
 #include "stat.h"
 #include "user.h"
 #include "fcntl.h"
+#include "isFileExists.h"
 
 char *argv[] = {"sh", 0};
-
-int isFileExists(const char *str)
-{
-	const int fd = open(str, O_RDONLY);
-	close(fd);
-	return fd >= 0;
-}
 
 int main(void)
 {
