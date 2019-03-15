@@ -6,11 +6,19 @@
 #include "stat.h"
 
 // Parsed command representation
-#define EXEC 1
-#define REDIR 2
-#define PIPE 3
-#define LIST 4
-#define BACK 5
+enum commandType
+{
+	EXEC,
+	REDIR,
+	PIPE,
+	LIST,
+	BACK
+};
+// #define EXEC 1
+// #define REDIR 2
+// #define PIPE 3
+// #define LIST 4
+// #define BACK 5
 
 #define MAXARGS 10
 

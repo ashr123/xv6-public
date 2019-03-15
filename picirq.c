@@ -3,11 +3,17 @@
 #include "traps.h"
 
 // I/O Addresses of the two programmable interrupt controllers
-#define IO_PIC1 0x20 // Master (IRQs 0-7)
-#define IO_PIC2 0xA0 // Slave (IRQs 8-15)
+enum IO_PIC
+{
+	IO_PIC1 = 0x20,
+	IO_PIC2 = 0xA0
+};
+// #define IO_PIC1 0x20 // Master (IRQs 0-7)
+// #define IO_PIC2 0xA0 // Slave (IRQs 8-15)
 
 // Don't use the 8259A interrupt controllers.  Xv6 assumes SMP hardware.
-void picinit(void)
+void
+picinit(void)
 {
 	// mask all interrupts
 	outb(IO_PIC1 + 1, 0xFF);

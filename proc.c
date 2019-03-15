@@ -47,11 +47,11 @@ int detach(int pid)
 		if (p->state != UNUSED && pid == p->pid)
 		{
 			// Found one.
-			p->parent = initproc; // ???
+			p->parent = initproc;
 			if (p->state == ZOMBIE)
 				wakeup1(initproc);
-			release(&ptable.lock);
 
+			release(&ptable.lock);
 			return 0;
 		}
 	}

@@ -39,6 +39,12 @@ struct proghdr
 #define ELF_PROG_LOAD 1
 
 // Flag bits for Proghdr flags
-#define ELF_PROG_FLAG_EXEC 1
-#define ELF_PROG_FLAG_WRITE 2
-#define ELF_PROG_FLAG_READ 4
+enum ELF_PROG_FLAG
+{
+	ELF_PROG_FLAG_EXEC = 1,
+	ELF_PROG_FLAG_WRITE = 2,
+	ELF_PROG_FLAG_READ = 4
+};
+// #define ELF_PROG_FLAG_EXEC 1
+// #define ELF_PROG_FLAG_WRITE 2
+// #define ELF_PROG_FLAG_READ 4

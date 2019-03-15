@@ -13,16 +13,32 @@
 #include "fs.h"
 #include "buf.h"
 
-#define SECTOR_SIZE 512
-#define IDE_BSY 0x80
-#define IDE_DRDY 0x40
-#define IDE_DF 0x20
-#define IDE_ERR 0x01
+enum IDEState
+{
+	IDE_BSY = 0x80,
+	IDE_DRDY = 0x40,
+	IDE_DF = 0x20,
+	IDE_ERR = 0x01
+};
 
-#define IDE_CMD_READ 0x20
-#define IDE_CMD_WRITE 0x30
-#define IDE_CMD_RDMUL 0xc4
-#define IDE_CMD_WRMUL 0xc5
+#define SECTOR_SIZE 512
+// #define IDE_BSY 0x80
+// #define IDE_DRDY 0x40
+// #define IDE_DF 0x20
+// #define IDE_ERR 0x01
+
+enum IDE_CMD
+{
+	IDE_CMD_READ = 0x20,
+	IDE_CMD_WRITE = 0x30,
+	IDE_CMD_RDMUL = 0xc4,
+	IDE_CMD_WRMUL = 0xc5
+};
+
+// #define IDE_CMD_READ 0x20
+// #define IDE_CMD_WRITE 0x30
+// #define IDE_CMD_RDMUL 0xc4
+// #define IDE_CMD_WRMUL 0xc5
 
 // idequeue points to the buf now being read/written to the disk.
 // idequeue->qnext points to the next buf to be processed.
