@@ -10,6 +10,7 @@
         "memlayout.h": "c",
         "x86.h": "c",
         "proc.h": "c",
-        "stdbool.h": "c"
+        "stdbool.h": "c",
+        "stdlib.h": "c"
     }
 }
