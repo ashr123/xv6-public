@@ -19,7 +19,7 @@ enum pol
 	EXTENDED_PRIORITY_SCHEDULING
 } policy = ROUND_ROBIN;
 
-volatile long long ticks1 = 0;
+volatile unsigned long ticks1 = 0;
 
 long long getAccumulator(struct proc *p)
 {
@@ -523,7 +523,7 @@ void scheduler(void)
 				p = pq.extractMin();
 				break;
 			case EXTENDED_PRIORITY_SCHEDULING:
-				if ((ticks1 % 100) == 0)
+				if (ticks1 % 100 == 0)
 					p = get_min_tick_pross();
 				else
 					p = rrq.dequeue(); //temp
