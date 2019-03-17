@@ -27,9 +27,9 @@ extern "C"
 	static boolean removeRunningProcessHolder(Proc *p);
 	static boolean getMinAccumulatorRunningProcessHolder(long long *pkey);
 
-	extern PriorityQueue pq;
-	extern RoundRobinQueue rrq;
-	extern RunningProcessesHolder rpholder;
+	// extern PriorityQueue pq;
+	// extern RoundRobinQueue rrq;
+	// extern RunningProcessesHolder rpholder;
 
 	PriorityQueue pq;
 	RoundRobinQueue rrq;

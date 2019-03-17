@@ -26,7 +26,6 @@ void forktest(void)
 		if (pid == 0)
 			exit(0);
 	}
-	printf(1, "%d\n", 4);
 	if (n == N)
 	{
 		printf(1, "fork claimed to work N times!\n", N);

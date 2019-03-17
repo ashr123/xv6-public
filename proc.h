@@ -1,4 +1,7 @@
 #pragma once
+#include "param.h"
+#include "types.h"
+#include "mmu.h"
 
 // Per-CPU state
 struct cpu {
@@ -59,7 +62,10 @@ struct proc {
 	struct file *ofile[NOFILE];    // Open files
 	struct inode *cwd;             // Current directory
 	char name[16];                 // Process name (debugging)
-	int status;                    // Exit status
+	int status;                    // (added) Exit status
+	int priority;                  // (added) priority between 1 to 10
+	long long accumulator;         // (added) priority accumulator
+	long long lastTickRunning;     // (added) last tick proc was running
 };
 
 // Process memory is laid out contiguously, low addresses first:

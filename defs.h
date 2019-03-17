@@ -123,6 +123,7 @@ int wait(int *); // changed
 void wakeup(void *);
 void yield(void);
 int detach(int); // added
+void priority(int); // added
 
 // swtch.S
 void swtch(struct context **, struct context *);

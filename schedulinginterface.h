@@ -6,7 +6,7 @@ struct proc;
 
 /**** The implementation of this is found in the ass1ds.cpp file. ****/
 
-//The following c-structs are holding pointers to functions as fields, to make the usage
+//The following c-structs are hol,oding pointers to functions as fields, to make the usage
 //easier, like in java.
 //For example, suppose we have an instance "pq" of type "PriorityQueue", to invoke the
 //isEmpty method just write:

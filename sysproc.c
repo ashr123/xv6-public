@@ -20,6 +20,13 @@ int sys_detach(void)
 	return detach(pid);
 }
 
+void sys_priority(void)
+{
+	int prio;
+	argint(0, &prio);
+	priority(prio);
+}
+
 void sys_exit(void)
 {
 	int status;

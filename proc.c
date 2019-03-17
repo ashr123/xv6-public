@@ -12,11 +12,42 @@ extern PriorityQueue pq;
 extern RoundRobinQueue rrq;
 extern RunningProcessesHolder rpholder;
 
+enum pol
+{
+	ROUND_ROBIN = 1,
+	PRIORITY_SCHEDULING,
+	EXTENDED_PRIORITY_SCHEDULING
+} policy = ROUND_ROBIN;
+
+volatile long long ticks1 = 0;
+
 long long getAccumulator(struct proc *p)
 {
 	//Implement this function, remove the panic line.
-	panic("getAccumulator: not implemented\n");
+	// panic("getAccumulator: not implemented\n");
+	return p->accumulator;
 }
+
+boolean get_min_accumulator(long long *acc)
+{
+	long long runnable_min_acc, running_min_acc;
+	if (!pq.getMinAccumulator(&runnable_min_acc))
+		return rpholder.getMinAccumulator(acc);
+	if (!rpholder.getMinAccumulator(&running_min_acc))
+	{
+		*acc = runnable_min_acc;
+		return 1;
+	}
+	if (runnable_min_acc > running_min_acc)
+	{
+		*acc = running_min_acc;
+		return 1;
+	}
+	*acc = runnable_min_acc;
+	return 1;
+}
+
+
 
 struct
 {
@@ -32,6 +63,30 @@ extern void trapret(void);
 
 static void wakeup1(void *chan);
 
+
+struct proc *get_min_tick_pross()
+{
+	struct proc *p;
+	struct proc *min_p = ptable.proc;
+	unsigned long long min_tick = ticks1;
+
+	// acquire(&ptable.lock);
+	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+	{
+		if (p->state != RUNNABLE)
+			continue;
+		if(p->lastTickRunning <= min_tick)
+		{
+			min_p = p;
+			min_tick = p->lastTickRunning;
+		}
+
+	}
+
+	// release(&ptable.lock);
+	return min_p;
+
+}
 int detach(int pid)
 {
 	struct proc *p, *curproc = myproc();
@@ -58,6 +113,51 @@ int detach(int pid)
 
 	release(&ptable.lock);
 	return -1;
+}
+
+void toRunnable(struct proc *p)
+{
+	p->state = RUNNABLE;
+	switch (policy)
+	{
+	case ROUND_ROBIN:
+		rrq.enqueue(p);
+		break;
+	case PRIORITY_SCHEDULING:
+		if (pq.isEmpty())
+		{
+			// cprintf(1, "%s's acc = 0!!!!!", p->name);
+			p->accumulator = 0;
+		}
+		else
+			if(!get_min_accumulator(&p->accumulator))
+			{
+				//cprintf("%s's acc = 0!!!!!", p->name);
+				p->accumulator = 0;
+			}
+
+		pq.put(p);
+		break;
+	case EXTENDED_PRIORITY_SCHEDULING:
+		if (pq.isEmpty())
+		{
+			// cprintf(1, "%s's acc = 0!!!!!", p->name);
+			p->accumulator = 0;
+		}
+		else
+			if(!get_min_accumulator(&p->accumulator))
+			{
+				//cprintf("%s's acc = 0!!!!!", p->name);
+				p->accumulator = 0;
+			}
+
+		pq.put(p);
+		break;
+		break;
+
+	default:
+		break;
+	}
 }
 
 void pinit(void)
@@ -129,6 +229,8 @@ allocproc(void)
 found:
 	p->state = EMBRYO;
 	p->pid = nextpid++;
+	p->priority = 5;
+	p->accumulator = 0;
 
 	release(&ptable.lock);
 
@@ -163,7 +265,8 @@ void userinit(void)
 {
 	struct proc *p;
 	extern char _binary_initcode_start[], _binary_initcode_size[];
-
+	policy = PRIORITY_SCHEDULING;
+	cprintf("policy: %d!!!\n", policy);
 	p = allocproc();
 
 	initproc = p;
@@ -189,10 +292,28 @@ void userinit(void)
 	// because the assignment might not be atomic.
 	acquire(&ptable.lock);
 
-	p->state = RUNNABLE;
-	rrq.enqueue(p);
+	toRunnable(p);
 
 	release(&ptable.lock);
+}
+
+void priority(int n)
+{
+	struct proc *curproc = myproc();
+	if (policy == EXTENDED_PRIORITY_SCHEDULING)
+	{
+		if (n >= 0 && n <= 10)
+			curproc->priority = n;
+		else
+			panic("not valid priority!\n ");
+	}
+	else
+	{
+		if (n >= 1 && n <= 10)
+			curproc->priority = n;
+		else
+			panic("not valid priority!\n ");
+	}
 }
 
 // Grow current process's memory by n bytes.
@@ -259,8 +380,7 @@ int fork(void)
 
 	acquire(&ptable.lock);
 
-	np->state = RUNNABLE;
-	rrq.enqueue(np);
+	toRunnable(np);
 
 	release(&ptable.lock);
 
@@ -390,9 +510,30 @@ void scheduler(void)
 
 		// Loop over process table looking for process to run.
 		acquire(&ptable.lock);
-		if(!rrq.isEmpty())
+
+		if (policy == ROUND_ROBIN ? !rrq.isEmpty() : policy == PRIORITY_SCHEDULING || policy == EXTENDED_PRIORITY_SCHEDULING ? !pq.isEmpty() : 0)
 		{
-			p = rrq.dequeue();
+			// cprintf("scheduler, policy: %d\n", policy);
+			switch (policy)
+			{
+			case ROUND_ROBIN:
+				p = rrq.dequeue();
+				break;
+			case PRIORITY_SCHEDULING:
+				p = pq.extractMin();
+				break;
+			case EXTENDED_PRIORITY_SCHEDULING:
+				if ((ticks1 % 100) == 0)
+					p = get_min_tick_pross();
+				else
+					p = rrq.dequeue(); //temp
+				break;
+
+			default:
+				panic("scheduler: Illegal policy");
+			}
+
+
 			// Switch to chosen process.  It is the process's job
 			// to release ptable.lock and then reacquire it
 			// before jumping back to us.
@@ -400,18 +541,21 @@ void scheduler(void)
 			switchuvm(p);
 			p->state = RUNNING;
 
+			p->lastTickRunning = 0;
+			rpholder.add(p);
+			//cprintf("%d\n",p->priority);
 			swtch(&(c->scheduler), p->context);
 			switchkvm();
 
 			// Process is done running for now.
 			// It should have changed its p->state before coming back.
-			c->proc = 0;
+
+			c->proc = null;
+			rpholder.remove(p);
 		}
 		release(&ptable.lock);
 
-
-
-/*
+		/*
 		for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
 		{
 			if (p->state != RUNNABLE)
@@ -432,9 +576,9 @@ void scheduler(void)
 			c->proc = 0;
 		}
 */
-
 	}
 }
+
 
 // Enter scheduler.  Must hold only ptable.lock
 // and have changed proc->state. Saves and restores
@@ -466,8 +610,11 @@ void yield(void)
 {
 	acquire(&ptable.lock); //DOC: yieldlock
 	struct proc *py = myproc();
-	py->state = RUNNABLE;
-	rrq.enqueue(py);
+	if(policy != ROUND_ROBIN)
+		py->accumulator += py->priority;
+	// cprintf("%s acc: %d\n", py->name, py->accumulator);
+	py->lastTickRunning = ++ticks1;
+	toRunnable(py);
 	sched();
 	release(&ptable.lock);
 }
@@ -543,10 +690,7 @@ wakeup1(void *chan)
 
 	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
 		if (p->state == SLEEPING && p->chan == chan)
-		{
-			p->state = RUNNABLE;
-			rrq.enqueue(p);
-		}
+			toRunnable(p);
 }
 
 // Wake up all processes sleeping on chan.
@@ -572,10 +716,7 @@ int kill(int pid)
 			p->killed = 1;
 			// Wake process from sleep if necessary.
 			if (p->state == SLEEPING)
-			{
-				p->state = RUNNABLE;
-				rrq.enqueue(p);
-			}
+				toRunnable(p);
 			release(&ptable.lock);
 			return 0;
 		}
