@@ -17,9 +17,9 @@ enum pol
 	ROUND_ROBIN = 1,
 	PRIORITY_SCHEDULING,
 	EXTENDED_PRIORITY_SCHEDULING
-} policy = ROUND_ROBIN;
+} policy1 = ROUND_ROBIN;
 
-volatile unsigned long ticks1 = 0;
+volatile long long ticks1 = 0;
 
 long long getAccumulator(struct proc *p)
 {
@@ -47,8 +47,6 @@ boolean get_min_accumulator(long long *acc)
 	return 1;
 }
 
-
-
 struct
 {
 	struct spinlock lock;
@@ -63,38 +61,36 @@ extern void trapret(void);
 
 static void wakeup1(void *chan);
 
-
 struct proc *get_min_tick_pross()
 {
-	struct proc *p;
 	struct proc *min_p = ptable.proc;
-	unsigned long long min_tick = ticks1;
-
+	long long min_tick = ticks1;
+	//cprintf("get min start\n");
 	// acquire(&ptable.lock);
-	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+	for (struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++)
 	{
 		if (p->state != RUNNABLE)
 			continue;
-		if(p->lastTickRunning <= min_tick)
+		if (p->lastTickRunning <= min_tick)
 		{
 			min_p = p;
 			min_tick = p->lastTickRunning;
 		}
-
 	}
+	//cprintf("min_p %s: end get min\n", min_p->name);
 
 	// release(&ptable.lock);
 	return min_p;
-
 }
+
 int detach(int pid)
 {
-	struct proc *p, *curproc = myproc();
+	struct proc *curproc = myproc();
 
 	acquire(&ptable.lock);
 
 	// Scan through table looking for exited children.
-	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+	for (struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++)
 	{
 		if (p->parent != curproc)
 			continue;
@@ -118,7 +114,7 @@ int detach(int pid)
 void toRunnable(struct proc *p)
 {
 	p->state = RUNNABLE;
-	switch (policy)
+	switch (policy1)
 	{
 	case ROUND_ROBIN:
 		rrq.enqueue(p);
@@ -129,30 +125,27 @@ void toRunnable(struct proc *p)
 			// cprintf(1, "%s's acc = 0!!!!!", p->name);
 			p->accumulator = 0;
 		}
-		else
-			if(!get_min_accumulator(&p->accumulator))
-			{
-				//cprintf("%s's acc = 0!!!!!", p->name);
-				p->accumulator = 0;
-			}
+		else if (!get_min_accumulator(&p->accumulator))
+		{
+			//cprintf("%s's acc = 0!!!!!", p->name);
+			p->accumulator = 0;
+		}
 
 		pq.put(p);
 		break;
 	case EXTENDED_PRIORITY_SCHEDULING:
 		if (pq.isEmpty())
 		{
-			// cprintf(1, "%s's acc = 0!!!!!", p->name);
+			// cprintf("%s's acc = 0!!!!!", p->name);
 			p->accumulator = 0;
 		}
-		else
-			if(!get_min_accumulator(&p->accumulator))
-			{
-				//cprintf("%s's acc = 0!!!!!", p->name);
-				p->accumulator = 0;
-			}
+		else if (!get_min_accumulator(&p->accumulator))
+		{
+			//cprintf("%s's acc = 0!!!!!", p->name);
+			p->accumulator = 0;
+		}
 
 		pq.put(p);
-		break;
 		break;
 
 	default:
@@ -231,6 +224,7 @@ found:
 	p->pid = nextpid++;
 	p->priority = 5;
 	p->accumulator = 0;
+	p->performance.ctime = ticks1;
 
 	release(&ptable.lock);
 
@@ -265,11 +259,11 @@ void userinit(void)
 {
 	struct proc *p;
 	extern char _binary_initcode_start[], _binary_initcode_size[];
-	policy = PRIORITY_SCHEDULING;
-	cprintf("policy: %d!!!\n", policy);
-	p = allocproc();
+	// policy = PRIORITY_SCHEDULING;
+	//cprintf("policy: %d!!!\n", policy);
+	initproc = p = allocproc();
 
-	initproc = p;
+	// initproc = p;
 	if ((p->pgdir = setupkvm()) == 0)
 		panic("userinit: out of memory?");
 	inituvm(p->pgdir, _binary_initcode_start, (int)_binary_initcode_size);
@@ -300,7 +294,7 @@ void userinit(void)
 void priority(int n)
 {
 	struct proc *curproc = myproc();
-	if (policy == EXTENDED_PRIORITY_SCHEDULING)
+	if (policy1 == EXTENDED_PRIORITY_SCHEDULING)
 	{
 		if (n >= 0 && n <= 10)
 			curproc->priority = n;
@@ -350,9 +344,7 @@ int fork(void)
 
 	// Allocate process.
 	if ((np = allocproc()) == 0)
-	{
 		return -1;
-	}
 
 	// Copy process state from proc.
 	if ((np->pgdir = copyuvm(curproc->pgdir, curproc->sz)) == 0)
@@ -387,13 +379,36 @@ int fork(void)
 	return pid;
 }
 
+void policy(int _policy)
+{
+	acquire(&ptable.lock);
+	//struct proc *curproc = myproc();
+	if (_policy > 0 && _policy < 4)
+		policy1 = _policy;
+	if (_policy == ROUND_ROBIN && policy1 != ROUND_ROBIN)
+		if (!pq.switchToRoundRobinPolicy())
+			panic("switchToRoundRobinPolicy failed!!!");
+
+	if (_policy != ROUND_ROBIN && policy1 == ROUND_ROBIN)
+		if (!rrq.switchToPriorityQueuePolicy())
+			panic("switchToPriorityQueuePolicy failed!!!");
+	for (struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+	{
+		if (_policy == ROUND_ROBIN)
+			p->accumulator = 0;
+		else if (_policy == PRIORITY_SCHEDULING)
+			if (p->priority == 0)
+				p->priority = 1;
+	}
+	release(&ptable.lock);
+}
+
 // Exit the current process.  Does not return.
 // An exited process remains in the zombie state
 // until its parent calls wait(int) to find out it exited.
 void exit(int status)
 {
 	struct proc *curproc = myproc();
-	struct proc *p;
 	int fd;
 
 	curproc->status = status; // Added
@@ -422,7 +437,7 @@ void exit(int status)
 	wakeup1(curproc->parent);
 
 	// Pass abandoned children to init.
-	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+	for (struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++)
 	{
 		if (p->parent == curproc)
 		{
@@ -442,8 +457,6 @@ void exit(int status)
 // Return -1 if this process has no children.
 int wait(int *status)
 {
-
-	struct proc *p;
 	int havekids, pid;
 	struct proc *curproc = myproc();
 
@@ -452,7 +465,7 @@ int wait(int *status)
 	{
 		// Scan through table looking for exited children.
 		havekids = 0;
-		for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+		for (struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++)
 		{
 			if (p->parent != curproc)
 				continue;
@@ -460,18 +473,16 @@ int wait(int *status)
 			if (p->state == ZOMBIE)
 			{
 				// Found one.
-				pid = p->pid;
-				kfree(p->kstack);
-				p->kstack = 0;
-				freevm(p->pgdir);
-				p->pid = 0;
-				p->parent = 0;
-				p->name[0] = 0;
-				p->killed = 0;
-				p->state = UNUSED;
 				if (status != null)
 					*status = p->status; // addition
-				p->status = 0;
+				pid = p->pid;
+				kfree(p->kstack);
+				p->kstack = null;
+				freevm(p->pgdir);
+				p->pid = p->killed = p->status = 0;
+				p->parent = null;
+				p->name[0] = 0;
+				p->state = UNUSED;
 				release(&ptable.lock);
 				return pid;
 			}
@@ -501,7 +512,7 @@ void scheduler(void)
 {
 	struct proc *p;
 	struct cpu *c = mycpu();
-	c->proc = 0;
+	c->proc = null;
 
 	for (;;)
 	{
@@ -511,10 +522,10 @@ void scheduler(void)
 		// Loop over process table looking for process to run.
 		acquire(&ptable.lock);
 
-		if (policy == ROUND_ROBIN ? !rrq.isEmpty() : policy == PRIORITY_SCHEDULING || policy == EXTENDED_PRIORITY_SCHEDULING ? !pq.isEmpty() : 0)
+		if (policy1 == ROUND_ROBIN ? !rrq.isEmpty() : policy1 == PRIORITY_SCHEDULING || policy1 == EXTENDED_PRIORITY_SCHEDULING ? !pq.isEmpty() : 0)
 		{
 			// cprintf("scheduler, policy: %d\n", policy);
-			switch (policy)
+			switch (policy1)
 			{
 			case ROUND_ROBIN:
 				p = rrq.dequeue();
@@ -524,15 +535,20 @@ void scheduler(void)
 				break;
 			case EXTENDED_PRIORITY_SCHEDULING:
 				if (ticks1 % 100 == 0)
+				{
 					p = get_min_tick_pross();
+					// cprintf("if %d\n", ticks1);
+				}
 				else
-					p = rrq.dequeue(); //temp
+				{
+					p = pq.extractMin();
+					// cprintf("%s else!!!\n",p->name);
+				}
 				break;
 
 			default:
 				panic("scheduler: Illegal policy");
 			}
-
 
 			// Switch to chosen process.  It is the process's job
 			// to release ptable.lock and then reacquire it
@@ -579,7 +595,6 @@ void scheduler(void)
 	}
 }
 
-
 // Enter scheduler.  Must hold only ptable.lock
 // and have changed proc->state. Saves and restores
 // intena because intena is a property of this
@@ -608,12 +623,18 @@ void sched(void)
 // Give up the CPU for one scheduling round.
 void yield(void)
 {
+	//cprintf("%d llll\n", ticks1);
 	acquire(&ptable.lock); //DOC: yieldlock
 	struct proc *py = myproc();
-	if(policy != ROUND_ROBIN)
-		py->accumulator += py->priority;
-	// cprintf("%s acc: %d\n", py->name, py->accumulator);
+	//if (policy != ROUND_ROBIN)
+	//{
+	py->accumulator += py->priority;
 	py->lastTickRunning = ++ticks1;
+	//cprintf("%d rrrr\n", ticks1);
+	//}
+
+	// cprintf("%s acc: %d\n", py->name, py->accumulator);
+
 	toRunnable(py);
 	sched();
 	release(&ptable.lock);
@@ -686,9 +707,7 @@ void sleep(void *chan, struct spinlock *lk)
 static void
 wakeup1(void *chan)
 {
-	struct proc *p;
-
-	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+	for (struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++)
 		if (p->state == SLEEPING && p->chan == chan)
 			toRunnable(p);
 }
@@ -706,10 +725,8 @@ void wakeup(void *chan)
 // to user space (see trap in trap.c).
 int kill(int pid)
 {
-	struct proc *p;
-
 	acquire(&ptable.lock);
-	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+	for (struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++)
 	{
 		if (p->pid == pid)
 		{

@@ -106,7 +106,7 @@ int pipewrite(struct pipe *, char *, int);
 //PAGEBREAK: 16
 // proc.c
 int cpuid(void);
-void exit(int); // changed
+void exit(int) __attribute__((noreturn)); // changed
 int fork(void);
 int growproc(int);
 int kill(int);
@@ -124,6 +124,7 @@ void wakeup(void *);
 void yield(void);
 int detach(int); // added
 void priority(int); // added
+void policy(int); // added
 
 // swtch.S
 void swtch(struct context **, struct context *);
@@ -165,7 +166,7 @@ void timerinit(void);
 
 // trap.c
 void idtinit(void);
-extern uint ticks;
+extern /*uint*/unsigned long long ticks;
 void tvinit(void);
 extern struct spinlock tickslock;
 

@@ -3,9 +3,11 @@
 extern "C"
 {
 	char *kalloc();
+	void panic(char *) __attribute__((noreturn));
 	void *memset(void *, int, uint);
 	void initSchedDS();
 	long long getAccumulator(Proc *p);
+	long long __moddi3(long long number, long long divisor);
 
 	//for pq
 	static boolean isEmptyPriorityQueue();
@@ -343,14 +345,17 @@ bool LinkedList::transfer()
 	if (!priorityQ->isEmpty())
 		return false;
 
-	MapNode *node = allocNode(0);
-	if (!node)
-		return false;
+	if (!isEmpty())
+	{
+		MapNode *node = allocNode(0);
+		if (!node)
+			return false;
 
-	node->listOfProcs.first = first;
-	node->listOfProcs.last = last;
-	first = last = null;
-	priorityQ->root = node;
+		node->listOfProcs.first = first;
+		node->listOfProcs.last = last;
+		first = last = null;
+		priorityQ->root = node;
+	}
 	return true;
 }
 
@@ -524,4 +529,34 @@ bool Map::extractProc(Proc *p)
 	}
 	root = tempMap.root;
 	return ans;
+}
+
+long long __moddi3(long long number, long long divisor)
+{ //returns number % divisor
+	if (divisor == 0)
+		panic((char *)"divide by zero!!!\n");
+
+	bool isNumberNegative = false;
+	if (number < 0)
+	{
+		number = -number;
+		isNumberNegative = true;
+	}
+
+	if (divisor < 0)
+		divisor = -divisor;
+
+	for (;;)
+	{
+		long long divisor2 = divisor;
+		while (number >= divisor2)
+		{
+			number -= divisor2;
+			if (divisor2 + divisor2 > 0) //exponential decay.
+				divisor2 += divisor2;
+		}
+
+		if (number < divisor)
+			return isNumberNegative ? -number : number;
+	}
 }

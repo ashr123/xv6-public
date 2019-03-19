@@ -27,12 +27,18 @@ void sys_priority(void)
 	priority(prio);
 }
 
+void sys_policy(void)
+{
+	int poly;
+	argint(0, &poly);
+	policy(poly);
+}
+
 void sys_exit(void)
 {
 	int status;
 	argint(0, &status);
 	exit(status);
-	// return 0; // not reached
 }
 
 int sys_wait(void)
