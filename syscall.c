@@ -102,6 +102,7 @@ extern int sys_uptime(void);
 extern int sys_detach(void);
 extern int sys_priority(void);
 extern int sys_policy(void);
+extern int sys_wait_stat(void);
 
 static int (*syscalls[])(void) = {
 	[SYS_fork] sys_fork,
@@ -127,7 +128,8 @@ static int (*syscalls[])(void) = {
 	[SYS_close] sys_close,
 	[SYS_detach] sys_detach,
 	[SYS_priority] sys_priority,
-	[SYS_policy] sys_policy};
+	[SYS_policy] sys_policy,
+	[SYS_wait_stat] sys_wait_stat};
 
 void syscall(void)
 {

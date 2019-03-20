@@ -63,10 +63,10 @@ static void wakeup1(void *chan);
 
 struct proc *get_min_tick_pross()
 {
+	//acquire(&ptable.lock);
 	struct proc *min_p = ptable.proc;
 	long long min_tick = ticks1;
 	//cprintf("get min start\n");
-	// acquire(&ptable.lock);
 	for (struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++)
 	{
 		if (p->state != RUNNABLE)
@@ -77,9 +77,9 @@ struct proc *get_min_tick_pross()
 			min_tick = p->lastTickRunning;
 		}
 	}
+	pq.extractProc(min_p);
 	//cprintf("min_p %s: end get min\n", min_p->name);
-
-	// release(&ptable.lock);
+	//release(&ptable.lock);
 	return min_p;
 }
 
@@ -113,6 +113,7 @@ int detach(int pid)
 
 void toRunnable(struct proc *p)
 {
+	p->firstTickRunnable = ticks;
 	p->state = RUNNABLE;
 	switch (policy1)
 	{
@@ -249,7 +250,7 @@ found:
 	p->context = (struct context *)sp;
 	memset(p->context, 0, sizeof *p->context);
 	p->context->eip = (uint)forkret;
-
+	p->performance.ctime = ticks; //added
 	return p;
 }
 
@@ -259,7 +260,6 @@ void userinit(void)
 {
 	struct proc *p;
 	extern char _binary_initcode_start[], _binary_initcode_size[];
-	// policy = PRIORITY_SCHEDULING;
 	//cprintf("policy: %d!!!\n", policy);
 	initproc = p = allocproc();
 
@@ -385,6 +385,8 @@ void policy(int _policy)
 	//struct proc *curproc = myproc();
 	if (_policy > 0 && _policy < 4)
 		policy1 = _policy;
+	else
+		return;
 	if (_policy == ROUND_ROBIN && policy1 != ROUND_ROBIN)
 		if (!pq.switchToRoundRobinPolicy())
 			panic("switchToRoundRobinPolicy failed!!!");
@@ -446,7 +448,8 @@ void exit(int status)
 				wakeup1(initproc);
 		}
 	}
-
+	curproc->performance.ttime = ticks;
+	curproc->performance.rutime = ticks - curproc->firstTickRunning_by_ticks;
 	// Jump into the scheduler, never to return.
 	curproc->state = ZOMBIE;
 	sched();
@@ -500,6 +503,13 @@ int wait(int *status)
 	}
 }
 
+//new system call 3.5
+int wait_stat(int *status, struct perf *performance)
+{
+	*performance = myproc()->performance;
+	return wait(status);
+}
+
 //PAGEBREAK: 42
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
@@ -536,7 +546,9 @@ void scheduler(void)
 			case EXTENDED_PRIORITY_SCHEDULING:
 				if (ticks1 % 100 == 0)
 				{
+					//release(&ptable.lock);
 					p = get_min_tick_pross();
+					//acquire(&ptable.lock);
 					// cprintf("if %d\n", ticks1);
 				}
 				else
@@ -555,12 +567,15 @@ void scheduler(void)
 			// before jumping back to us.
 			c->proc = p;
 			switchuvm(p);
+
+			p->performance.retime += ticks - p->firstTickRunnable;
+			p->firstTickRunning_by_ticks = ticks;
 			p->state = RUNNING;
 
-			p->lastTickRunning = 0;
+			// p->lastTickRunning = 0;
 			rpholder.add(p);
 			//cprintf("%d\n",p->priority);
-			swtch(&(c->scheduler), p->context);
+			swtch(&c->scheduler, p->context);
 			switchkvm();
 
 			// Process is done running for now.
@@ -626,12 +641,9 @@ void yield(void)
 	//cprintf("%d llll\n", ticks1);
 	acquire(&ptable.lock); //DOC: yieldlock
 	struct proc *py = myproc();
-	//if (policy != ROUND_ROBIN)
-	//{
+	py->performance.rutime = ticks - py->firstTickRunning_by_ticks;
 	py->accumulator += py->priority;
 	py->lastTickRunning = ++ticks1;
-	//cprintf("%d rrrr\n", ticks1);
-	//}
 
 	// cprintf("%s acc: %d\n", py->name, py->accumulator);
 
@@ -686,6 +698,10 @@ void sleep(void *chan, struct spinlock *lk)
 	}
 	// Go to sleep.
 	p->chan = chan;
+
+	p->performance.rutime = ticks - p->firstTickRunning_by_ticks;
+	p->firstTickSleepping_by_ticks = ticks;
+
 	p->state = SLEEPING;
 
 	sched();
@@ -709,7 +725,10 @@ wakeup1(void *chan)
 {
 	for (struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++)
 		if (p->state == SLEEPING && p->chan == chan)
+		{
+			p->performance.stime = ticks - p->firstTickSleepping_by_ticks;
 			toRunnable(p);
+		}
 }
 
 // Wake up all processes sleeping on chan.

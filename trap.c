@@ -12,7 +12,7 @@
 struct gatedesc idt[256];
 extern uint vectors[]; // in vectors.S: array of 256 entry pointers
 struct spinlock tickslock;
-/*uint*/unsigned long long ticks = 0;
+/*uint*/volatile unsigned long long ticks = 0;
 
 void tvinit(void)
 {
@@ -47,13 +47,13 @@ void trap(struct trapframe *tf)
 	switch (tf->trapno)
 	{
 	case T_IRQ0 + IRQ_TIMER:
-		// if (cpuid() == 0)
-		// {
+		if (cpuid() == 0)
+		{
 			acquire(&tickslock);
 			ticks++;
-			wakeup(&ticks);
+			wakeup((void *)&ticks);
 			release(&tickslock);
-		// }
+		}
 		lapiceoi();
 		break;
 	case T_IRQ0 + IRQ_IDE:

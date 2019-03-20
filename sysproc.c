@@ -34,6 +34,17 @@ void sys_policy(void)
 	policy(poly);
 }
 
+int sys_wait_stat(void)
+{
+	int *status;
+	struct perf *performance;
+
+	argptr(0, (void *)&status, sizeof(int));
+	argptr(1, (void *)&performance, sizeof(struct perf));
+
+	return wait(status);
+}
+
 void sys_exit(void)
 {
 	int status;
@@ -44,7 +55,7 @@ void sys_exit(void)
 int sys_wait(void)
 {
 	int *status;
-	argptr(0, (void *)&status, sizeof(int *));
+	argptr(0, (void *)&status, sizeof(int));
 	return wait(status);
 }
 
@@ -91,7 +102,7 @@ int sys_sleep(void)
 			release(&tickslock);
 			return -1;
 		}
-		sleep(&ticks, &tickslock);
+		sleep((void *)&ticks, &tickslock);
 	}
 	release(&tickslock);
 	return 0;

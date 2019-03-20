@@ -1,5 +1,6 @@
 // #include "types.h"
 #include "user.h"
+#include"proc.h"
 
 int main(void)
 {
@@ -17,6 +18,54 @@ int main(void)
 	// 			printf(1, "detach :%d -> should be -1\n", detach(9));
 	// 		}
 	// 	}
+	/*
+
+int pid = fork();
+if (pid == 0) {
+sleep(300);
+exit(5);
+}
+else {
+int* status = malloc(1);
+wait(status);
+printf(1, "exit status after is %d\n",*status);
+}
+
+exit(0);
+*/
+	// struct perf
+	// {
+	// 	unsigned long long ctime, // process creation time (technically should be int)
+	// 		ttime,				  // process termination time
+	// 		stime,				  // the total time the process spent in the SLEEPING state
+	// 		retime,				  // the total time the process spent in the RUNNABLE state
+	// 		rutime;				  // the total time the process spent in the RUNNING state
+	// };
+
+	struct perf perf1;
+
+	int pid = fork();
+	if (pid == 0)
+	{
+		printf(1, "Child is waiting");
+		sleep(300);
+		exit(5);
+	}
+	else
+	{
+		int status;
+		wait_stat(&status, &perf1);
+		printf(1, "exit status after is %d\n", status);
+		printf(1, "ctime is %d\n", perf1.ctime);
+		printf(1, "ttime is %d\n", perf1.ttime);
+		printf(1, "stime is %d\n", perf1.stime);
+		printf(1, "retime is %d\n", perf1.retime);
+		printf(1, "rutime is %d\n", perf1.rutime);
+	}
+
+	exit(0);
+
+	/*
 
 	int pid = fork();
 	if (pid > 0)
@@ -33,4 +82,5 @@ int main(void)
 			   first_status, second_status, third_status);
 	}
 	exit(0);
+	*/
 }

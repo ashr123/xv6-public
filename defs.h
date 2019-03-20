@@ -11,6 +11,7 @@ struct spinlock;
 struct sleeplock;
 struct stat;
 struct superblock;
+struct perf;
 
 // bio.c
 void binit(void);
@@ -122,9 +123,10 @@ void userinit(void);
 int wait(int *); // changed
 void wakeup(void *);
 void yield(void);
-int detach(int); // added
-void priority(int); // added
-void policy(int); // added
+int detach(int);                     // added
+void priority(int);                  // added
+void policy(int);                    // added
+int wait_stat(int *, struct perf *); // added
 
 // swtch.S
 void swtch(struct context **, struct context *);
@@ -166,7 +168,7 @@ void timerinit(void);
 
 // trap.c
 void idtinit(void);
-extern /*uint*/unsigned long long ticks;
+extern /*uint*/ volatile unsigned long long ticks;
 void tvinit(void);
 extern struct spinlock tickslock;
 

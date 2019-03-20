@@ -130,7 +130,8 @@ void runcmd(struct cmd *cmd)
 				tempBufIndx++;
 			}
 		}
-
+		free(buf);
+		free(tempBuf);
 		printf(2, "exec %s failed\n", ecmd->argv[0]);
 		break;
 

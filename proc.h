@@ -39,6 +39,7 @@ struct context
 		eip;
 };
 
+
 // Per-process state
 struct proc
 {
@@ -51,30 +52,34 @@ struct proc
 		RUNNABLE,
 		RUNNING,
 		ZOMBIE
-	} state;					// Process state
-	struct proc *parent;		// Parent process
-	struct trapframe *tf;		// Trap frame for current syscall
-	struct context *context;	// swtch() here to run process
-	void *chan;					// If non-zero, sleeping on chan
-	struct file *ofile[NOFILE]; // Open files
-	struct inode *cwd;			// Current directory
-	char *kstack,				// Bottom of kernel stack for this process
-		name[16];				// Process name (debugging)
-	int pid,					// Process ID
-		killed,					// If non-zero, have been killed
-		status,					// (added) Exit status
-		priority;				// (added) priority between 1 to 10
-	long long accumulator,		// (added) priority accumulator
-		lastTickRunning,		// (added) last tick proc was in the RUNNING state
-		lastTickRunnable;		// (added) last tick proc was in the RUNNABLE state
+	} state;							// Process state
+	struct proc *parent;				// Parent process
+	struct trapframe *tf;				// Trap frame for current syscall
+	struct context *context;			// swtch() here to run process
+	void *chan;							// If non-zero, sleeping on chan
+	struct file *ofile[NOFILE];			// Open files
+	struct inode *cwd;					// Current directory
+	char *kstack,						// Bottom of kernel stack for this process
+		name[16];						// Process name (debugging)
+	int pid,							// Process ID
+		killed,							// If non-zero, have been killed
+		status,							// (added) Exit status
+		priority;						// (added) priority between 1 to 10
+	long long accumulator;				// (added) priority accumulator
+	unsigned long long
+
+	lastTickRunning, // (added) last tick proc was in the RUNNING state (by tiks1)
+		firstTickRunnable,				// (added) first tick proc was in the RUNNABLE state (by ticks)
+		firstTickRunning_by_ticks,		// (added) first tick proc was in the RUNNING state (by ticks)
+		firstTickSleepping_by_ticks;	// (added) first tick proc was in the SLEEPPING state (by ticks)
 	struct perf
 	{
-		long long ctime, // process creation time (technically should be int)
-			ttime,		 // process termination time
-			stime,		 // the total time the process spent in the SLEEPING state
-			retime,		 // the total time the process spent in the READY state
-			rutime;		 // the total time the process spent in the RUNNING state
-	} performance;		 // (added)
+		unsigned long long ctime, // process creation time (technically should be int)
+			ttime,				  // process termination time
+			stime,				  // the total time the process spent in the SLEEPING state
+			retime,				  // the total time the process spent in the RUNNABLE state
+			rutime;				  // the total time the process spent in the RUNNING state
+	} performance;				  // (added)
 };
 
 // Process memory is laid out contiguously, low addresses first:
