@@ -47,7 +47,7 @@ exit(0);
 	int pid = fork();
 	if (pid == 0)
 	{
-		printf(1, "Child is waiting");
+		printf(1, "Child is waiting\n");
 		sleep(300);
 		exit(5);
 	}

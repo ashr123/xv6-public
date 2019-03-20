@@ -42,7 +42,7 @@ int sys_wait_stat(void)
 	argptr(0, (void *)&status, sizeof(int));
 	argptr(1, (void *)&performance, sizeof(struct perf));
 
-	return wait(status);
+	return wait_stat(status, performance);
 }
 
 void sys_exit(void)

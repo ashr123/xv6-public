@@ -39,7 +39,6 @@ struct context
 		eip;
 };
 
-
 // Per-process state
 struct proc
 {
@@ -66,9 +65,7 @@ struct proc
 		status,							// (added) Exit status
 		priority;						// (added) priority between 1 to 10
 	long long accumulator;				// (added) priority accumulator
-	unsigned long long
-
-	lastTickRunning, // (added) last tick proc was in the RUNNING state (by tiks1)
+	unsigned long long lastTickRunning, // (added) last tick proc was in the RUNNING state (by tiks1)
 		firstTickRunnable,				// (added) first tick proc was in the RUNNABLE state (by ticks)
 		firstTickRunning_by_ticks,		// (added) first tick proc was in the RUNNING state (by ticks)
 		firstTickSleepping_by_ticks;	// (added) first tick proc was in the SLEEPPING state (by ticks)

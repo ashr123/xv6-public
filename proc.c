@@ -114,37 +114,37 @@ int detach(int pid)
 void toRunnable(struct proc *p)
 {
 	p->firstTickRunnable = ticks;
-	p->state = RUNNABLE;
 	switch (policy1)
 	{
 	case ROUND_ROBIN:
 		rrq.enqueue(p);
 		break;
 	case PRIORITY_SCHEDULING:
-		if (pq.isEmpty())
-		{
-			// cprintf(1, "%s's acc = 0!!!!!", p->name);
-			p->accumulator = 0;
-		}
-		else if (!get_min_accumulator(&p->accumulator))
-		{
-			//cprintf("%s's acc = 0!!!!!", p->name);
-			p->accumulator = 0;
-		}
+		// if (pq.isEmpty())
+		// {
+		// 	// cprintf(1, "%s's acc = 0!!!!!", p->name);
+		// 	p->accumulator = 0;
+		// }
+		// else if (!get_min_accumulator(&p->accumulator))
+		// {
+		// 	//cprintf("%s's acc = 0!!!!!", p->name);
+		// 	p->accumulator = 0;
+		// }
 
-		pq.put(p);
-		break;
+		// pq.put(p);
+		// break;
 	case EXTENDED_PRIORITY_SCHEDULING:
 		if (pq.isEmpty())
 		{
 			// cprintf("%s's acc = 0!!!!!", p->name);
 			p->accumulator = 0;
 		}
-		else if (!get_min_accumulator(&p->accumulator))
-		{
-			//cprintf("%s's acc = 0!!!!!", p->name);
-			p->accumulator = 0;
-		}
+		else if (p->state != RUNNING)
+			if (!get_min_accumulator(&p->accumulator))
+			{
+				//cprintf("%s's acc = 0!!!!!", p->name);
+				p->accumulator = 0;
+			}
 
 		pq.put(p);
 		break;
@@ -152,6 +152,7 @@ void toRunnable(struct proc *p)
 	default:
 		break;
 	}
+	p->state = RUNNABLE;
 }
 
 void pinit(void)
@@ -224,8 +225,21 @@ found:
 	p->state = EMBRYO;
 	p->pid = nextpid++;
 	p->priority = 5;
-	p->accumulator = 0;
-	p->performance.ctime = ticks1;
+	//p->performance.retime = p->performance.rutime = p->performance.stime = p->performance.ttime  = p->firstTickRunnable = p->firstTickRunning_by_ticks = p->firstTickSleepping_by_ticks = 0;
+	// p->accumulator = 0;
+	if (policy1 != ROUND_ROBIN)
+	{
+		if (!get_min_accumulator(&p->accumulator))
+		{
+			p->accumulator = 0;
+		}
+	}
+	else
+	{
+		p->accumulator = 0;
+	}
+
+	p->performance.ctime = ticks;
 
 	release(&ptable.lock);
 
@@ -251,6 +265,7 @@ found:
 	memset(p->context, 0, sizeof *p->context);
 	p->context->eip = (uint)forkret;
 	p->performance.ctime = ticks; //added
+								  //cprintf("%d",p->performance.ctime );
 	return p;
 }
 
@@ -506,6 +521,7 @@ int wait(int *status)
 //new system call 3.5
 int wait_stat(int *status, struct perf *performance)
 {
+	//performance = &myproc()->performance;
 	*performance = myproc()->performance;
 	return wait(status);
 }
