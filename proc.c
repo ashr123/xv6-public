@@ -581,6 +581,8 @@ void scheduler(void)
 			default:
 				panic("scheduler: Illegal policy");
 			}
+			if (p == null)
+				continue;
 
 			// Switch to chosen process.  It is the process's job
 			// to release ptable.lock and then reacquire it
