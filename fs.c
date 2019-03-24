@@ -22,7 +22,9 @@
 #include "file.h"
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
+
 static void itrunc(struct inode *);
+
 // there should be one superblock per disk device, but we run with
 // only one device
 struct superblock sb;
@@ -66,7 +68,7 @@ balloc(uint dev)
 		{
 			m = 1 << (bi % 8);
 			if ((bp->data[bi / 8] & m) == 0)
-			{						   // Is block free?
+			{                           // Is block free?
 				bp->data[bi / 8] |= m; // Mark block in use.
 				log_write(bp);
 				brelse(bp);
@@ -185,9 +187,9 @@ void iinit(int dev)
 	readsb(dev, &sb);
 	cprintf("sb: size %d nblocks %d ninodes %d nlog %d logstart %d\
  inodestart %d bmap start %d\n",
-			sb.size, sb.nblocks,
-			sb.ninodes, sb.nlog, sb.logstart, sb.inodestart,
-			sb.bmapstart);
+	        sb.size, sb.nblocks,
+	        sb.ninodes, sb.nlog, sb.logstart, sb.inodestart,
+	        sb.bmapstart);
 }
 
 static struct inode *iget(uint dev, uint inum);
@@ -206,7 +208,7 @@ ialloc(uint dev, short type)
 	for (inum = 1; inum < sb.ninodes; inum++)
 	{
 		bp = bread(dev, IBLOCK(inum, sb));
-		dip = (struct dinode *)bp->data + inum % IPB;
+		dip = (struct dinode *) bp->data + inum % IPB;
 		if (dip->type == 0)
 		{ // a free inode
 			memset(dip, 0, sizeof(*dip));
@@ -230,7 +232,7 @@ void iupdate(struct inode *ip)
 	struct dinode *dip;
 
 	bp = bread(ip->dev, IBLOCK(ip->inum, sb));
-	dip = (struct dinode *)bp->data + ip->inum % IPB;
+	dip = (struct dinode *) bp->data + ip->inum % IPB;
 	dip->type = ip->type;
 	dip->major = ip->major;
 	dip->minor = ip->minor;
@@ -305,7 +307,7 @@ void ilock(struct inode *ip)
 	if (ip->valid == 0)
 	{
 		bp = bread(ip->dev, IBLOCK(ip->inum, sb));
-		dip = (struct dinode *)bp->data + ip->inum % IPB;
+		dip = (struct dinode *) bp->data + ip->inum % IPB;
 		ip->type = dip->type;
 		ip->major = dip->major;
 		ip->minor = dip->minor;
@@ -396,7 +398,7 @@ bmap(struct inode *ip, uint bn)
 		if ((addr = ip->addrs[NDIRECT]) == 0)
 			ip->addrs[NDIRECT] = addr = balloc(ip->dev);
 		bp = bread(ip->dev, addr);
-		a = (uint *)bp->data;
+		a = (uint *) bp->data;
 		if ((addr = a[bn]) == 0)
 		{
 			a[bn] = addr = balloc(ip->dev);
@@ -433,7 +435,7 @@ itrunc(struct inode *ip)
 	if (ip->addrs[NDIRECT])
 	{
 		bp = bread(ip->dev, ip->addrs[NDIRECT]);
-		a = (uint *)bp->data;
+		a = (uint *) bp->data;
 		for (j = 0; j < NINDIRECT; j++)
 		{
 			if (a[j])
@@ -547,7 +549,7 @@ dirlookup(struct inode *dp, char *name, uint *poff)
 
 	for (off = 0; off < dp->size; off += sizeof(de))
 	{
-		if (readi(dp, (char *)&de, off, sizeof(de)) != sizeof(de))
+		if (readi(dp, (char *) &de, off, sizeof(de)) != sizeof(de))
 			panic("dirlookup read");
 		if (de.inum == 0)
 			continue;
@@ -581,7 +583,7 @@ int dirlink(struct inode *dp, char *name, uint inum)
 	// Look for an empty dirent.
 	for (off = 0; off < dp->size; off += sizeof(de))
 	{
-		if (readi(dp, (char *)&de, off, sizeof(de)) != sizeof(de))
+		if (readi(dp, (char *) &de, off, sizeof(de)) != sizeof(de))
 			panic("dirlink read");
 		if (de.inum == 0)
 			break;
@@ -589,7 +591,7 @@ int dirlink(struct inode *dp, char *name, uint inum)
 
 	strncpy(de.name, name, DIRSIZ);
 	de.inum = inum;
-	if (writei(dp, (char *)&de, off, sizeof(de)) != sizeof(de))
+	if (writei(dp, (char *) &de, off, sizeof(de)) != sizeof(de))
 		panic("dirlink");
 
 	return 0;

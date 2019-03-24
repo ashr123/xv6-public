@@ -21,7 +21,7 @@ static uchar *memdisk;
 void ideinit(void)
 {
 	memdisk = _binary_fs_img_start;
-	disksize = (uint)_binary_fs_img_size / BSIZE;
+	disksize = (uint) _binary_fs_img_size / BSIZE;
 }
 
 // Interrupt handler.
@@ -52,8 +52,7 @@ void iderw(struct buf *b)
 	{
 		b->flags &= ~B_DIRTY;
 		memmove(p, b->data, BSIZE);
-	}
-	else
+	} else
 		memmove(b->data, p, BSIZE);
 	b->flags |= B_VALID;
 }

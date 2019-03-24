@@ -14,7 +14,7 @@ struct pipe
 {
 	struct spinlock lock;
 	char data[PIPESIZE];
-	uint nread;	// number of bytes read
+	uint nread;    // number of bytes read
 	uint nwrite;   // number of bytes written
 	int readopen;  // read fd is still open
 	int writeopen; // write fd is still open
@@ -28,7 +28,7 @@ int pipealloc(struct file **f0, struct file **f1)
 	*f0 = *f1 = 0;
 	if ((*f0 = filealloc()) == 0 || (*f1 = filealloc()) == 0)
 		goto bad;
-	if ((p = (struct pipe *)kalloc()) == 0)
+	if ((p = (struct pipe *) kalloc()) == 0)
 		goto bad;
 	p->readopen = 1;
 	p->writeopen = 1;
@@ -46,9 +46,9 @@ int pipealloc(struct file **f0, struct file **f1)
 	return 0;
 
 	//PAGEBREAK: 20
-bad:
+	bad:
 	if (p)
-		kfree((char *)p);
+		kfree((char *) p);
 	if (*f0)
 		fileclose(*f0);
 	if (*f1)
@@ -63,8 +63,7 @@ void pipeclose(struct pipe *p, int writable)
 	{
 		p->writeopen = 0;
 		wakeup(&p->nread);
-	}
-	else
+	} else
 	{
 		p->readopen = 0;
 		wakeup(&p->nwrite);
@@ -72,9 +71,8 @@ void pipeclose(struct pipe *p, int writable)
 	if (p->readopen == 0 && p->writeopen == 0)
 	{
 		release(&p->lock);
-		kfree((char *)p);
-	}
-	else
+		kfree((char *) p);
+	} else
 		release(&p->lock);
 }
 

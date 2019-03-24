@@ -10,8 +10,9 @@
 #include "spinlock.h"
 
 void freerange(void *vstart, void *vend);
+
 extern char end[]; // first address after kernel loaded from ELF file
-				   // defined by the kernel linker script in kernel.ld
+// defined by the kernel linker script in kernel.ld
 
 struct run
 {
@@ -46,10 +47,11 @@ void kinit2(void *vstart, void *vend)
 void freerange(void *vstart, void *vend)
 {
 	char *p;
-	p = (char *)PGROUNDUP((uint)vstart);
-	for (; p + PGSIZE <= (char *)vend; p += PGSIZE)
+	p = (char *) PGROUNDUP((uint) vstart);
+	for (; p + PGSIZE <= (char *) vend; p += PGSIZE)
 		kfree(p);
 }
+
 //PAGEBREAK: 21
 // Free the page of physical memory pointed at by v,
 // which normally should have been returned by a
@@ -59,7 +61,7 @@ void kfree(char *v)
 {
 	struct run *r;
 
-	if ((uint)v % PGSIZE || v < end || V2P(v) >= PHYSTOP)
+	if ((uint) v % PGSIZE || v < end || V2P(v) >= PHYSTOP)
 		panic("kfree");
 
 	// Fill with junk to catch dangling refs.
@@ -67,7 +69,7 @@ void kfree(char *v)
 
 	if (kmem.use_lock)
 		acquire(&kmem.lock);
-	r = (struct run *)v;
+	r = (struct run *) v;
 	r->next = kmem.freelist;
 	kmem.freelist = r;
 	if (kmem.use_lock)
@@ -89,5 +91,5 @@ kalloc(void)
 		kmem.freelist = r->next;
 	if (kmem.use_lock)
 		release(&kmem.lock);
-	return (char *)r;
+	return (char *) r;
 }

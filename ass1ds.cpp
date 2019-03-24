@@ -2,40 +2,40 @@
 
 extern "C"
 {
-	char *kalloc();
-	void panic(char *) __attribute__((noreturn));
-	void *memset(void *, int, uint);
-	void initSchedDS();
-	long long getAccumulator(Proc *p);
-	long long __moddi3(long long number, long long divisor);
+char *kalloc();
+void panic(char *) __attribute__((noreturn));
+void *memset(void *, int, uint);
+void initSchedDS();
+long long getAccumulator(Proc *p);
+long long __moddi3(long long number, long long divisor);
 
-	//for pq
-	static boolean isEmptyPriorityQueue();
-	static boolean putPriorityQueue(Proc *p);
-	static boolean getMinAccumulatorPriorityQueue(long long *pkey);
-	static Proc *extractMinPriorityQueue();
-	static boolean switchToRoundRobinPolicyPriorityQueue();
-	static boolean extractProcPriorityQueue(Proc *p);
+//for pq
+static boolean isEmptyPriorityQueue();
+static boolean putPriorityQueue(Proc *p);
+static boolean getMinAccumulatorPriorityQueue(long long *pkey);
+static Proc *extractMinPriorityQueue();
+static boolean switchToRoundRobinPolicyPriorityQueue();
+static boolean extractProcPriorityQueue(Proc *p);
 
-	//for rrq
-	static boolean isEmptyRoundRobinQueue();
-	static boolean enqueueRoundRobinQueue(Proc *p);
-	static Proc *dequeueRoundRobinQueue();
-	static boolean switchToPriorityQueuePolicyRoundRobinQueue();
+//for rrq
+static boolean isEmptyRoundRobinQueue();
+static boolean enqueueRoundRobinQueue(Proc *p);
+static Proc *dequeueRoundRobinQueue();
+static boolean switchToPriorityQueuePolicyRoundRobinQueue();
 
-	//for rpholder
-	static boolean isEmptyRunningProcessHolder();
-	static boolean addRunningProcessHolder(Proc *p);
-	static boolean removeRunningProcessHolder(Proc *p);
-	static boolean getMinAccumulatorRunningProcessHolder(long long *pkey);
+//for rpholder
+static boolean isEmptyRunningProcessHolder();
+static boolean addRunningProcessHolder(Proc *p);
+static boolean removeRunningProcessHolder(Proc *p);
+static boolean getMinAccumulatorRunningProcessHolder(long long *pkey);
 
-	// extern PriorityQueue pq;
-	// extern RoundRobinQueue rrq;
-	// extern RunningProcessesHolder rpholder;
+// extern PriorityQueue pq;
+// extern RoundRobinQueue rrq;
+// extern RunningProcessesHolder rpholder;
 
-	PriorityQueue pq;
-	RoundRobinQueue rrq;
-	RunningProcessesHolder rpholder;
+PriorityQueue pq;
+RoundRobinQueue rrq;
+RunningProcessesHolder rpholder;
 }
 
 #define PGSIZE 4096
@@ -145,19 +145,19 @@ void initSchedDS()
 	data = null;
 	spaceLeft = 0u;
 
-	priorityQ = (Map *)mymalloc(sizeof(Map));
+	priorityQ = (Map *) mymalloc(sizeof(Map));
 	*priorityQ = Map();
 
-	roundRobinQ = (LinkedList *)mymalloc(sizeof(LinkedList));
+	roundRobinQ = (LinkedList *) mymalloc(sizeof(LinkedList));
 	*roundRobinQ = LinkedList();
 
-	runningProcHolder = (LinkedList *)mymalloc(sizeof(LinkedList));
+	runningProcHolder = (LinkedList *) mymalloc(sizeof(LinkedList));
 	*runningProcHolder = LinkedList();
 
 	freeLinks = null;
 	for (int i = 0; i < NPROCLIST; ++i)
 	{
-		Link *link = (Link *)mymalloc(sizeof(Link));
+		Link *link = (Link *) mymalloc(sizeof(Link));
 		*link = Link();
 		link->next = freeLinks;
 		freeLinks = link;
@@ -166,7 +166,7 @@ void initSchedDS()
 	freeNodes = null;
 	for (int i = 0; i < NPROCMAP; ++i)
 	{
-		MapNode *node = (MapNode *)mymalloc(sizeof(MapNode));
+		MapNode *node = (MapNode *) mymalloc(sizeof(MapNode));
 		*node = MapNode();
 		node->next = freeNodes;
 		freeNodes = node;
@@ -366,11 +366,12 @@ bool LinkedList::getMinKey(long long *pkey)
 
 	long long minKey = getAccumulator(first->p);
 
-	forEach([&](Proc *p) {
-		long long key = getAccumulator(p);
-		if (key < minKey)
-			minKey = key;
-	});
+	forEach([&](Proc *p)
+	        {
+		        long long key = getAccumulator(p);
+		        if (key < minKey)
+			        minKey = key;
+	        });
 
 	*pkey = minKey;
 
@@ -404,8 +405,7 @@ bool MapNode::put(Proc *p)
 				}
 				return false;
 			}
-		}
-		else
+		} else
 		{ //right
 			if (node->right)
 				node = node->right;
@@ -484,8 +484,7 @@ Proc *Map::extractMin()
 			root = minNode->right;
 			if (!isEmpty())
 				root->parent = null;
-		}
-		else
+		} else
 		{
 			MapNode *parent = minNode->parent;
 			parent->left = minNode->right;
@@ -534,7 +533,7 @@ bool Map::extractProc(Proc *p)
 long long __moddi3(long long number, long long divisor)
 { //returns number % divisor
 	if (divisor == 0)
-		panic((char *)"divide by zero!!!\n");
+		panic((char *) "divide by zero!!!\n");
 
 	bool isNumberNegative = false;
 	if (number < 0)

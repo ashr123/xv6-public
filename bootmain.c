@@ -21,21 +21,21 @@ void bootmain(void)
 	void (*entry)(void);
 	uchar *pa;
 
-	elf = (struct elfhdr *)0x10000; // scratch space
+	elf = (struct elfhdr *) 0x10000; // scratch space
 
 	// Read 1st page off disk
-	readseg((uchar *)elf, 4096, 0);
+	readseg((uchar *) elf, 4096, 0);
 
 	// Is this an ELF executable?
 	if (elf->magic != ELF_MAGIC)
 		return; // let bootasm.S handle error
 
 	// Load each program segment (ignores ph flags).
-	ph = (struct proghdr *)((uchar *)elf + elf->phoff);
+	ph = (struct proghdr *) ((uchar *) elf + elf->phoff);
 	eph = ph + elf->phnum;
 	for (; ph < eph; ph++)
 	{
-		pa = (uchar *)ph->paddr;
+		pa = (uchar *) ph->paddr;
 		readseg(pa, ph->filesz, ph->off);
 		if (ph->memsz > ph->filesz)
 			stosb(pa + ph->filesz, 0, ph->memsz - ph->filesz);
@@ -43,15 +43,14 @@ void bootmain(void)
 
 	// Call the entry point from the ELF header.
 	// Does not return!
-	entry = (void (*)(void))(elf->entry);
+	entry = (void (*)(void)) (elf->entry);
 	entry();
 }
 
 void waitdisk(void)
 {
 	// Wait for disk ready.
-	while ((inb(0x1F7) & 0xC0) != 0x40)
-		;
+	while ((inb(0x1F7) & 0xC0) != 0x40);
 }
 
 // Read a single sector at offset into dst.

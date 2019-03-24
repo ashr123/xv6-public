@@ -4,7 +4,7 @@
 // Processor-defined:
 #define T_DIVIDE 0 // divide error
 #define T_DEBUG 1  // debug exception
-#define T_NMI 2	// non-maskable interrupt
+#define T_NMI 2    // non-maskable interrupt
 #define T_BRKPT 3  // breakpoint
 #define T_OFLOW 4  // overflow
 #define T_BOUND 5  // bounds check
@@ -20,7 +20,7 @@
 // #define T_RES        15      // reserved
 #define T_FPERR 16   // floating point error
 #define T_ALIGN 17   // aligment check
-#define T_MCHK 18	// machine check
+#define T_MCHK 18    // machine check
 #define T_SIMDERR 19 // SIMD floating point error
 
 // These are arbitrarily chosen, but with care not to overlap

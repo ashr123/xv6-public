@@ -7,8 +7,8 @@ inb(ushort port)
 	uchar data;
 
 	asm volatile("in %1,%0"
-				 : "=a"(data)
-				 : "d"(port));
+	: "=a"(data)
+	: "d"(port));
 	return data;
 }
 
@@ -16,52 +16,52 @@ static inline void
 insl(int port, void *addr, int cnt)
 {
 	asm volatile("cld; rep insl"
-				 : "=D"(addr), "=c"(cnt)
-				 : "d"(port), "0"(addr), "1"(cnt)
-				 : "memory", "cc");
+	: "=D"(addr), "=c"(cnt)
+	: "d"(port), "0"(addr), "1"(cnt)
+	: "memory", "cc");
 }
 
 static inline void
 outb(ushort port, uchar data)
 {
 	asm volatile("out %0,%1"
-				 :
-				 : "a"(data), "d"(port));
+	:
+	: "a"(data), "d"(port));
 }
 
 static inline void
 outw(ushort port, ushort data)
 {
 	asm volatile("out %0,%1"
-				 :
-				 : "a"(data), "d"(port));
+	:
+	: "a"(data), "d"(port));
 }
 
 static inline void
 outsl(int port, const void *addr, int cnt)
 {
 	asm volatile("cld; rep outsl"
-				 : "=S"(addr), "=c"(cnt)
-				 : "d"(port), "0"(addr), "1"(cnt)
-				 : "cc");
+	: "=S"(addr), "=c"(cnt)
+	: "d"(port), "0"(addr), "1"(cnt)
+	: "cc");
 }
 
 static inline void
 stosb(void *addr, int data, int cnt)
 {
 	asm volatile("cld; rep stosb"
-				 : "=D"(addr), "=c"(cnt)
-				 : "0"(addr), "1"(cnt), "a"(data)
-				 : "memory", "cc");
+	: "=D"(addr), "=c"(cnt)
+	: "0"(addr), "1"(cnt), "a"(data)
+	: "memory", "cc");
 }
 
 static inline void
 stosl(void *addr, int data, int cnt)
 {
 	asm volatile("cld; rep stosl"
-				 : "=D"(addr), "=c"(cnt)
-				 : "0"(addr), "1"(cnt), "a"(data)
-				 : "memory", "cc");
+	: "=D"(addr), "=c"(cnt)
+	: "0"(addr), "1"(cnt), "a"(data)
+	: "memory", "cc");
 }
 
 struct segdesc;
@@ -72,12 +72,12 @@ lgdt(struct segdesc *p, int size)
 	volatile ushort pd[3];
 
 	pd[0] = size - 1;
-	pd[1] = (uint)p;
-	pd[2] = (uint)p >> 16;
+	pd[1] = (uint) p;
+	pd[2] = (uint) p >> 16;
 
 	asm volatile("lgdt (%0)"
-				 :
-				 : "r"(pd));
+	:
+	: "r"(pd));
 }
 
 struct gatedesc;
@@ -88,20 +88,20 @@ lidt(struct gatedesc *p, int size)
 	volatile ushort pd[3];
 
 	pd[0] = size - 1;
-	pd[1] = (uint)p;
-	pd[2] = (uint)p >> 16;
+	pd[1] = (uint) p;
+	pd[2] = (uint) p >> 16;
 
 	asm volatile("lidt (%0)"
-				 :
-				 : "r"(pd));
+	:
+	: "r"(pd));
 }
 
 static inline void
 ltr(ushort sel)
 {
 	asm volatile("ltr %0"
-				 :
-				 : "r"(sel));
+	:
+	: "r"(sel));
 }
 
 static inline uint
@@ -109,7 +109,7 @@ readeflags(void)
 {
 	uint eflags;
 	asm volatile("pushfl; popl %0"
-				 : "=r"(eflags));
+	: "=r"(eflags));
 	return eflags;
 }
 
@@ -117,8 +117,8 @@ static inline void
 loadgs(ushort v)
 {
 	asm volatile("movw %0, %%gs"
-				 :
-				 : "r"(v));
+	:
+	: "r"(v));
 }
 
 static inline void
@@ -140,9 +140,9 @@ xchg(volatile uint *addr, uint newval)
 
 	// The + in "+m" denotes a read-modify-write operand.
 	asm volatile("lock; xchgl %0, %1"
-				 : "+m"(*addr), "=a"(result)
-				 : "1"(newval)
-				 : "cc");
+	: "+m"(*addr), "=a"(result)
+	: "1"(newval)
+	: "cc");
 	return result;
 }
 
@@ -151,7 +151,7 @@ rcr2(void)
 {
 	uint val;
 	asm volatile("movl %%cr2,%0"
-				 : "=r"(val));
+	: "=r"(val));
 	return val;
 }
 
@@ -159,8 +159,8 @@ static inline void
 lcr3(uint val)
 {
 	asm volatile("movl %0,%%cr3"
-				 :
-				 : "r"(val));
+	:
+	: "r"(val));
 }
 
 //PAGEBREAK: 36

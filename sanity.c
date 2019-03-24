@@ -50,8 +50,7 @@ exit(0);
 		printf(1, "Child is waiting\n");
 		sleep(300);
 		exit(5);
-	}
-	else
+	} else
 	{
 		int status;
 		wait_stat(&status, &perf1);

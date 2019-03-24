@@ -6,6 +6,7 @@
 #include <assert.h>
 
 #define stat xv6_stat // avoid clash with host struct stat
+
 #include "types.h"
 #include "fs.h"
 #include "stat.h"
@@ -33,11 +34,17 @@ uint freeinode = 1;
 uint freeblock;
 
 void balloc(int);
+
 void wsect(uint, void *);
+
 void winode(uint, struct dinode *);
+
 void rinode(uint inum, struct dinode *ip);
+
 void rsect(uint sec, void *buf);
+
 uint ialloc(ushort type);
+
 void iappend(uint inum, void *p, int n);
 
 // convert to intel byte order
@@ -45,7 +52,7 @@ ushort
 xshort(ushort x)
 {
 	ushort y;
-	uchar *a = (uchar *)&y;
+	uchar *a = (uchar *) &y;
 	a[0] = x;
 	a[1] = x >> 8;
 	return y;
@@ -54,7 +61,7 @@ xshort(ushort x)
 uint xint(uint x)
 {
 	uint y;
-	uchar *a = (uchar *)&y;
+	uchar *a = (uchar *) &y;
 	a[0] = x;
 	a[1] = x >> 8;
 	a[2] = x >> 16;
@@ -101,7 +108,7 @@ int main(int argc, char *argv[])
 	sb.bmapstart = xint(2 + nlog + ninodeblocks);
 
 	printf("nmeta %d (boot, super, log blocks %u inode blocks %u, bitmap blocks %u) blocks %d total %d\n",
-		   nmeta, nlog, ninodeblocks, nbitmap, nblocks, FSSIZE);
+	       nmeta, nlog, ninodeblocks, nbitmap, nblocks, FSSIZE);
 
 	freeblock = nmeta; // the first free block that we can allocate
 
@@ -189,7 +196,7 @@ void winode(uint inum, struct dinode *ip)
 
 	bn = IBLOCK(inum, sb);
 	rsect(bn, buf);
-	dip = ((struct dinode *)buf) + (inum % IPB);
+	dip = ((struct dinode *) buf) + (inum % IPB);
 	*dip = *ip;
 	wsect(bn, buf);
 }
@@ -202,7 +209,7 @@ void rinode(uint inum, struct dinode *ip)
 
 	bn = IBLOCK(inum, sb);
 	rsect(bn, buf);
-	dip = ((struct dinode *)buf) + (inum % IPB);
+	dip = ((struct dinode *) buf) + (inum % IPB);
 	*ip = *dip;
 }
 
@@ -253,7 +260,7 @@ void balloc(int used)
 
 void iappend(uint inum, void *xp, int n)
 {
-	char *p = (char *)xp;
+	char *p = (char *) xp;
 	uint fbn, off, n1;
 	struct dinode din;
 	char buf[BSIZE];
@@ -274,18 +281,17 @@ void iappend(uint inum, void *xp, int n)
 				din.addrs[fbn] = xint(freeblock++);
 			}
 			x = xint(din.addrs[fbn]);
-		}
-		else
+		} else
 		{
 			if (xint(din.addrs[NDIRECT]) == 0)
 			{
 				din.addrs[NDIRECT] = xint(freeblock++);
 			}
-			rsect(xint(din.addrs[NDIRECT]), (char *)indirect);
+			rsect(xint(din.addrs[NDIRECT]), (char *) indirect);
 			if (indirect[fbn - NDIRECT] == 0)
 			{
 				indirect[fbn - NDIRECT] = xint(freeblock++);
-				wsect(xint(din.addrs[NDIRECT]), (char *)indirect);
+				wsect(xint(din.addrs[NDIRECT]), (char *) indirect);
 			}
 			x = xint(indirect[fbn - NDIRECT]);
 		}

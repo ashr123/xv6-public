@@ -6,6 +6,7 @@
 #include "fcntl.h"
 
 char buf[1024];
+
 int match(char *, char *);
 
 void grep(char *pattern, int fd)
@@ -74,6 +75,7 @@ int main(int argc, char *argv[])
 // The Practice of Programming, Chapter 9.
 
 int matchhere(char *, char *);
+
 int matchstar(int, char *, char *);
 
 int match(char *re, char *text)

@@ -27,8 +27,7 @@ void acquire(struct spinlock *lk)
 		panic("acquire");
 
 	// The xchg is atomic.
-	while (xchg(&lk->locked, 1) != 0)
-		;
+	while (xchg(&lk->locked, 1) != 0);
 
 	// Tell the C compiler and the processor to not move loads or stores
 	// past this point, to ensure that the critical section's memory
@@ -60,8 +59,8 @@ void release(struct spinlock *lk)
 	// This code can't use a C assignment, since it might
 	// not be atomic. A real OS would use C atomics here.
 	asm volatile("movl $0, %0"
-				 : "+m"(lk->locked)
-				 :);
+	: "+m"(lk->locked)
+	:);
 
 	popcli();
 }
@@ -72,13 +71,13 @@ void getcallerpcs(void *v, uint pcs[])
 	uint *ebp;
 	int i;
 
-	ebp = (uint *)v - 2;
+	ebp = (uint *) v - 2;
 	for (i = 0; i < 10; i++)
 	{
-		if (ebp == 0 || ebp < (uint *)KERNBASE || ebp == (uint *)0xffffffff)
+		if (ebp == 0 || ebp < (uint *) KERNBASE || ebp == (uint *) 0xffffffff)
 			break;
-		pcs[i] = ebp[1];	  // saved %eip
-		ebp = (uint *)ebp[0]; // saved %ebp
+		pcs[i] = ebp[1];      // saved %eip
+		ebp = (uint *) ebp[0]; // saved %ebp
 	}
 	for (; i < 10; i++)
 		pcs[i] = 0;

@@ -10,8 +10,7 @@ strcpy(char *s, const char *t)
 	char *os;
 
 	os = s;
-	while ((*s++ = *t++) != 0)
-		;
+	while ((*s++ = *t++) != 0);
 	return os;
 }
 
@@ -19,15 +18,14 @@ int strcmp(const char *p, const char *q)
 {
 	while (*p && *p == *q)
 		p++, q++;
-	return (uchar)*p - (uchar)*q;
+	return (uchar) *p - (uchar) *q;
 }
 
 uint strlen(const char *s)
 {
 	int n;
 
-	for (n = 0; s[n]; n++)
-		;
+	for (n = 0; s[n]; n++);
 	return n;
 }
 
@@ -43,7 +41,7 @@ strchr(const char *s, char c)
 {
 	for (; *s; s++)
 		if (*s == c)
-			return (char *)s;
+			return (char *) s;
 	return 0;
 }
 

@@ -39,8 +39,8 @@ int sys_wait_stat(void)
 	int *status;
 	struct perf *performance;
 
-	argptr(0, (void *)&status, sizeof(int));
-	argptr(1, (void *)&performance, sizeof(struct perf));
+	argptr(0, (void *) &status, sizeof(int));
+	argptr(1, (void *) &performance, sizeof(struct perf));
 
 	return wait_stat(status, performance);
 }
@@ -55,7 +55,7 @@ void sys_exit(void)
 int sys_wait(void)
 {
 	int *status;
-	argptr(0, (void *)&status, sizeof(int));
+	argptr(0, (void *) &status, sizeof(int));
 	return wait(status);
 }
 
@@ -102,7 +102,7 @@ int sys_sleep(void)
 			release(&tickslock);
 			return -1;
 		}
-		sleep((void *)&ticks, &tickslock);
+		sleep((void *) &ticks, &tickslock);
 	}
 	release(&tickslock);
 	return 0;

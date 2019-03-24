@@ -48,6 +48,7 @@ static struct spinlock idelock;
 static struct buf *idequeue;
 
 static int havedisk1;
+
 static void idestart(struct buf *);
 
 // Wait for IDE disk to become ready.
@@ -56,8 +57,7 @@ idewait(int checkerr)
 {
 	int r;
 
-	while (((r = inb(0x1f7)) & (IDE_BSY | IDE_DRDY)) != IDE_DRDY)
-		;
+	while (((r = inb(0x1f7)) & (IDE_BSY | IDE_DRDY)) != IDE_DRDY);
 	if (checkerr && (r & (IDE_DF | IDE_ERR)) != 0)
 		return -1;
 	return 0;
@@ -103,7 +103,7 @@ idestart(struct buf *b)
 		panic("idestart");
 
 	idewait(0);
-	outb(0x3f6, 0);				   // generate interrupt
+	outb(0x3f6, 0);                   // generate interrupt
 	outb(0x1f2, sector_per_block); // number of sectors
 	outb(0x1f3, sector & 0xff);
 	outb(0x1f4, (sector >> 8) & 0xff);
@@ -113,8 +113,7 @@ idestart(struct buf *b)
 	{
 		outb(0x1f7, write_cmd);
 		outsl(0x1f0, b->data, BSIZE / 4);
-	}
-	else
+	} else
 	{
 		outb(0x1f7, read_cmd);
 	}

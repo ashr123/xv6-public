@@ -1,10 +1,10 @@
 #pragma once
 enum fflags
 {
-    O_RDONLY,
-    O_WRONLY,
-    O_RDWR,
-    O_CREATE = 0x200
+	O_RDONLY,
+	O_WRONLY,
+	O_RDWR,
+	O_CREATE = 0x200
 };
 
 // #define O_RDONLY 0x000
