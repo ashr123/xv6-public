@@ -99,7 +99,6 @@ fabric.properties
 .idea/sonarlint
 
 ### Linux ###
-*~
 
 # temporary files which can be created if a process still has a handle open of a deleted file
 .fuse_hidden*
@@ -153,3 +152,4 @@ Temporary Items
 .history
 
 # End of https://www.gitignore.io/api/macos,linux,clion,visualstudiocode
+/.idea/
