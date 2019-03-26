@@ -583,7 +583,7 @@ void scheduler(void)
 			default:
 				panic("scheduler: Illegal policy");
 			}
-			if (p == null)
+			if (p == null || p->state == UNUSED)
 				continue;
 			if (p->state != RUNNABLE)
 				cprintf("proc %s's state: %s\n",
