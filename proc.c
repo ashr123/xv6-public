@@ -316,7 +316,8 @@ void priority(int n)
 		if (n >= 0 && n <= 10)
 			curproc->priority = n;
 		else
-			cprintf("not valid priority!\n ");
+			return;
+		// cprintf("not valid priority!\n ");
 	}
 	else
 	{
@@ -325,7 +326,8 @@ void priority(int n)
 		else if (n == 0)
 			curproc->priority = 1;
 		else
-			cprintf("not valid priority!\n ");
+			return;
+		// cprintf("not valid priority!\n ");
 	}
 }
 
