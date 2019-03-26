@@ -584,7 +584,10 @@ void scheduler(void)
 				panic("scheduler: Illegal policy");
 			}
 			if (p == null || p->state == UNUSED)
+			{
+				release(&ptable.lock);
 				continue;
+			}
 			if (p->state != RUNNABLE)
 				cprintf("proc %s's state: %s\n",
 						p->name,
