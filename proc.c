@@ -152,7 +152,7 @@ void toRunnable(struct proc *p)
 		break;
 
 	default:
-		break;
+		panic("toRunnable: wrong priority!!!!");
 	}
 	p->state = RUNNABLE;
 }
@@ -585,6 +585,9 @@ void scheduler(void)
 			}
 			if (p == null)
 				continue;
+			cprintf("proc %s state: %s\n",
+					p->name,
+					p->state == UNUSED ? "UNUSED" : p->state == EMBRYO ? "EMBRYO" : p->state == SLEEPING ? "SLEEPING" : p->state == RUNNABLE ? "RUNNABLE" : p->state == RUNNING ? "RUNNING" : p->state == ZOMBIE ? "ZOMBIE" : "UNKNOWN!!!");
 
 			// Switch to chosen process.  It is the process's job
 			// to release ptable.lock and then reacquire it
