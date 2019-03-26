@@ -403,7 +403,6 @@ int fork(void)
 void policy(int _policy)
 {
 	acquire(&ptable.lock);
-	//struct proc *curproc = myproc();
 	if (_policy > 0 && _policy < 4)
 	{
 		if (_policy == ROUND_ROBIN && policy1 != ROUND_ROBIN)
@@ -414,13 +413,11 @@ void policy(int _policy)
 			if (!rrq.switchToPriorityQueuePolicy())
 				cprintf("switchToPriorityQueuePolicy failed!!!");
 		for (struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-		{
 			if (_policy == ROUND_ROBIN)
 				p->accumulator = 0;
 			else if (_policy == PRIORITY_SCHEDULING)
 				if (p->priority == 0)
 					p->priority = 1;
-		}
 		policy1 = _policy;
 	}
 	release(&ptable.lock);
