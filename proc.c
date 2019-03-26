@@ -335,10 +335,9 @@ void priority(int n)
 // Return 0 on success, -1 on failure.
 int growproc(int n)
 {
-	uint sz;
 	struct proc *curproc = myproc();
 
-	sz = curproc->sz;
+	uint sz = curproc->sz;
 	if (n > 0)
 	{
 		if ((sz = allocuvm(curproc->pgdir, sz, sz + n)) == 0)
@@ -359,7 +358,6 @@ int growproc(int n)
 // Caller must set state of returned proc to RUNNABLE.
 int fork(void)
 {
-	int i, pid;
 	struct proc *np;
 	struct proc *curproc = myproc();
 
@@ -382,14 +380,14 @@ int fork(void)
 	// Clear %eax so that fork returns 0 in the child.
 	np->tf->eax = 0;
 
-	for (i = 0; i < NOFILE; i++)
+	for (int i = 0; i < NOFILE; i++)
 		if (curproc->ofile[i])
 			np->ofile[i] = filedup(curproc->ofile[i]);
 	np->cwd = idup(curproc->cwd);
 
 	safestrcpy(np->name, curproc->name, sizeof(curproc->name));
 
-	pid = np->pid;
+	int pid = np->pid;
 
 	acquire(&ptable.lock);
 
@@ -429,7 +427,6 @@ void policy(int _policy)
 void exit(int status)
 {
 	struct proc *curproc = myproc();
-	int fd;
 
 	curproc->status = status; // Added
 
@@ -437,7 +434,7 @@ void exit(int status)
 		panic("init exiting");
 
 	// Close all open files.
-	for (fd = 0; fd < NOFILE; fd++)
+	for (int fd = 0; fd < NOFILE; fd++)
 	{
 		if (curproc->ofile[fd])
 		{
@@ -478,14 +475,13 @@ void exit(int status)
 // Return -1 if this process has no children.
 int wait(int *status)
 {
-	int havekids, pid;
 	struct proc *curproc = myproc();
 
 	acquire(&ptable.lock);
 	for (;;)
 	{
 		// Scan through table looking for exited children.
-		havekids = 0;
+		int havekids = 0;
 		for (struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++)
 		{
 			if (p->parent != curproc)
@@ -496,7 +492,7 @@ int wait(int *status)
 				// Found one.
 				if (status != null)
 					*status = p->status; // addition
-				pid = p->pid;
+				int pid = p->pid;
 				kfree(p->kstack);
 				p->kstack = null;
 				freevm(p->pgdir);
@@ -539,7 +535,6 @@ int wait_stat(int *status, struct perf *performance)
 //      via swtch back to the scheduler.
 void scheduler(void)
 {
-	struct proc *p;
 	struct cpu *c = mycpu();
 	c->proc = null;
 
@@ -554,6 +549,7 @@ void scheduler(void)
 		if (policy1 == ROUND_ROBIN ? !rrq.isEmpty() : policy1 == PRIORITY_SCHEDULING || policy1 == EXTENDED_PRIORITY_SCHEDULING ? !pq.isEmpty() : 0)
 		{
 			// cprintf("scheduler, policy: %d\n", policy);
+			struct proc *p;
 			switch (policy1)
 			{
 			case ROUND_ROBIN:
@@ -647,7 +643,6 @@ void scheduler(void)
 // there's no process.
 void sched(void)
 {
-	int intena;
 	struct proc *p = myproc();
 
 	if (!holding(&ptable.lock))
@@ -658,7 +653,7 @@ void sched(void)
 		panic("sched running");
 	if (readeflags() & FL_IF)
 		panic("sched interruptible");
-	intena = mycpu()->intena;
+	int intena = mycpu()->intena;
 	swtch(&p->context, mycpu()->scheduler);
 	mycpu()->intena = intena;
 }
