@@ -6,34 +6,21 @@
 #include "defs.h"
 #include "traps.h"
 
-#define IOAPIC 0xFEC00000 // Default physical address of IO APIC
+#define IOAPIC  0xFEC00000   // Default physical address of IO APIC
 
-enum REG
-{
-	REG_ID,
-	REG_VER,
-	REG_TABLE = 0x10
-};
-// #define REG_ID 0x00	// Register index: ID
-// #define REG_VER 0x01   // Register index: version
-// #define REG_TABLE 0x10 // Redirection table base
+#define REG_ID     0x00  // Register index: ID
+#define REG_VER    0x01  // Register index: version
+#define REG_TABLE  0x10  // Redirection table base
 
 // The redirection table starts at REG_TABLE and uses
 // two registers to configure each interrupt.
 // The first (low) register in a pair contains configuration bits.
 // The second (high) register contains a bitmask telling which
 // CPUs can serve that interrupt.
-enum INT
-{
-	INT_DISABLED = 0x00010000,
-	INT_LEVEL = 0x00008000,
-	INT_ACTIVELOW = 0x00002000,
-	INT_LOGICAL = 0x00000800
-};
-// #define INT_DISABLED 0x00010000 // Interrupt disabled
-// #define INT_LEVEL 0x00008000	 // Level-triggered (vs edge-)
-// #define INT_ACTIVELOW 0x00002000 // Active low (vs high)
-// #define INT_LOGICAL 0x00000800   // Destination is CPU id (vs APIC ID)
+#define INT_DISABLED   0x00010000  // Interrupt disabled
+#define INT_LEVEL      0x00008000  // Level-triggered (vs edge-)
+#define INT_ACTIVELOW  0x00002000  // Active low (vs high)
+#define INT_LOGICAL    0x00000800  // Destination is CPU id (vs APIC ID)
 
 volatile struct ioapic *ioapic;
 
@@ -59,7 +46,8 @@ ioapicwrite(int reg, uint data)
 	ioapic->data = data;
 }
 
-void ioapicinit(void)
+void
+ioapicinit(void)
 {
 	int i, id, maxintr;
 
@@ -78,7 +66,8 @@ void ioapicinit(void)
 	}
 }
 
-void ioapicenable(int irq, int cpunum)
+void
+ioapicenable(int irq, int cpunum)
 {
 	// Mark interrupt edge-triggered, active high,
 	// enabled, and routed to the given cpunum,

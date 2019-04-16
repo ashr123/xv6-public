@@ -2,9 +2,7 @@ struct file
 {
 	enum
 	{
-		FD_NONE,
-		FD_PIPE,
-		FD_INODE
+		FD_NONE, FD_PIPE, FD_INODE
 	} type;
 	int ref; // reference count
 	char readable;
@@ -14,16 +12,17 @@ struct file
 	uint off;
 };
 
+
 // in-memory copy of an inode
 struct inode
 {
-	uint dev;               // Device number
-	uint inum;               // Inode number
-	int ref;               // Reference count
+	uint dev;           // Device number
+	uint inum;          // Inode number
+	int ref;            // Reference count
 	struct sleeplock lock; // protects everything below here
-	int valid;               // inode has been read from disk?
+	int valid;          // inode has been read from disk?
 
-	short type; // copy of disk inode
+	short type;         // copy of disk inode
 	short major;
 	short minor;
 	short nlink;
@@ -32,8 +31,6 @@ struct inode
 };
 
 // table mapping major device number to
-#pragma once
-
 // device functions
 struct devsw
 {

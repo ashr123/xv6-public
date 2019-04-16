@@ -14,7 +14,8 @@
 // to a saved program counter, and then the first argument.
 
 // Fetch the int at addr from the current process.
-int fetchint(uint addr, int *ip)
+int
+fetchint(uint addr, int *ip)
 {
 	struct proc *curproc = myproc();
 
@@ -27,7 +28,8 @@ int fetchint(uint addr, int *ip)
 // Fetch the nul-terminated string at addr from the current process.
 // Doesn't actually copy the string - just sets *pp to point at it.
 // Returns length of string, not including nul.
-int fetchstr(uint addr, char **pp)
+int
+fetchstr(uint addr, char **pp)
 {
 	char *s, *ep;
 	struct proc *curproc = myproc();
@@ -45,7 +47,8 @@ int fetchstr(uint addr, char **pp)
 }
 
 // Fetch the nth 32-bit system call argument.
-int argint(int n, int *ip)
+int
+argint(int n, int *ip)
 {
 	return fetchint((myproc()->tf->esp) + 4 + 4 * n, ip);
 }
@@ -53,7 +56,8 @@ int argint(int n, int *ip)
 // Fetch the nth word-sized system call argument as a pointer
 // to a block of memory of size bytes.  Check that the pointer
 // lies within the process address space.
-int argptr(int n, char **pp, int size)
+int
+argptr(int n, char **pp, int size)
 {
 	int i;
 	struct proc *curproc = myproc();
@@ -70,7 +74,8 @@ int argptr(int n, char **pp, int size)
 // Check that the pointer is valid and the string is nul-terminated.
 // (There is no shared writable memory, so the string can't change
 // between this check and being used by the kernel.)
-int argstr(int n, char **pp)
+int
+argstr(int n, char **pp)
 {
 	int addr;
 	if (argint(n, &addr) < 0)
@@ -120,42 +125,32 @@ extern int sys_write(void);
 
 extern int sys_uptime(void);
 
-extern int sys_detach(void);
-
-extern int sys_priority(void);
-
-extern int sys_policy(void);
-
-extern int sys_wait_stat(void);
-
 static int (*syscalls[])(void) = {
-		[SYS_fork] sys_fork,
-		[SYS_exit] sys_exit,
-		[SYS_wait] sys_wait,
-		[SYS_pipe] sys_pipe,
-		[SYS_read] sys_read,
-		[SYS_kill] sys_kill,
-		[SYS_exec] sys_exec,
-		[SYS_fstat] sys_fstat,
-		[SYS_chdir] sys_chdir,
-		[SYS_dup] sys_dup,
-		[SYS_getpid] sys_getpid,
-		[SYS_sbrk] sys_sbrk,
-		[SYS_sleep] sys_sleep,
-		[SYS_uptime] sys_uptime,
-		[SYS_open] sys_open,
-		[SYS_write] sys_write,
-		[SYS_mknod] sys_mknod,
-		[SYS_unlink] sys_unlink,
-		[SYS_link] sys_link,
-		[SYS_mkdir] sys_mkdir,
-		[SYS_close] sys_close,
-		[SYS_detach] sys_detach,
-		[SYS_priority] sys_priority,
-		[SYS_policy] sys_policy,
-		[SYS_wait_stat] sys_wait_stat};
+		[SYS_fork]    sys_fork,
+		[SYS_exit]    sys_exit,
+		[SYS_wait]    sys_wait,
+		[SYS_pipe]    sys_pipe,
+		[SYS_read]    sys_read,
+		[SYS_kill]    sys_kill,
+		[SYS_exec]    sys_exec,
+		[SYS_fstat]   sys_fstat,
+		[SYS_chdir]   sys_chdir,
+		[SYS_dup]     sys_dup,
+		[SYS_getpid]  sys_getpid,
+		[SYS_sbrk]    sys_sbrk,
+		[SYS_sleep]   sys_sleep,
+		[SYS_uptime]  sys_uptime,
+		[SYS_open]    sys_open,
+		[SYS_write]   sys_write,
+		[SYS_mknod]   sys_mknod,
+		[SYS_unlink]  sys_unlink,
+		[SYS_link]    sys_link,
+		[SYS_mkdir]   sys_mkdir,
+		[SYS_close]   sys_close,
+};
 
-void syscall(void)
+void
+syscall(void)
 {
 	int num;
 	struct proc *curproc = myproc();

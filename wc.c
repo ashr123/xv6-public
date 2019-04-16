@@ -1,11 +1,11 @@
 #include "types.h"
 #include "stat.h"
 #include "user.h"
-#include "fcntl.h"
 
 char buf[512];
 
-void wc(int fd, char *name)
+void
+wc(int fd, char *name)
 {
 	int i, n;
 	int l, w, c, inword;
@@ -31,30 +31,31 @@ void wc(int fd, char *name)
 	if (n < 0)
 	{
 		printf(1, "wc: read error\n");
-		exit(0);
+		exit();
 	}
 	printf(1, "%d %d %d %s\n", l, w, c, name);
 }
 
-int main(int argc, char *argv[])
+int
+main(int argc, char *argv[])
 {
 	int fd, i;
 
 	if (argc <= 1)
 	{
 		wc(0, "");
-		exit(0);
+		exit();
 	}
 
 	for (i = 1; i < argc; i++)
 	{
-		if ((fd = open(argv[i], O_RDONLY)) < 0)
+		if ((fd = open(argv[i], 0)) < 0)
 		{
 			printf(1, "wc: cannot open %s\n", argv[i]);
-			exit(0);
+			exit();
 		}
 		wc(fd, argv[i]);
 		close(fd);
 	}
-	exit(0);
+	exit();
 }

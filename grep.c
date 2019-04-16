@@ -3,13 +3,13 @@
 #include "types.h"
 #include "stat.h"
 #include "user.h"
-#include "fcntl.h"
 
 char buf[1024];
 
 int match(char *, char *);
 
-void grep(char *pattern, int fd)
+void
+grep(char *pattern, int fd)
 {
 	int n, m;
 	char *p, *q;
@@ -40,7 +40,8 @@ void grep(char *pattern, int fd)
 	}
 }
 
-int main(int argc, char *argv[])
+int
+main(int argc, char *argv[])
 {
 	int fd, i;
 	char *pattern;
@@ -48,27 +49,27 @@ int main(int argc, char *argv[])
 	if (argc <= 1)
 	{
 		printf(2, "usage: grep pattern [file ...]\n");
-		exit(0);
+		exit();
 	}
 	pattern = argv[1];
 
 	if (argc <= 2)
 	{
 		grep(pattern, 0);
-		exit(0);
+		exit();
 	}
 
 	for (i = 2; i < argc; i++)
 	{
-		if ((fd = open(argv[i], O_RDONLY)) < 0)
+		if ((fd = open(argv[i], 0)) < 0)
 		{
 			printf(1, "grep: cannot open %s\n", argv[i]);
-			exit(0);
+			exit();
 		}
 		grep(pattern, fd);
 		close(fd);
 	}
-	exit(0);
+	exit();
 }
 
 // Regexp matcher from Kernighan & Pike,
@@ -78,12 +79,13 @@ int matchhere(char *, char *);
 
 int matchstar(int, char *, char *);
 
-int match(char *re, char *text)
+int
+match(char *re, char *text)
 {
 	if (re[0] == '^')
 		return matchhere(re + 1, text);
 	do
-	{ // must look at empty string
+	{  // must look at empty string
 		if (matchhere(re, text))
 			return 1;
 	} while (*text++ != '\0');
@@ -108,9 +110,10 @@ int matchhere(char *re, char *text)
 int matchstar(int c, char *re, char *text)
 {
 	do
-	{ // a * matches zero or more instances
+	{  // a * matches zero or more instances
 		if (matchhere(re, text))
 			return 1;
 	} while (*text != '\0' && (*text++ == c || c == '.'));
 	return 0;
 }
+

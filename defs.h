@@ -1,5 +1,3 @@
-#pragma once
-
 struct buf;
 struct context;
 struct file;
@@ -11,7 +9,6 @@ struct spinlock;
 struct sleeplock;
 struct stat;
 struct superblock;
-struct perf;
 
 // bio.c
 void binit(void);
@@ -27,7 +24,7 @@ void consoleinit(void);
 
 void cprintf(char *, ...);
 
-void consoleintr(int (*)(void));
+void consoleintr(int(*)(void));
 
 void panic(char *) __attribute__((noreturn));
 
@@ -157,7 +154,8 @@ int pipewrite(struct pipe *, char *, int);
 // proc.c
 int cpuid(void);
 
-void exit(int) __attribute__((noreturn)); // changed
+void exit(void);
+
 int fork(void);
 
 int growproc(int);
@@ -182,15 +180,11 @@ void sleep(void *, struct spinlock *);
 
 void userinit(void);
 
-int wait(int *); // changed
+int wait(void);
+
 void wakeup(void *);
 
 void yield(void);
-
-int detach(int);                     // added
-void priority(int);                  // added
-void policy(int);                    // added
-int wait_stat(int *, struct perf *); // added
 
 // swtch.S
 void swtch(struct context **, struct context *);
@@ -253,7 +247,7 @@ void timerinit(void);
 // trap.c
 void idtinit(void);
 
-extern /*uint*/ volatile unsigned long long ticks;
+extern uint ticks;
 
 void tvinit(void);
 
@@ -296,4 +290,4 @@ int copyout(pde_t *, uint, void *, uint);
 void clearpteu(pde_t *pgdir, char *uva);
 
 // number of elements in fixed-size array
-#define NELEM(x) (sizeof(x) / sizeof((x)[0]))
+#define NELEM(x) (sizeof(x)/sizeof((x)[0]))

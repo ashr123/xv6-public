@@ -66,7 +66,7 @@ inline acquire(x)
 inline release(x)
 		{
 				assert x==1;
-				x = 0
+		x = 0
 		}
 
 inline sleep(cond, lk
@@ -79,8 +79,7 @@ skip
 :: else ->
 atomic {
 release(lk);
-sleeping[_pid] = 1
-};
+sleeping[_pid] = 1 };
 sleeping[_pid] == 0;
 acquire(lk)
 fi

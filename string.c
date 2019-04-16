@@ -13,7 +13,8 @@ memset(void *dst, int c, uint n)
 	return dst;
 }
 
-int memcmp(const void *v1, const void *v2, uint n)
+int
+memcmp(const void *v1, const void *v2, uint n)
 {
 	const uchar *s1, *s2;
 
@@ -57,7 +58,8 @@ memcpy(void *dst, const void *src, uint n)
 	return memmove(dst, src, n);
 }
 
-int strncmp(const char *p, const char *q, uint n)
+int
+strncmp(const char *p, const char *q, uint n)
 {
 	while (n > 0 && *p && *p == *q)
 		n--, p++, q++;
@@ -92,10 +94,12 @@ safestrcpy(char *s, const char *t, int n)
 	return os;
 }
 
-int strlen(const char *s)
+int
+strlen(const char *s)
 {
 	int n;
 
 	for (n = 0; s[n]; n++);
 	return n;
 }
+

@@ -1,16 +1,13 @@
-#pragma once
-
-#include "types.h"
-#include "proc.h"
-
 struct stat;
 struct rtcdate;
 
 // system calls
 int fork(void);
 
-void exit(int) __attribute__((noreturn)); // changed (also ret type)
-int wait(int *);                          // changed
+int exit(void) __attribute__((noreturn));
+
+int wait(void);
+
 int pipe(int *);
 
 int write(int, const void *, int);
@@ -46,11 +43,6 @@ char *sbrk(int);
 int sleep(int);
 
 int uptime(void);
-
-int detach(int);                     // added
-int priority(int);                   // added
-void policy(int);                    // added
-int wait_stat(int *, struct perf *); // added
 
 // ulib.c
 int stat(const char *, struct stat *);

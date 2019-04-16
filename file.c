@@ -17,7 +17,8 @@ struct
 	struct file file[NFILE];
 } ftable;
 
-void fileinit(void)
+void
+fileinit(void)
 {
 	initlock(&ftable.lock, "ftable");
 }
@@ -55,7 +56,8 @@ filedup(struct file *f)
 }
 
 // Close file f.  (Decrement ref count, close when reaches 0.)
-void fileclose(struct file *f)
+void
+fileclose(struct file *f)
 {
 	struct file ff;
 
@@ -83,7 +85,8 @@ void fileclose(struct file *f)
 }
 
 // Get metadata about file f.
-int filestat(struct file *f, struct stat *st)
+int
+filestat(struct file *f, struct stat *st)
 {
 	if (f->type == FD_INODE)
 	{
@@ -96,7 +99,8 @@ int filestat(struct file *f, struct stat *st)
 }
 
 // Read from file f.
-int fileread(struct file *f, char *addr, int n)
+int
+fileread(struct file *f, char *addr, int n)
 {
 	int r;
 
@@ -117,7 +121,8 @@ int fileread(struct file *f, char *addr, int n)
 
 //PAGEBREAK!
 // Write to file f.
-int filewrite(struct file *f, char *addr, int n)
+int
+filewrite(struct file *f, char *addr, int n)
 {
 	int r;
 
@@ -158,3 +163,4 @@ int filewrite(struct file *f, char *addr, int n)
 	}
 	panic("filewrite");
 }
+

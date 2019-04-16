@@ -9,7 +9,8 @@
 #include "proc.h"
 #include "spinlock.h"
 
-void initlock(struct spinlock *lk, char *name)
+void
+initlock(struct spinlock *lk, char *name)
 {
 	lk->name = name;
 	lk->locked = 0;
@@ -20,7 +21,8 @@ void initlock(struct spinlock *lk, char *name)
 // Loops (spins) until the lock is acquired.
 // Holding a lock for a long time may cause
 // other CPUs to waste time spinning to acquire it.
-void acquire(struct spinlock *lk)
+void
+acquire(struct spinlock *lk)
 {
 	pushcli(); // disable interrupts to avoid deadlock.
 	if (holding(lk))
@@ -40,7 +42,8 @@ void acquire(struct spinlock *lk)
 }
 
 // Release the lock.
-void release(struct spinlock *lk)
+void
+release(struct spinlock *lk)
 {
 	if (!holding(lk))
 		panic("release");
@@ -58,15 +61,14 @@ void release(struct spinlock *lk)
 	// Release the lock, equivalent to lk->locked = 0.
 	// This code can't use a C assignment, since it might
 	// not be atomic. A real OS would use C atomics here.
-	asm volatile("movl $0, %0"
-	: "+m"(lk->locked)
-	:);
+	asm volatile("movl $0, %0" : "+m" (lk->locked) : );
 
 	popcli();
 }
 
 // Record the current call stack in pcs[] by following the %ebp chain.
-void getcallerpcs(void *v, uint pcs[])
+void
+getcallerpcs(void *v, uint pcs[])
 {
 	uint *ebp;
 	int i;
@@ -76,7 +78,7 @@ void getcallerpcs(void *v, uint pcs[])
 	{
 		if (ebp == 0 || ebp < (uint *) KERNBASE || ebp == (uint *) 0xffffffff)
 			break;
-		pcs[i] = ebp[1];      // saved %eip
+		pcs[i] = ebp[1];     // saved %eip
 		ebp = (uint *) ebp[0]; // saved %ebp
 	}
 	for (; i < 10; i++)
@@ -84,7 +86,8 @@ void getcallerpcs(void *v, uint pcs[])
 }
 
 // Check whether this cpu is holding the lock.
-int holding(struct spinlock *lock)
+int
+holding(struct spinlock *lock)
 {
 	int r;
 	pushcli();
@@ -93,11 +96,13 @@ int holding(struct spinlock *lock)
 	return r;
 }
 
+
 // Pushcli/popcli are like cli/sti except that they are matched:
 // it takes two popcli to undo two pushcli.  Also, if interrupts
 // are off, then pushcli, popcli leaves them off.
 
-void pushcli(void)
+void
+pushcli(void)
 {
 	int eflags;
 
@@ -108,7 +113,8 @@ void pushcli(void)
 	mycpu()->ncli += 1;
 }
 
-void popcli(void)
+void
+popcli(void)
 {
 	if (readeflags() & FL_IF)
 		panic("popcli - interruptible");
@@ -117,3 +123,4 @@ void popcli(void)
 	if (mycpu()->ncli == 0 && mycpu()->intena)
 		sti();
 }
+

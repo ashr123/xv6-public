@@ -7,7 +7,8 @@
 #include "x86.h"
 #include "elf.h"
 
-int exec(char *path, char **argv)
+int
+exec(char *path, char **argv)
 {
 	char *s, *last;
 	int i, off;
@@ -81,9 +82,9 @@ int exec(char *path, char **argv)
 	}
 	ustack[3 + argc] = 0;
 
-	ustack[0] = 0xffffffff; // fake return PC
+	ustack[0] = 0xffffffff;  // fake return PC
 	ustack[1] = argc;
-	ustack[2] = sp - (argc + 1) * 4; // argv pointer
+	ustack[2] = sp - (argc + 1) * 4;  // argv pointer
 
 	sp -= (3 + argc + 1) * 4;
 	if (copyout(pgdir, sp, ustack, (3 + argc + 1) * 4) < 0)
@@ -99,7 +100,7 @@ int exec(char *path, char **argv)
 	oldpgdir = curproc->pgdir;
 	curproc->pgdir = pgdir;
 	curproc->sz = sz;
-	curproc->tf->eip = elf.entry; // main
+	curproc->tf->eip = elf.entry;  // main
 	curproc->tf->esp = sp;
 	switchuvm(curproc);
 	freevm(oldpgdir);

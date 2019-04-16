@@ -30,7 +30,8 @@ static void itrunc(struct inode *);
 struct superblock sb;
 
 // Read the super block.
-void readsb(int dev, struct superblock *sb)
+void
+readsb(int dev, struct superblock *sb)
 {
 	struct buf *bp;
 
@@ -68,8 +69,8 @@ balloc(uint dev)
 		{
 			m = 1 << (bi % 8);
 			if ((bp->data[bi / 8] & m) == 0)
-			{                           // Is block free?
-				bp->data[bi / 8] |= m; // Mark block in use.
+			{  // Is block free?
+				bp->data[bi / 8] |= m;  // Mark block in use.
 				log_write(bp);
 				brelse(bp);
 				bzero(dev, b + bi);
@@ -174,7 +175,8 @@ struct
 	struct inode inode[NINODE];
 } icache;
 
-void iinit(int dev)
+void
+iinit(int dev)
 {
 	int i = 0;
 
@@ -186,8 +188,7 @@ void iinit(int dev)
 
 	readsb(dev, &sb);
 	cprintf("sb: size %d nblocks %d ninodes %d nlog %d logstart %d\
- inodestart %d bmap start %d\n",
-	        sb.size, sb.nblocks,
+ inodestart %d bmap start %d\n", sb.size, sb.nblocks,
 	        sb.ninodes, sb.nlog, sb.logstart, sb.inodestart,
 	        sb.bmapstart);
 }
@@ -210,10 +211,10 @@ ialloc(uint dev, short type)
 		bp = bread(dev, IBLOCK(inum, sb));
 		dip = (struct dinode *) bp->data + inum % IPB;
 		if (dip->type == 0)
-		{ // a free inode
+		{  // a free inode
 			memset(dip, 0, sizeof(*dip));
 			dip->type = type;
-			log_write(bp); // mark it allocated on the disk
+			log_write(bp);   // mark it allocated on the disk
 			brelse(bp);
 			return iget(dev, inum);
 		}
@@ -226,7 +227,8 @@ ialloc(uint dev, short type)
 // Must be called after every change to an ip->xxx field
 // that lives on disk, since i-node cache is write-through.
 // Caller must hold ip->lock.
-void iupdate(struct inode *ip)
+void
+iupdate(struct inode *ip)
 {
 	struct buf *bp;
 	struct dinode *dip;
@@ -263,7 +265,7 @@ iget(uint dev, uint inum)
 			release(&icache.lock);
 			return ip;
 		}
-		if (empty == 0 && ip->ref == 0) // Remember empty slot.
+		if (empty == 0 && ip->ref == 0)    // Remember empty slot.
 			empty = ip;
 	}
 
@@ -294,7 +296,8 @@ idup(struct inode *ip)
 
 // Lock the given inode.
 // Reads the inode from disk if necessary.
-void ilock(struct inode *ip)
+void
+ilock(struct inode *ip)
 {
 	struct buf *bp;
 	struct dinode *dip;
@@ -322,7 +325,8 @@ void ilock(struct inode *ip)
 }
 
 // Unlock the given inode.
-void iunlock(struct inode *ip)
+void
+iunlock(struct inode *ip)
 {
 	if (ip == 0 || !holdingsleep(&ip->lock) || ip->ref < 1)
 		panic("iunlock");
@@ -337,7 +341,8 @@ void iunlock(struct inode *ip)
 // to it, free the inode (and its content) on disk.
 // All calls to iput() must be inside a transaction in
 // case it has to free the inode.
-void iput(struct inode *ip)
+void
+iput(struct inode *ip)
 {
 	acquiresleep(&ip->lock);
 	if (ip->valid && ip->nlink == 0)
@@ -362,7 +367,8 @@ void iput(struct inode *ip)
 }
 
 // Common idiom: unlock, then put.
-void iunlockput(struct inode *ip)
+void
+iunlockput(struct inode *ip)
 {
 	iunlock(ip);
 	iput(ip);
@@ -452,7 +458,8 @@ itrunc(struct inode *ip)
 
 // Copy stat information from inode.
 // Caller must hold ip->lock.
-void stati(struct inode *ip, struct stat *st)
+void
+stati(struct inode *ip, struct stat *st)
 {
 	st->dev = ip->dev;
 	st->ino = ip->inum;
@@ -464,7 +471,8 @@ void stati(struct inode *ip, struct stat *st)
 //PAGEBREAK!
 // Read data from inode.
 // Caller must hold ip->lock.
-int readi(struct inode *ip, char *dst, uint off, uint n)
+int
+readi(struct inode *ip, char *dst, uint off, uint n)
 {
 	uint tot, m;
 	struct buf *bp;
@@ -494,7 +502,8 @@ int readi(struct inode *ip, char *dst, uint off, uint n)
 // PAGEBREAK!
 // Write data to inode.
 // Caller must hold ip->lock.
-int writei(struct inode *ip, char *src, uint off, uint n)
+int
+writei(struct inode *ip, char *src, uint off, uint n)
 {
 	uint tot, m;
 	struct buf *bp;
@@ -531,7 +540,8 @@ int writei(struct inode *ip, char *src, uint off, uint n)
 //PAGEBREAK!
 // Directories
 
-int namecmp(const char *s, const char *t)
+int
+namecmp(const char *s, const char *t)
 {
 	return strncmp(s, t, DIRSIZ);
 }
@@ -567,7 +577,8 @@ dirlookup(struct inode *dp, char *name, uint *poff)
 }
 
 // Write a new directory entry (name, inum) into the directory dp.
-int dirlink(struct inode *dp, char *name, uint inum)
+int
+dirlink(struct inode *dp, char *name, uint inum)
 {
 	int off;
 	struct dirent de;

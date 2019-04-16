@@ -23,7 +23,8 @@ typedef union header Header;
 static Header base;
 static Header *freep;
 
-void free(void *ap)
+void
+free(void *ap)
 {
 	Header *bp, *p;
 

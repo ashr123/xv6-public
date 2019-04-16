@@ -3,23 +3,13 @@
 #include "types.h"
 #include "user.h"
 #include "fcntl.h"
-#include "stat.h"
-#include "isFileExists.h"
 
 // Parsed command representation
-enum commandType
-{
-	EXEC/* = 1*/,
-	REDIR,
-	PIPE,
-	LIST,
-	BACK
-};
-// #define EXEC 1
-// #define REDIR 2
-// #define PIPE 3
-// #define LIST 4
-// #define BACK 5
+#define EXEC  1
+#define REDIR 2
+#define PIPE  3
+#define LIST  4
+#define BACK  5
 
 #define MAXARGS 10
 
@@ -65,13 +55,14 @@ struct backcmd
 	struct cmd *cmd;
 };
 
-int fork1(void); // Fork but panics on failure.
+int fork1(void);  // Fork but panics on failure.
 void panic(char *);
 
 struct cmd *parsecmd(char *);
 
 // Execute cmd.  Never returns.
-void runcmd(struct cmd *cmd)
+void
+runcmd(struct cmd *cmd)
 {
 	int p[2];
 	struct backcmd *bcmd;
@@ -81,7 +72,7 @@ void runcmd(struct cmd *cmd)
 	struct redircmd *rcmd;
 
 	if (cmd == 0)
-		exit(0);
+		exit();
 
 	switch (cmd->type)
 	{
@@ -91,47 +82,8 @@ void runcmd(struct cmd *cmd)
 		case EXEC:
 			ecmd = (struct execcmd *) cmd;
 			if (ecmd->argv[0] == 0)
-				exit(0);
-			if (isFileExists(ecmd->argv[0]))
-				exec(ecmd->argv[0], ecmd->argv);
-
-			struct stat st;
-			int fd, tempBufIndx = 0;
-			if ((fd = open("/path", O_RDONLY)) < 0)
-			{
-				printf(2, "sh: cannot open PATH\n");
-				return;
-			}
-
-			if (fstat(fd, &st) < 0)
-			{
-				printf(2, "sh: cannot stat PATH\n");
-				close(fd);
-				return;
-			}
-
-			char *buf = (char *) malloc(st.size * sizeof(char)),
-					*tempBuf = (char *) malloc((st.size + 10) * sizeof(char)); //no need for free
-			read(fd, buf, st.size);
-			close(fd);
-			for (int i = 0; i < st.size; i++)
-			{
-				if (buf[i] == ':')
-				{
-					strcpy(tempBuf + tempBufIndx, ecmd->argv[0]);
-					// printf(1, "TEMPPATH is: %s\n", tempBuf);
-					if (isFileExists(tempBuf))
-						exec(tempBuf, ecmd->argv);
-
-					tempBufIndx = 0; //continue searching if exec failed
-				} else
-				{
-					tempBuf[tempBufIndx] = buf[i];
-					tempBufIndx++;
-				}
-			}
-			free(buf);
-			free(tempBuf);
+				exit();
+			exec(ecmd->argv[0], ecmd->argv);
 			printf(2, "exec %s failed\n", ecmd->argv[0]);
 			break;
 
@@ -141,7 +93,7 @@ void runcmd(struct cmd *cmd)
 			if (open(rcmd->file, rcmd->mode) < 0)
 			{
 				printf(2, "open %s failed\n", rcmd->file);
-				exit(0);
+				exit();
 			}
 			runcmd(rcmd->cmd);
 			break;
@@ -150,7 +102,7 @@ void runcmd(struct cmd *cmd)
 			lcmd = (struct listcmd *) cmd;
 			if (fork1() == 0)
 				runcmd(lcmd->left);
-			wait(null);
+			wait();
 			runcmd(lcmd->right);
 			break;
 
@@ -176,8 +128,8 @@ void runcmd(struct cmd *cmd)
 			}
 			close(p[0]);
 			close(p[1]);
-			wait(null);
-			wait(null);
+			wait();
+			wait();
 			break;
 
 		case BACK:
@@ -186,10 +138,11 @@ void runcmd(struct cmd *cmd)
 				runcmd(bcmd->cmd);
 			break;
 	}
-	exit(0);
+	exit();
 }
 
-int getcmd(char *buf, int nbuf)
+int
+getcmd(char *buf, int nbuf)
 {
 	printf(2, "$ ");
 	memset(buf, 0, nbuf);
@@ -199,7 +152,8 @@ int getcmd(char *buf, int nbuf)
 	return 0;
 }
 
-int main(void)
+int
+main(void)
 {
 	static char buf[100];
 	int fd;
@@ -220,25 +174,27 @@ int main(void)
 		if (buf[0] == 'c' && buf[1] == 'd' && buf[2] == ' ')
 		{
 			// Chdir must be called by the parent, not the child.
-			buf[strlen(buf) - 1] = 0; // chop \n
+			buf[strlen(buf) - 1] = 0;  // chop \n
 			if (chdir(buf + 3) < 0)
 				printf(2, "cannot cd %s\n", buf + 3);
 			continue;
 		}
 		if (fork1() == 0)
 			runcmd(parsecmd(buf));
-		wait(null);
+		wait();
 	}
-	exit(0);
+	exit();
 }
 
-void panic(char *s)
+void
+panic(char *s)
 {
 	printf(2, "%s\n", s);
-	exit(0);
+	exit();
 }
 
-int fork1(void)
+int
+fork1(void)
 {
 	int pid;
 
@@ -321,7 +277,8 @@ backcmd(struct cmd *subcmd)
 char whitespace[] = " \t\r\n\v";
 char symbols[] = "<|>&;()";
 
-int gettoken(char **ps, char *es, char **q, char **eq)
+int
+gettoken(char **ps, char *es, char **q, char **eq)
 {
 	char *s;
 	int ret;
@@ -367,7 +324,8 @@ int gettoken(char **ps, char *es, char **q, char **eq)
 	return ret;
 }
 
-int peek(char **ps, char *es, char *toks)
+int
+peek(char **ps, char *es, char *toks)
 {
 	char *s;
 
@@ -456,7 +414,7 @@ parseredirs(struct cmd *cmd, char **ps, char *es)
 			case '>':
 				cmd = redircmd(cmd, q, eq, O_WRONLY | O_CREATE, 1);
 				break;
-			case '+': // >>
+			case '+':  // >>
 				cmd = redircmd(cmd, q, eq, O_WRONLY | O_CREATE, 1);
 				break;
 		}

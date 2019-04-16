@@ -54,7 +54,8 @@ fdalloc(struct file *f)
 	return -1;
 }
 
-int sys_dup(void)
+int
+sys_dup(void)
 {
 	struct file *f;
 	int fd;
@@ -67,7 +68,8 @@ int sys_dup(void)
 	return fd;
 }
 
-int sys_read(void)
+int
+sys_read(void)
 {
 	struct file *f;
 	int n;
@@ -78,7 +80,8 @@ int sys_read(void)
 	return fileread(f, p, n);
 }
 
-int sys_write(void)
+int
+sys_write(void)
 {
 	struct file *f;
 	int n;
@@ -89,7 +92,8 @@ int sys_write(void)
 	return filewrite(f, p, n);
 }
 
-int sys_close(void)
+int
+sys_close(void)
 {
 	int fd;
 	struct file *f;
@@ -101,7 +105,8 @@ int sys_close(void)
 	return 0;
 }
 
-int sys_fstat(void)
+int
+sys_fstat(void)
 {
 	struct file *f;
 	struct stat *st;
@@ -112,10 +117,10 @@ int sys_fstat(void)
 }
 
 // Create the path new as a link to the same inode as old.
-int sys_link(void)
+int
+sys_link(void)
 {
-	char name[DIRSIZ], *
-	new, *old;
+	char name[DIRSIZ], *new, *old;
 	struct inode *dp, *ip;
 
 	if (argstr(0, &old) < 0 || argstr(1, &new) < 0)
@@ -182,7 +187,8 @@ isdirempty(struct inode *dp)
 }
 
 //PAGEBREAK!
-int sys_unlink(void)
+int
+sys_unlink(void)
 {
 	struct inode *ip, *dp;
 	struct dirent de;
@@ -272,8 +278,8 @@ create(char *path, short type, short major, short minor)
 	iupdate(ip);
 
 	if (type == T_DIR)
-	{                 // Create . and .. entries.
-		dp->nlink++; // for ".."
+	{  // Create . and .. entries.
+		dp->nlink++;  // for ".."
 		iupdate(dp);
 		// No ip->nlink++ for ".": avoid cyclic ref count.
 		if (dirlink(ip, ".", ip->inum) < 0 || dirlink(ip, "..", dp->inum) < 0)
@@ -288,7 +294,8 @@ create(char *path, short type, short major, short minor)
 	return ip;
 }
 
-int sys_open(void)
+int
+sys_open(void)
 {
 	char *path;
 	int fd, omode;
@@ -343,7 +350,8 @@ int sys_open(void)
 	return fd;
 }
 
-int sys_mkdir(void)
+int
+sys_mkdir(void)
 {
 	char *path;
 	struct inode *ip;
@@ -359,7 +367,8 @@ int sys_mkdir(void)
 	return 0;
 }
 
-int sys_mknod(void)
+int
+sys_mknod(void)
 {
 	struct inode *ip;
 	char *path;
@@ -379,7 +388,8 @@ int sys_mknod(void)
 	return 0;
 }
 
-int sys_chdir(void)
+int
+sys_chdir(void)
 {
 	char *path;
 	struct inode *ip;
@@ -405,7 +415,8 @@ int sys_chdir(void)
 	return 0;
 }
 
-int sys_exec(void)
+int
+sys_exec(void)
 {
 	char *path, *argv[MAXARG];
 	int i;
@@ -433,7 +444,8 @@ int sys_exec(void)
 	return exec(path, argv);
 }
 
-int sys_pipe(void)
+int
+sys_pipe(void)
 {
 	int *fd;
 	struct file *rf, *wf;

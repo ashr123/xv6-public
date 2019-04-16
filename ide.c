@@ -13,32 +13,16 @@
 #include "fs.h"
 #include "buf.h"
 
-enum IDEState
-{
-	IDE_BSY = 0x80,
-	IDE_DRDY = 0x40,
-	IDE_DF = 0x20,
-	IDE_ERR = 0x01
-};
+#define SECTOR_SIZE   512
+#define IDE_BSY       0x80
+#define IDE_DRDY      0x40
+#define IDE_DF        0x20
+#define IDE_ERR       0x01
 
-#define SECTOR_SIZE 512
-// #define IDE_BSY 0x80
-// #define IDE_DRDY 0x40
-// #define IDE_DF 0x20
-// #define IDE_ERR 0x01
-
-enum IDE_CMD
-{
-	IDE_CMD_READ = 0x20,
-	IDE_CMD_WRITE = 0x30,
-	IDE_CMD_RDMUL = 0xc4,
-	IDE_CMD_WRMUL = 0xc5
-};
-
-// #define IDE_CMD_READ 0x20
-// #define IDE_CMD_WRITE 0x30
-// #define IDE_CMD_RDMUL 0xc4
-// #define IDE_CMD_WRMUL 0xc5
+#define IDE_CMD_READ  0x20
+#define IDE_CMD_WRITE 0x30
+#define IDE_CMD_RDMUL 0xc4
+#define IDE_CMD_WRMUL 0xc5
 
 // idequeue points to the buf now being read/written to the disk.
 // idequeue->qnext points to the next buf to be processed.
@@ -63,7 +47,8 @@ idewait(int checkerr)
 	return 0;
 }
 
-void ideinit(void)
+void
+ideinit(void)
 {
 	int i;
 
@@ -99,12 +84,11 @@ idestart(struct buf *b)
 	int read_cmd = (sector_per_block == 1) ? IDE_CMD_READ : IDE_CMD_RDMUL;
 	int write_cmd = (sector_per_block == 1) ? IDE_CMD_WRITE : IDE_CMD_WRMUL;
 
-	if (sector_per_block > 7)
-		panic("idestart");
+	if (sector_per_block > 7) panic("idestart");
 
 	idewait(0);
-	outb(0x3f6, 0);                   // generate interrupt
-	outb(0x1f2, sector_per_block); // number of sectors
+	outb(0x3f6, 0);  // generate interrupt
+	outb(0x1f2, sector_per_block);  // number of sectors
 	outb(0x1f3, sector & 0xff);
 	outb(0x1f4, (sector >> 8) & 0xff);
 	outb(0x1f5, (sector >> 16) & 0xff);
@@ -120,7 +104,8 @@ idestart(struct buf *b)
 }
 
 // Interrupt handler.
-void ideintr(void)
+void
+ideintr(void)
 {
 	struct buf *b;
 
@@ -154,7 +139,8 @@ void ideintr(void)
 // Sync buf with disk.
 // If B_DIRTY is set, write buf to disk, clear B_DIRTY, set B_VALID.
 // Else if B_VALID is not set, read buf from disk, set B_VALID.
-void iderw(struct buf *b)
+void
+iderw(struct buf *b)
 {
 	struct buf **pp;
 
@@ -165,11 +151,11 @@ void iderw(struct buf *b)
 	if (b->dev != 0 && !havedisk1)
 		panic("iderw: ide disk 1 not present");
 
-	acquire(&idelock); //DOC:acquire-lock
+	acquire(&idelock);  //DOC:acquire-lock
 
 	// Append b to idequeue.
 	b->qnext = 0;
-	for (pp = &idequeue; *pp; pp = &(*pp)->qnext) //DOC:insert-queue
+	for (pp = &idequeue; *pp; pp = &(*pp)->qnext)  //DOC:insert-queue
 		;
 	*pp = b;
 
@@ -182,6 +168,7 @@ void iderw(struct buf *b)
 	{
 		sleep(b, &idelock);
 	}
+
 
 	release(&idelock);
 }

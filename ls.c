@@ -2,7 +2,6 @@
 #include "stat.h"
 #include "user.h"
 #include "fs.h"
-#include "fcntl.h"
 
 char *
 fmtname(char *path)
@@ -22,14 +21,15 @@ fmtname(char *path)
 	return buf;
 }
 
-void ls(char *path)
+void
+ls(char *path)
 {
 	char buf[512], *p;
 	int fd;
 	struct dirent de;
 	struct stat st;
 
-	if ((fd = open(path, O_RDONLY)) < 0)
+	if ((fd = open(path, 0)) < 0)
 	{
 		printf(2, "ls: cannot open %s\n", path);
 		return;
@@ -75,16 +75,17 @@ void ls(char *path)
 	close(fd);
 }
 
-int main(int argc, char *argv[])
+int
+main(int argc, char *argv[])
 {
 	int i;
 
 	if (argc < 2)
 	{
 		ls(".");
-		exit(0);
+		exit();
 	}
 	for (i = 1; i < argc; i++)
 		ls(argv[i]);
-	exit(0);
+	exit();
 }

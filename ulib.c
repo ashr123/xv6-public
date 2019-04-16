@@ -14,14 +14,16 @@ strcpy(char *s, const char *t)
 	return os;
 }
 
-int strcmp(const char *p, const char *q)
+int
+strcmp(const char *p, const char *q)
 {
 	while (*p && *p == *q)
 		p++, q++;
 	return (uchar) *p - (uchar) *q;
 }
 
-uint strlen(const char *s)
+uint
+strlen(const char *s)
 {
 	int n;
 
@@ -64,7 +66,8 @@ gets(char *buf, int max)
 	return buf;
 }
 
-int stat(const char *n, struct stat *st)
+int
+stat(const char *n, struct stat *st)
 {
 	int fd;
 	int r;
@@ -77,7 +80,8 @@ int stat(const char *n, struct stat *st)
 	return r;
 }
 
-int atoi(const char *s)
+int
+atoi(const char *s)
 {
 	int n;
 

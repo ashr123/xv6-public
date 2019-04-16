@@ -53,7 +53,8 @@ printint(int xx, int base, int sign)
 //PAGEBREAK: 50
 
 // Print to the console. only understands %d, %x, %p, %s.
-void cprintf(char *fmt, ...)
+void
+cprintf(char *fmt, ...)
 {
 	int i, c, locking;
 	uint *argp;
@@ -107,7 +108,8 @@ void cprintf(char *fmt, ...)
 		release(&cons.lock);
 }
 
-void panic(char *s)
+void
+panic(char *s)
 {
 	int i;
 	uint pcs[10];
@@ -128,7 +130,7 @@ void panic(char *s)
 //PAGEBREAK: 50
 #define BACKSPACE 0x100
 #define CRTPORT 0x3d4
-static ushort *crt = (ushort *) P2V(0xb8000); // CGA memory
+static ushort *crt = (ushort *) P2V(0xb8000);  // CGA memory
 
 static void
 cgaputc(int c)
@@ -145,16 +147,15 @@ cgaputc(int c)
 		pos += 80 - pos % 80;
 	else if (c == BACKSPACE)
 	{
-		if (pos > 0)
-			--pos;
+		if (pos > 0) --pos;
 	} else
-		crt[pos++] = (c & 0xff) | 0x0700; // black on white
+		crt[pos++] = (c & 0xff) | 0x0700;  // black on white
 
 	if (pos < 0 || pos > 25 * 80)
 		panic("pos under/overflow");
 
 	if ((pos / 80) >= 24)
-	{ // Scroll up.
+	{  // Scroll up.
 		memmove(crt, crt + 80, sizeof(crt[0]) * 23 * 80);
 		pos -= 80;
 		memset(crt + pos, 0, sizeof(crt[0]) * (24 * 80 - pos));
@@ -167,7 +168,8 @@ cgaputc(int c)
 	crt[pos] = ' ' | 0x0700;
 }
 
-void consputc(int c)
+void
+consputc(int c)
 {
 	if (panicked)
 	{
@@ -189,14 +191,15 @@ void consputc(int c)
 struct
 {
 	char buf[INPUT_BUF];
-	uint r; // Read index
-	uint w; // Write index
-	uint e; // Edit index
+	uint r;  // Read index
+	uint w;  // Write index
+	uint e;  // Edit index
 } input;
 
-#define C(x) ((x) - '@') // Control-x
+#define C(x)  ((x)-'@')  // Control-x
 
-void consoleintr(int (*getc)(void))
+void
+consoleintr(int (*getc)(void))
 {
 	int c, doprocdump = 0;
 
@@ -205,11 +208,11 @@ void consoleintr(int (*getc)(void))
 	{
 		switch (c)
 		{
-			case C('P'): // Process listing.
+			case C('P'):  // Process listing.
 				// procdump() locks cons.lock indirectly; invoke later
 				doprocdump = 1;
 				break;
-			case C('U'): // Kill line.
+			case C('U'):  // Kill line.
 				while (input.e != input.w &&
 				       input.buf[(input.e - 1) % INPUT_BUF] != '\n')
 				{
@@ -218,7 +221,7 @@ void consoleintr(int (*getc)(void))
 				}
 				break;
 			case C('H'):
-			case '\x7f': // Backspace
+			case '\x7f':  // Backspace
 				if (input.e != input.w)
 				{
 					input.e--;
@@ -243,11 +246,12 @@ void consoleintr(int (*getc)(void))
 	release(&cons.lock);
 	if (doprocdump)
 	{
-		procdump(); // now call procdump() wo. cons.lock held
+		procdump();  // now call procdump() wo. cons.lock held
 	}
 }
 
-int consoleread(struct inode *ip, char *dst, int n)
+int
+consoleread(struct inode *ip, char *dst, int n)
 {
 	uint target;
 	int c;
@@ -269,7 +273,7 @@ int consoleread(struct inode *ip, char *dst, int n)
 		}
 		c = input.buf[input.r++ % INPUT_BUF];
 		if (c == C('D'))
-		{ // EOF
+		{  // EOF
 			if (n < target)
 			{
 				// Save ^D for next time, to make sure
@@ -289,7 +293,8 @@ int consoleread(struct inode *ip, char *dst, int n)
 	return target - n;
 }
 
-int consolewrite(struct inode *ip, char *buf, int n)
+int
+consolewrite(struct inode *ip, char *buf, int n)
 {
 	int i;
 
@@ -303,7 +308,8 @@ int consolewrite(struct inode *ip, char *buf, int n)
 	return n;
 }
 
-void consoleinit(void)
+void
+consoleinit(void)
 {
 	initlock(&cons.lock, "console");
 
@@ -313,3 +319,4 @@ void consoleinit(void)
 
 	ioapicenable(IRQ_KBD, 0);
 }
+

@@ -90,7 +90,8 @@ mpconfig(struct mp **pmp)
 	return conf;
 }
 
-void mpinit(void)
+void
+mpinit(void)
 {
 	uchar *p, *e;
 	int ismp;
@@ -111,7 +112,7 @@ void mpinit(void)
 				proc = (struct mpproc *) p;
 				if (ncpu < NCPU)
 				{
-					cpus[ncpu].apicid = proc->apicid; // apicid may differ from ncpu
+					cpus[ncpu].apicid = proc->apicid;  // apicid may differ from ncpu
 					ncpu++;
 				}
 				p += sizeof(struct mpproc);
@@ -138,7 +139,7 @@ void mpinit(void)
 	{
 		// Bochs doesn't support IMCR, so this doesn't run on Bochs.
 		// But it would on real hardware.
-		outb(0x22, 0x70);           // Select IMCR
-		outb(0x23, inb(0x23) | 1); // Mask external interrupts.
+		outb(0x22, 0x70);   // Select IMCR
+		outb(0x23, inb(0x23) | 1);  // Mask external interrupts.
 	}
 }
