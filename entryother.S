@@ -25,10 +25,10 @@ start:
   cli            
 
   # Zero data segment registers DS, ES, and SS.
-  xorw    %ax,%ax
-  movw    %ax,%ds
-  movw    %ax,%es
-  movw    %ax,%ss
+  xorw    %ax, %ax
+  movw    %ax, %ds
+  movw    %ax, %es
+  movw    %ax, %ss
 
   # Switch from real to protected mode.  Use a bootstrap GDT that makes
   # virtual addresses map directly to physical addresses so that the
@@ -51,7 +51,8 @@ start32:
   movw    %ax, %ds                # -> DS: Data Segment
   movw    %ax, %es                # -> ES: Extra Segment
   movw    %ax, %ss                # -> SS: Stack Segment
-  movw    $0, %ax                 # Zero segments not ready for use
+  #movw    $0, %ax                 # Zero segments not ready for use
+  xorw    %ax, %ax
   movw    %ax, %fs                # -> FS
   movw    %ax, %gs                # -> GS
 
@@ -90,4 +91,3 @@ gdt:
 gdtdesc:
   .word   (gdtdesc - gdt - 1)
   .long   gdt
-
