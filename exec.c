@@ -7,8 +7,7 @@
 #include "x86.h"
 #include "elf.h"
 
-int
-exec(char *path, char **argv)
+int exec(char *path, char **argv)
 {
 	char *s, *last;
 	int i, off;
@@ -18,6 +17,11 @@ exec(char *path, char **argv)
 	struct proghdr ph;
 	pde_t *pgdir, *oldpgdir;
 	struct proc *curproc = myproc();
+	lockptable();
+
+	for (struct thread *t = myproc()->threads; t < &myproc()->threads[NTHREAD]; t++)
+		if (t != mythread())
+			t->killed = 1;
 
 	begin_op();
 
@@ -25,13 +29,14 @@ exec(char *path, char **argv)
 	{
 		end_op();
 		cprintf("exec: fail\n");
+		unlockptable();
 		return -1;
 	}
 	ilock(ip);
 	pgdir = 0;
 
 	// Check ELF header
-	if (readi(ip, (char *) &elf, 0, sizeof(elf)) != sizeof(elf))
+	if (readi(ip, (char *)&elf, 0, sizeof(elf)) != sizeof(elf))
 		goto bad;
 	if (elf.magic != ELF_MAGIC)
 		goto bad;
@@ -43,7 +48,7 @@ exec(char *path, char **argv)
 	sz = 0;
 	for (i = 0, off = elf.phoff; i < elf.phnum; i++, off += sizeof(ph))
 	{
-		if (readi(ip, (char *) &ph, off, sizeof(ph)) != sizeof(ph))
+		if (readi(ip, (char *)&ph, off, sizeof(ph)) != sizeof(ph))
 			goto bad;
 		if (ph.type != ELF_PROG_LOAD)
 			continue;
@@ -55,7 +60,7 @@ exec(char *path, char **argv)
 			goto bad;
 		if (ph.vaddr % PGSIZE != 0)
 			goto bad;
-		if (loaduvm(pgdir, (char *) ph.vaddr, ip, ph.off, ph.filesz) < 0)
+		if (loaduvm(pgdir, (char *)ph.vaddr, ip, ph.off, ph.filesz) < 0)
 			goto bad;
 	}
 	iunlockput(ip);
@@ -67,7 +72,7 @@ exec(char *path, char **argv)
 	sz = PGROUNDUP(sz);
 	if ((sz = allocuvm(pgdir, sz, sz + 2 * PGSIZE)) == 0)
 		goto bad;
-	clearpteu(pgdir, (char *) (sz - 2 * PGSIZE));
+	clearpteu(pgdir, (char *)(sz - 2 * PGSIZE));
 	sp = sz;
 
 	// Push argument strings, prepare rest of stack in ustack.
@@ -82,9 +87,9 @@ exec(char *path, char **argv)
 	}
 	ustack[3 + argc] = 0;
 
-	ustack[0] = 0xffffffff;  // fake return PC
+	ustack[0] = 0xffffffff; // fake return PC
 	ustack[1] = argc;
-	ustack[2] = sp - (argc + 1) * 4;  // argv pointer
+	ustack[2] = sp - (argc + 1) * 4; // argv pointer
 
 	sp -= (3 + argc + 1) * 4;
 	if (copyout(pgdir, sp, ustack, (3 + argc + 1) * 4) < 0)
@@ -100,13 +105,14 @@ exec(char *path, char **argv)
 	oldpgdir = curproc->pgdir;
 	curproc->pgdir = pgdir;
 	curproc->sz = sz;
-	curproc->tf->eip = elf.entry;  // main
-	curproc->tf->esp = sp;
-	switchuvm(curproc);
+	mythread()->tf->eip = elf.entry; // main
+	mythread()->tf->esp = sp;
+	switchuvm(curproc, mythread());
 	freevm(oldpgdir);
+	unlockptable();
 	return 0;
 
-	bad:
+bad:
 	if (pgdir)
 		freevm(pgdir);
 	if (ip)
@@ -114,5 +120,6 @@ exec(char *path, char **argv)
 		iunlockput(ip);
 		end_op();
 	}
+	unlockptable();
 	return -1;
 }

@@ -14,14 +14,13 @@ struct pipe
 {
 	struct spinlock lock;
 	char data[PIPESIZE];
-	uint nread;     // number of bytes read
-	uint nwrite;    // number of bytes written
-	int readopen;   // read fd is still open
-	int writeopen;  // write fd is still open
+	uint nread;	// number of bytes read
+	uint nwrite;   // number of bytes written
+	int readopen;  // read fd is still open
+	int writeopen; // write fd is still open
 };
 
-int
-pipealloc(struct file **f0, struct file **f1)
+int pipealloc(struct file **f0, struct file **f1)
 {
 	struct pipe *p;
 
@@ -29,7 +28,7 @@ pipealloc(struct file **f0, struct file **f1)
 	*f0 = *f1 = 0;
 	if ((*f0 = filealloc()) == 0 || (*f1 = filealloc()) == 0)
 		goto bad;
-	if ((p = (struct pipe *) kalloc()) == 0)
+	if ((p = (struct pipe *)kalloc()) == 0)
 		goto bad;
 	p->readopen = 1;
 	p->writeopen = 1;
@@ -46,10 +45,10 @@ pipealloc(struct file **f0, struct file **f1)
 	(*f1)->pipe = p;
 	return 0;
 
-//PAGEBREAK: 20
-	bad:
+	//PAGEBREAK: 20
+bad:
 	if (p)
-		kfree((char *) p);
+		kfree((char *)p);
 	if (*f0)
 		fileclose(*f0);
 	if (*f1)
@@ -57,15 +56,15 @@ pipealloc(struct file **f0, struct file **f1)
 	return -1;
 }
 
-void
-pipeclose(struct pipe *p, int writable)
+void pipeclose(struct pipe *p, int writable)
 {
 	acquire(&p->lock);
 	if (writable)
 	{
 		p->writeopen = 0;
 		wakeup(&p->nread);
-	} else
+	}
+	else
 	{
 		p->readopen = 0;
 		wakeup(&p->nwrite);
@@ -73,14 +72,14 @@ pipeclose(struct pipe *p, int writable)
 	if (p->readopen == 0 && p->writeopen == 0)
 	{
 		release(&p->lock);
-		kfree((char *) p);
-	} else
+		kfree((char *)p);
+	}
+	else
 		release(&p->lock);
 }
 
 //PAGEBREAK: 40
-int
-pipewrite(struct pipe *p, char *addr, int n)
+int pipewrite(struct pipe *p, char *addr, int n)
 {
 	int i;
 
@@ -88,30 +87,37 @@ pipewrite(struct pipe *p, char *addr, int n)
 	for (i = 0; i < n; i++)
 	{
 		while (p->nwrite == p->nread + PIPESIZE)
-		{  //DOC: pipewrite-full
+		{ //DOC: pipewrite-full
+			if (mythread()->killed)
+			{
+				killthread(mythread());
+			}
 			if (p->readopen == 0 || myproc()->killed)
 			{
 				release(&p->lock);
 				return -1;
 			}
 			wakeup(&p->nread);
-			sleep(&p->nwrite, &p->lock);  //DOC: pipewrite-sleep
+			sleep(&p->nwrite, &p->lock); //DOC: pipewrite-sleep
 		}
 		p->data[p->nwrite++ % PIPESIZE] = addr[i];
 	}
-	wakeup(&p->nread);  //DOC: pipewrite-wakeup1
+	wakeup(&p->nread); //DOC: pipewrite-wakeup1
 	release(&p->lock);
 	return n;
 }
 
-int
-piperead(struct pipe *p, char *addr, int n)
+int piperead(struct pipe *p, char *addr, int n)
 {
 	int i;
 
 	acquire(&p->lock);
 	while (p->nread == p->nwrite && p->writeopen)
-	{  //DOC: pipe-empty
+	{ //DOC: pipe-empty
+		if (mythread()->killed)
+		{
+			killthread(mythread());
+		}
 		if (myproc()->killed)
 		{
 			release(&p->lock);
@@ -120,12 +126,12 @@ piperead(struct pipe *p, char *addr, int n)
 		sleep(&p->nread, &p->lock); //DOC: piperead-sleep
 	}
 	for (i = 0; i < n; i++)
-	{  //DOC: piperead-copy
+	{ //DOC: piperead-copy
 		if (p->nread == p->nwrite)
 			break;
 		addr[i] = p->data[p->nread++ % PIPESIZE];
 	}
-	wakeup(&p->nwrite);  //DOC: piperead-wakeup
+	wakeup(&p->nwrite); //DOC: piperead-wakeup
 	release(&p->lock);
 	return i;
 }

@@ -4,6 +4,7 @@ struct file;
 struct inode;
 struct pipe;
 struct proc;
+struct thread;
 struct rtcdate;
 struct spinlock;
 struct sleeplock;
@@ -162,9 +163,17 @@ int growproc(int);
 
 int kill(int);
 
+void killthread(struct thread *thread);
+
+void lockptable();
+
+void unlockptable();
+
 struct cpu *mycpu(void);
 
 struct proc *myproc();
+
+struct thread *mythread();
 
 void pinit(void);
 
@@ -281,7 +290,7 @@ int loaduvm(pde_t *, char *, struct inode *, uint, uint);
 
 pde_t *copyuvm(pde_t *, uint);
 
-void switchuvm(struct proc *);
+void switchuvm(struct proc *, struct thread *);
 
 void switchkvm(void);
 

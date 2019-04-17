@@ -1,5 +1,26 @@
 #define NTHREAD 16
 
+enum threadstate
+{
+	UNUSED,
+	SLEEPING,
+	RUNNABLE,
+	RUNNING,
+	ZOMBIE
+};
+
+struct thread
+{
+	int tid;				 // Thread id
+	struct proc *owner;		 // The proccess owning the thread
+	enum threadstate state;  // Process state
+	char *kstack;			 // Bottom of kernel stack for this process
+	struct context *context; // swtch() here to run process
+	void *chan;				 // If non-zero, sleeping on chan
+	struct trapframe *tf;	// Trap frame for current syscall
+	int killed;				 // If non-zero, have been killed
+};
+
 // Per-CPU state
 struct cpu
 {
@@ -10,8 +31,8 @@ struct cpu
 	volatile uint started;	 // Has the CPU started?
 	int ncli;				   // Depth of pushcli nesting.
 	int intena;				   // Were interrupts enabled before pushcli?
-	//	struct proc *proc;		   // The process running on this cpu or null
-	struct thread *thread; // The thread running on this cpu or null
+	struct proc *proc;		   // The process running on this cpu or null
+	struct thread *thread;	 // The thread running on this cpu or null
 };
 
 extern struct cpu cpus[NCPU];
@@ -39,19 +60,10 @@ struct context
 
 enum procstate
 {
-	UNUSED,
+	UNUSEDP,
 	USED, // ???
 	EMBRYO,
-	ZOMBIE
-};
-
-enum threadstate
-{
-	UNUSED,
-	SLEEPING,
-	RUNNABLE,
-	RUNNING,
-	ZOMBIE
+	ZOMBIEP
 };
 
 // Per-process state
@@ -73,17 +85,7 @@ struct proc
 	char name[16];					// Process name (debugging)
 };
 
-struct thread
-{
-	int tid;				 // Thread id
-	struct proc *owner;		 // The proccess owning the thread
-	enum threadstate state;  // Process state
-	char *kstack;			 // Bottom of kernel stack for this process
-	struct context *context; // swtch() here to run process
-	void *chan;				 // If non-zero, sleeping on chan
-	struct trapframe *tf;	// Trap frame for current syscall
-	int killed;						// If non-zero, have been killed
-};
+
 
 // Process memory is laid out contiguously, low addresses first:
 //   text
