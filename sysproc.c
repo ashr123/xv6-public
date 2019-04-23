@@ -12,10 +12,9 @@ int sys_fork(void)
 	return fork();
 }
 
-int sys_exit(void)
+void sys_exit(void)
 {
 	exit();
-	return 0; // not reached
 }
 
 int sys_wait(void)
@@ -34,7 +33,7 @@ int sys_kill(void)
 
 int sys_getpid(void)
 {
-	return myproc()->pid;
+	return kthread_id();
 }
 
 int sys_sbrk(void)
@@ -76,10 +75,19 @@ int sys_sleep(void)
 // since start.
 int sys_uptime(void)
 {
-	uint xticks;
-
 	acquire(&tickslock);
-	xticks = ticks;
+	uint xticks = ticks;
 	release(&tickslock);
 	return xticks;
+}
+
+int sys_kthread_create(void) // Added
+{
+
+}
+
+
+int sys_kthread_id(void) // Added
+{
+	return kthread_id();
 }

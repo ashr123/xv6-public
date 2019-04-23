@@ -326,7 +326,7 @@ void exit_thread(void)
 	for (t = curproc->threads; t < &curproc->threads[NTHREAD]; t++)
 		if (t->tid != curthread->tid && (t->state == RUNNABLE || t->state == RUNNING || t->state == SLEEPING))
 		{
-			//this thread is not the last alive--makemyself zombie and ret to sched
+			//this thread is not the last alive--make m yself zombie and ret to sched
 			curthread->state = THREAD_ZOMBIE;
 			sched();
 			panic("zombie exit_thread");
@@ -612,12 +612,33 @@ int kill(int pid)
 	return -1;
 }
 
-//PAGEBREAK: 36
-// Print a process listing to console.  For debugging.
-// Runs when user types ^P on console.
-// No lock to avoid wedging a stuck machine further.
+int kthread_create(void (*start_func)(), void *stack){
 
-/*
+}
+
+
+int kthread_id(){
+	int id = mythread()->tid;
+	if(id == 0)
+		return -1;
+	return id;
+}
+
+void kthread_exit(){
+
+	if(myproc()==initproc){
+      	panic("exit from init proc");
+	}
+	//there may bethreads sleeping on me
+    wakeup(mythread());
+	exit_thread();
+}
+
+	//PAGEBREAK: 36
+	// Print a process listing to console.  For debugging.
+	// Runs when user types ^P on console.
+	// No lock to avoid wedging a stuck machine further.
+	/*
 void procdump(void)
 {
 	static char *states[] = {

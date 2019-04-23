@@ -489,6 +489,7 @@ mem(void)
 
 	printf(1, "mem test\n");
 	ppid = getpid();
+
 	if ((pid = fork()) == 0)
 	{
 		m1 = 0;

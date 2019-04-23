@@ -1,3 +1,5 @@
+#include "kthread.h" // Added
+
 struct buf;
 struct context;
 struct file;
@@ -155,15 +157,17 @@ int pipewrite(struct pipe *, char *, int);
 // proc.c
 int cpuid(void);
 
-void exit(void);
+void exit(void) __attribute__((noreturn));
 
-void exit_thread(void); //added
+void exit_thread(void) __attribute__((noreturn)); //added
 
 int fork(void);
 
 int growproc(int);
 
 int kill(int);
+
+
 
 //void lockptable();//added
 //
