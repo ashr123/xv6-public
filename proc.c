@@ -132,8 +132,6 @@ found:
 	p->state = EMBRYO;
 	p->pid = nextpid++;
 
-	release(&ptable.lock);
-
 	// Allocate kernel stack.
 
 	struct thread *th;
@@ -253,22 +251,22 @@ int fork(void)
 
 	acquire(&ptable.lock);
 
-	np->state = RUNNABLE;
+	np->threads[0].state = RUNNABLE;
 
 	release(&ptable.lock);
 
 	return pid;
 }
 
-void lockptable()
-{
-	acquire(&ptable.lock);
-}
-
-void unlockptable()
-{
-	release(&ptable.lock);
-}
+//void lockptable()
+//{
+//	acquire(&ptable.lock);
+//}
+//
+//void unlockptable()
+//{
+//	release(&ptable.lock);
+//}
 
 void close_thread(struct thread *t)
 {
@@ -353,7 +351,6 @@ void exit(void)
 	acquire(&ptable.lock);
 	if (curproc == initproc)
 		panic("init exiting");
-	acquire(&ptable.lock);
 	//make all threads sonskill themself
 	for (t = curproc->threads; t < &curproc->threads[NTHREAD]; t++)
 	{

@@ -165,9 +165,9 @@ int growproc(int);
 
 int kill(int);
 
-void lockptable();//added
-
-void unlockptable();//added
+//void lockptable();//added
+//
+//void unlockptable();//added
 
 struct cpu *mycpu(void);
 

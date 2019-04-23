@@ -17,7 +17,7 @@ int exec(char *path, char **argv)
 	struct proghdr ph;
 	pde_t *pgdir, *oldpgdir;
 	struct proc *curproc = myproc();
-	lockptable();
+//	lockptable();
 	
 
 	for (struct thread *t = myproc()->threads; t < &myproc()->threads[NTHREAD]; t++){
@@ -36,7 +36,7 @@ int exec(char *path, char **argv)
 	{
 		end_op();
 		cprintf("exec: fail\n");
-		unlockptable();
+//		unlockptable();
 		return -1;
 	}
 	ilock(ip);
@@ -116,7 +116,7 @@ int exec(char *path, char **argv)
 	mythread()->tf->esp = sp;
 	switchuvm(mythread());
 	freevm(oldpgdir);
-	unlockptable();
+//	unlockptable();
 	return 0;
 
 bad:
@@ -127,6 +127,6 @@ bad:
 		iunlockput(ip);
 		end_op();
 	}
-	unlockptable();
+//	unlockptable();
 	return -1;
 }
