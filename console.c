@@ -202,8 +202,8 @@ struct
 
 void consoleintr(int (*getc)(void))
 {
-	int c, doprocdump = 0;
-
+	int c = 0;
+	//int doprocdump =0;
 	acquire(&cons.lock);
 	while ((c = getc()) >= 0)
 	{
@@ -211,7 +211,7 @@ void consoleintr(int (*getc)(void))
 		{
 		case C('P'): // Process listing.
 			// procdump() locks cons.lock indirectly; invoke later
-			doprocdump = 1;
+			//doprocdump = 1;
 			break;
 		case C('U'): // Kill line.
 			while (input.e != input.w &&
@@ -245,10 +245,10 @@ void consoleintr(int (*getc)(void))
 		}
 	}
 	release(&cons.lock);
-	if (doprocdump)
-	{
-		procdump(); // now call procdump() wo. cons.lock held
-	}
+	// if (doprocdump)
+	// {
+	// 	procdump(); // now call procdump() wo. cons.lock held
+	// }
 }
 
 int consoleread(struct inode *ip, char *dst, int n)
@@ -263,10 +263,7 @@ int consoleread(struct inode *ip, char *dst, int n)
 	{
 		while (input.r == input.w)
 		{
-			if (mythread()->killed)
-			{
-				killthread(mythread());
-			}
+			
 			if (myproc()->killed)
 			{
 				release(&cons.lock);

@@ -88,10 +88,7 @@ int pipewrite(struct pipe *p, char *addr, int n)
 	{
 		while (p->nwrite == p->nread + PIPESIZE)
 		{ //DOC: pipewrite-full
-			if (mythread()->killed)
-			{
-				killthread(mythread());
-			}
+			
 			if (p->readopen == 0 || myproc()->killed)
 			{
 				release(&p->lock);
@@ -114,10 +111,7 @@ int piperead(struct pipe *p, char *addr, int n)
 	acquire(&p->lock);
 	while (p->nread == p->nwrite && p->writeopen)
 	{ //DOC: pipe-empty
-		if (mythread()->killed)
-		{
-			killthread(mythread());
-		}
+		
 		if (myproc()->killed)
 		{
 			release(&p->lock);

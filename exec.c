@@ -18,10 +18,17 @@ int exec(char *path, char **argv)
 	pde_t *pgdir, *oldpgdir;
 	struct proc *curproc = myproc();
 	lockptable();
+	
 
-	for (struct thread *t = myproc()->threads; t < &myproc()->threads[NTHREAD]; t++)
-		if (t != mythread())
+	for (struct thread *t = myproc()->threads; t < &myproc()->threads[NTHREAD]; t++){
+		if (t->tid != mythread()->tid && (t->state != THREAD_UNUSED || t->state != THREAD_ZOMBIE))
 			t->killed = 1;
+		if(t->state==SLEEPING){
+			t->state = RUNNABLE;
+		}
+	}
+		
+
 
 	begin_op();
 

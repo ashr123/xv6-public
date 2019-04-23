@@ -43,7 +43,7 @@ void trap(struct trapframe *tf)
 		syscall();
 		if (mythread()->killed)
 		{
-			killthread(mythread());
+			exit_thread();
 		}
 
 		return;

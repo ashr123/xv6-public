@@ -61,10 +61,6 @@ int sys_sleep(void)
 	ticks0 = ticks;
 	while (ticks - ticks0 < n)
 	{
-		if (mythread()->killed)
-		{
-			killthread(mythread());
-		}
 		if (myproc()->killed)
 		{
 			release(&tickslock);

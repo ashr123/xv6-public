@@ -138,7 +138,7 @@ found:
 
 	struct thread *th;
 	for (th = p->threads; th < &p->threads[NTHREAD]; th++)
-		th->state == THREAD_UNUSED;
+		th->state = THREAD_UNUSED;
 	allocthread(p);
 	release(&ptable.lock);
 	return p;
@@ -186,7 +186,7 @@ void userinit(void)
 int growproc(int n)
 {
 	uint sz;
-	acquire(&ptable.lock);
+	acquire(&ptable.lock); //????
 	struct proc *curproc = myproc();
 
 	sz = curproc->sz;
@@ -219,7 +219,7 @@ int fork(void)
 {
 	struct proc *np;
 	struct proc *curproc = myproc();
-	struct thread *curthread = mythread();
+	//struct thread *curthread = mythread();
 
 	// Allocate process.
 	if ((np = allocproc()) == 0)
@@ -331,6 +331,7 @@ void exit_thread(void)
 			//this thread is not the last alive--makemyself zombie and ret to sched
 			curthread->state = THREAD_ZOMBIE;
 			sched();
+			panic("zombie exit_thread");
 		}
 
 	release(&ptable.lock);
@@ -339,7 +340,7 @@ void exit_thread(void)
 
 	curthread->state = THREAD_ZOMBIE;
 	sched();
-	panic("zombie exit");
+	panic("zombie exit_thread");
 }
 
 // Exit the current process.  Does not return.
@@ -358,6 +359,8 @@ void exit(void)
 	{
 		if (t->state != THREAD_UNUSED)
 			t->killed = 1;
+		if (t->state == SLEEPING)
+			t->state = RUNNABLE;
 	}
 	curproc->killed = 1;
 	release(&ptable.lock);
@@ -426,7 +429,7 @@ int wait(void)
 //      via swtch back to the scheduler.
 void scheduler(void)
 {
-	struct thread *t;
+	//struct thread *t;
 	struct proc *p;
 	struct cpu *c = mycpu();
 	c->proc = 0;
@@ -460,7 +463,10 @@ void scheduler(void)
 				t->state = RUNNING;
 				swtch(&(c->scheduler), t->context);
 				switchkvm();
-				t->state = RUNNING;
+
+
+				c->proc =0;
+				c->thread = 0;
 			}
 		}
 		release(&ptable.lock);
