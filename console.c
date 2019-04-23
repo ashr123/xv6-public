@@ -66,7 +66,7 @@ void cprintf(char *fmt, ...)
 	if (fmt == 0)
 		panic("null fmt");
 
-	argp = (uint *)(void *)(&fmt + 1);
+	argp = (uint *) (void *) (&fmt + 1);
 	for (i = 0; (c = fmt[i] & 0xff) != 0; i++)
 	{
 		if (c != '%')
@@ -79,27 +79,27 @@ void cprintf(char *fmt, ...)
 			break;
 		switch (c)
 		{
-		case 'd':
-			printint(*argp++, 10, 1);
-			break;
-		case 'x':
-		case 'p':
-			printint(*argp++, 16, 0);
-			break;
-		case 's':
-			if ((s = (char *)*argp++) == 0)
-				s = "(null)";
-			for (; *s; s++)
-				consputc(*s);
-			break;
-		case '%':
-			consputc('%');
-			break;
-		default:
-			// Print unknown % sequence to draw attention.
-			consputc('%');
-			consputc(c);
-			break;
+			case 'd':
+				printint(*argp++, 10, 1);
+				break;
+			case 'x':
+			case 'p':
+				printint(*argp++, 16, 0);
+				break;
+			case 's':
+				if ((s = (char *) *argp++) == 0)
+					s = "(null)";
+				for (; *s; s++)
+					consputc(*s);
+				break;
+			case '%':
+				consputc('%');
+				break;
+			default:
+				// Print unknown % sequence to draw attention.
+				consputc('%');
+				consputc(c);
+				break;
 		}
 	}
 
@@ -122,14 +122,13 @@ void panic(char *s)
 	for (i = 0; i < 10; i++)
 		cprintf(" %p", pcs[i]);
 	panicked = 1; // freeze other CPU
-	for (;;)
-		;
+	for (;;);
 }
 
 //PAGEBREAK: 50
 #define BACKSPACE 0x100
 #define CRTPORT 0x3d4
-static ushort *crt = (ushort *)P2V(0xb8000); // CGA memory
+static ushort *crt = (ushort *) P2V(0xb8000); // CGA memory
 
 static void
 cgaputc(int c)
@@ -148,8 +147,7 @@ cgaputc(int c)
 	{
 		if (pos > 0)
 			--pos;
-	}
-	else
+	} else
 		crt[pos++] = (c & 0xff) | 0x0700; // black on white
 
 	if (pos < 0 || pos > 25 * 80)
@@ -174,8 +172,7 @@ void consputc(int c)
 	if (panicked)
 	{
 		cli();
-		for (;;)
-			;
+		for (;;);
 	}
 
 	if (c == BACKSPACE)
@@ -183,8 +180,7 @@ void consputc(int c)
 		uartputc('\b');
 		uartputc(' ');
 		uartputc('\b');
-	}
-	else
+	} else
 		uartputc(c);
 	cgaputc(c);
 }
@@ -209,39 +205,39 @@ void consoleintr(int (*getc)(void))
 	{
 		switch (c)
 		{
-		case C('P'): // Process listing.
-			// procdump() locks cons.lock indirectly; invoke later
-			//doprocdump = 1;
-			break;
-		case C('U'): // Kill line.
-			while (input.e != input.w &&
-				   input.buf[(input.e - 1) % INPUT_BUF] != '\n')
-			{
-				input.e--;
-				consputc(BACKSPACE);
-			}
-			break;
-		case C('H'):
-		case '\x7f': // Backspace
-			if (input.e != input.w)
-			{
-				input.e--;
-				consputc(BACKSPACE);
-			}
-			break;
-		default:
-			if (c != 0 && input.e - input.r < INPUT_BUF)
-			{
-				c = (c == '\r') ? '\n' : c;
-				input.buf[input.e++ % INPUT_BUF] = c;
-				consputc(c);
-				if (c == '\n' || c == C('D') || input.e == input.r + INPUT_BUF)
+			case C('P'): // Process listing.
+				// procdump() locks cons.lock indirectly; invoke later
+				//doprocdump = 1;
+				break;
+			case C('U'): // Kill line.
+				while (input.e != input.w &&
+				       input.buf[(input.e - 1) % INPUT_BUF] != '\n')
 				{
-					input.w = input.e;
-					wakeup(&input.r);
+					input.e--;
+					consputc(BACKSPACE);
 				}
-			}
-			break;
+				break;
+			case C('H'):
+			case '\x7f': // Backspace
+				if (input.e != input.w)
+				{
+					input.e--;
+					consputc(BACKSPACE);
+				}
+				break;
+			default:
+				if (c != 0 && input.e - input.r < INPUT_BUF)
+				{
+					c = (c == '\r') ? '\n' : c;
+					input.buf[input.e++ % INPUT_BUF] = c;
+					consputc(c);
+					if (c == '\n' || c == C('D') || input.e == input.r + INPUT_BUF)
+					{
+						input.w = input.e;
+						wakeup(&input.r);
+					}
+				}
+				break;
 		}
 	}
 	release(&cons.lock);
@@ -263,7 +259,7 @@ int consoleread(struct inode *ip, char *dst, int n)
 	{
 		while (input.r == input.w)
 		{
-			
+
 			if (myproc()->killed)
 			{
 				release(&cons.lock);

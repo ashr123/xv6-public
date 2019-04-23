@@ -8,7 +8,7 @@
 #include "elf.h"
 
 extern char data[]; // defined by kernel.ld
-pde_t *kpgdir;		// for use in scheduler()
+pde_t *kpgdir;        // for use in scheduler()
 
 // Set up CPU's kernel segment descriptors.
 // Run once on entry on each CPU.
@@ -40,11 +40,10 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
 	pde = &pgdir[PDX(va)];
 	if (*pde & PTE_P)
 	{
-		pgtab = (pte_t *)P2V(PTE_ADDR(*pde));
-	}
-	else
+		pgtab = (pte_t *) P2V(PTE_ADDR(*pde));
+	} else
 	{
-		if (!alloc || (pgtab = (pte_t *)kalloc()) == 0)
+		if (!alloc || (pgtab = (pte_t *) kalloc()) == 0)
 			return 0;
 		// Make sure all those PTE_P bits are zero.
 		memset(pgtab, 0, PGSIZE);
@@ -65,8 +64,8 @@ mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
 	char *a, *last;
 	pte_t *pte;
 
-	a = (char *)PGROUNDDOWN((uint)va);
-	last = (char *)PGROUNDDOWN(((uint)va) + size - 1);
+	a = (char *) PGROUNDDOWN((uint) va);
+	last = (char *) PGROUNDDOWN(((uint) va) + size - 1);
 	for (;;)
 	{
 		if ((pte = walkpgdir(pgdir, a, 1)) == 0)
@@ -112,10 +111,10 @@ static struct kmap
 	uint phys_end;
 	int perm;
 } kmap[] = {
-	{(void *)KERNBASE, 0, EXTMEM, PTE_W},			 // I/O space
-	{(void *)KERNLINK, V2P(KERNLINK), V2P(data), 0}, // kern text+rodata
-	{(void *)data, V2P(data), PHYSTOP, PTE_W},		 // kern data+memory
-	{(void *)DEVSPACE, DEVSPACE, 0, PTE_W},			 // more devices
+		{(void *) KERNBASE, 0,             EXTMEM,  PTE_W},             // I/O space
+		{(void *) KERNLINK, V2P(KERNLINK), V2P(data), 0}, // kern text+rodata
+		{(void *) data,     V2P(data),     PHYSTOP, PTE_W},         // kern data+memory
+		{(void *) DEVSPACE, DEVSPACE, 0,            PTE_W},             // more devices
 };
 
 // Set up kernel part of a page table.
@@ -125,19 +124,19 @@ setupkvm(void)
 	pde_t *pgdir;
 	struct kmap *k;
 
-	if ((pgdir = (pde_t *)kalloc()) == 0)
+	if ((pgdir = (pde_t *) kalloc()) == 0)
 		return 0;
 	memset(pgdir, 0, PGSIZE);
-	if (P2V(PHYSTOP) > (void *)DEVSPACE)
+	if (P2V(PHYSTOP) > (void *) DEVSPACE)
 		panic("PHYSTOP too high");
 	for (k = kmap; k < &kmap[NELEM(kmap)];
-		 k++)
-		if (mappages(pgdir, k->virt, k->phys_end - k->phys_start,
-					 (uint)k->phys_start, k->perm) < 0)
-		{
-			freevm(pgdir);
-			return 0;
-		}
+	k++)
+	if (mappages(pgdir, k->virt, k->phys_end - k->phys_start,
+	             (uint) k->phys_start, k->perm) < 0)
+	{
+		freevm(pgdir);
+		return 0;
+	}
 	return pgdir;
 }
 
@@ -168,13 +167,13 @@ void switchuvm(struct thread *t)
 
 	pushcli();
 	mycpu()->gdt[SEG_TSS] = SEG16(STS_T32A, &mycpu()->ts,
-								  sizeof(mycpu()->ts) - 1, 0);
+	                              sizeof(mycpu()->ts) - 1, 0);
 	mycpu()->gdt[SEG_TSS].s = 0;
 	mycpu()->ts.ss0 = SEG_KDATA << 3;
-	mycpu()->ts.esp0 = (uint)t->kstack + KSTACKSIZE;
+	mycpu()->ts.esp0 = (uint) t->kstack + KSTACKSIZE;
 	// setting IOPL=0 in eflags *and* iomb beyond the tss segment limit
 	// forbids I/O instructions (e.g., inb and outb) from user space
-	mycpu()->ts.iomb = (ushort)0xFFFF;
+	mycpu()->ts.iomb = (ushort) 0xFFFF;
 	ltr(SEG_TSS << 3);
 	lcr3(V2P(t->owner->pgdir)); // switch to process's address space
 	popcli();
@@ -201,7 +200,7 @@ int loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
 	uint i, pa, n;
 	pte_t *pte;
 
-	if ((uint)addr % PGSIZE != 0)
+	if ((uint) addr % PGSIZE != 0)
 		panic("loaduvm: addr must be page aligned");
 	for (i = 0; i < sz; i += PGSIZE)
 	{
@@ -241,7 +240,7 @@ int allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 			return 0;
 		}
 		memset(mem, 0, PGSIZE);
-		if (mappages(pgdir, (char *)a, PGSIZE, V2P(mem), PTE_W | PTE_U) < 0)
+		if (mappages(pgdir, (char *) a, PGSIZE, V2P(mem), PTE_W | PTE_U) < 0)
 		{
 			cprintf("allocuvm out of memory (2)\n");
 			deallocuvm(pgdir, newsz, oldsz);
@@ -267,7 +266,7 @@ int deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 	a = PGROUNDUP(newsz);
 	for (; a < oldsz; a += PGSIZE)
 	{
-		pte = walkpgdir(pgdir, (char *)a, 0);
+		pte = walkpgdir(pgdir, (char *) a, 0);
 		if (!pte)
 			a = PGADDR(PDX(a) + 1, 0, 0) - PGSIZE;
 		else if ((*pte & PTE_P) != 0)
@@ -300,7 +299,7 @@ void freevm(pde_t *pgdir)
 			kfree(v);
 		}
 	}
-	kfree((char *)pgdir);
+	kfree((char *) pgdir);
 }
 
 // Clear PTE_U on a page. Used to create an inaccessible
@@ -329,7 +328,7 @@ copyuvm(pde_t *pgdir, uint sz)
 		return 0;
 	for (i = 0; i < sz; i += PGSIZE)
 	{
-		if ((pte = walkpgdir(pgdir, (void *)i, 0)) == 0)
+		if ((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
 			panic("copyuvm: pte should exist");
 		if (!(*pte & PTE_P))
 			panic("copyuvm: page not present");
@@ -337,8 +336,8 @@ copyuvm(pde_t *pgdir, uint sz)
 		flags = PTE_FLAGS(*pte);
 		if ((mem = kalloc()) == 0)
 			goto bad;
-		memmove(mem, (char *)P2V(pa), PGSIZE);
-		if (mappages(d, (void *)i, PGSIZE, V2P(mem), flags) < 0)
+		memmove(mem, (char *) P2V(pa), PGSIZE);
+		if (mappages(d, (void *) i, PGSIZE, V2P(mem), flags) < 0)
 		{
 			kfree(mem);
 			goto bad;
@@ -346,7 +345,7 @@ copyuvm(pde_t *pgdir, uint sz)
 	}
 	return d;
 
-bad:
+	bad:
 	freevm(d);
 	return 0;
 }
@@ -363,7 +362,7 @@ uva2ka(pde_t *pgdir, char *uva)
 		return 0;
 	if ((*pte & PTE_U) == 0)
 		return 0;
-	return (char *)P2V(PTE_ADDR(*pte));
+	return (char *) P2V(PTE_ADDR(*pte));
 }
 
 // Copy len bytes from p to user address va in page table pgdir.
@@ -374,11 +373,11 @@ int copyout(pde_t *pgdir, uint va, void *p, uint len)
 	char *buf, *pa0;
 	uint n, va0;
 
-	buf = (char *)p;
+	buf = (char *) p;
 	while (len > 0)
 	{
-		va0 = (uint)PGROUNDDOWN(va);
-		pa0 = uva2ka(pgdir, (char *)va0);
+		va0 = (uint) PGROUNDDOWN(va);
+		pa0 = uva2ka(pgdir, (char *) va0);
 		if (pa0 == 0)
 			return -1;
 		n = PGSIZE - (va - va0);

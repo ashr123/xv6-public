@@ -98,17 +98,17 @@ allocthread(struct proc *p)
 
 	// Leave room for trap frame.
 	sp -= sizeof *t->tf;
-	t->tf = (struct trapframe *)sp;
+	t->tf = (struct trapframe *) sp;
 
 	// Set up new context to start executing at forkret,
 	// which returns to trapret.
 	sp -= 4;
-	*(uint *)sp = (uint)trapret;
+	*(uint *) sp = (uint) trapret;
 
 	sp -= sizeof *t->context;
-	t->context = (struct context *)sp;
+	t->context = (struct context *) sp;
 	memset(t->context, 0, sizeof *t->context);
-	t->context->eip = (uint)forkret;
+	t->context->eip = (uint) forkret;
 }
 
 //PAGEBREAK: 32
@@ -128,7 +128,7 @@ allocproc(void)
 	release(&ptable.lock);
 	return 0;
 
-found:
+	found:
 	p->state = EMBRYO;
 	p->pid = nextpid++;
 
@@ -153,7 +153,7 @@ void userinit(void)
 	initproc = p;
 	if ((p->pgdir = setupkvm()) == 0)
 		panic("userinit: out of memory?");
-	inituvm(p->pgdir, _binary_initcode_start, (int)_binary_initcode_size);
+	inituvm(p->pgdir, _binary_initcode_start, (int) _binary_initcode_size);
 
 	p->sz = PGSIZE;
 	//allocate first thread tf in proc
@@ -179,6 +179,7 @@ void userinit(void)
 
 	release(&ptable.lock);
 }
+
 // Grow current process's memory by n bytes.
 // Return 0 on success, -1 on failure.
 int growproc(int n)
@@ -195,8 +196,7 @@ int growproc(int n)
 			release(&ptable.lock);
 			return -1;
 		}
-	}
-	else if (n < 0)
+	} else if (n < 0)
 	{
 		if ((sz = deallocuvm(curproc->pgdir, sz, sz + n)) == 0)
 		{
@@ -462,7 +462,7 @@ void scheduler(void)
 				switchkvm();
 
 
-				c->proc =0;
+				c->proc = 0;
 				c->thread = 0;
 			}
 		}
@@ -544,7 +544,7 @@ void sleep(void *chan, struct spinlock *lk)
 	// (wakeup runs with ptable.lock locked),
 	// so it's okay to release lk.
 	if (lk != &ptable.lock)
-	{						   //DOC: sleeplock0
+	{                           //DOC: sleeplock0
 		acquire(&ptable.lock); //DOC: sleeplock1
 		release(lk);
 	}

@@ -290,7 +290,7 @@ int loaduvm(pde_t *, char *, struct inode *, uint, uint);
 
 pde_t *copyuvm(pde_t *, uint);
 
-void switchuvm( struct thread *);
+void switchuvm(struct thread *);
 
 void switchkvm(void);
 

@@ -18,16 +18,17 @@ int exec(char *path, char **argv)
 	pde_t *pgdir, *oldpgdir;
 	struct proc *curproc = myproc();
 //	lockptable();
-	
 
-	for (struct thread *t = myproc()->threads; t < &myproc()->threads[NTHREAD]; t++){
+
+	for (struct thread *t = myproc()->threads; t < &myproc()->threads[NTHREAD]; t++)
+	{
 		if (t->tid != mythread()->tid && (t->state != THREAD_UNUSED || t->state != THREAD_ZOMBIE))
 			t->killed = 1;
-		if(t->state==SLEEPING){
+		if (t->state == SLEEPING)
+		{
 			t->state = RUNNABLE;
 		}
 	}
-		
 
 
 	begin_op();
@@ -43,7 +44,7 @@ int exec(char *path, char **argv)
 	pgdir = 0;
 
 	// Check ELF header
-	if (readi(ip, (char *)&elf, 0, sizeof(elf)) != sizeof(elf))
+	if (readi(ip, (char *) &elf, 0, sizeof(elf)) != sizeof(elf))
 		goto bad;
 	if (elf.magic != ELF_MAGIC)
 		goto bad;
@@ -55,7 +56,7 @@ int exec(char *path, char **argv)
 	sz = 0;
 	for (i = 0, off = elf.phoff; i < elf.phnum; i++, off += sizeof(ph))
 	{
-		if (readi(ip, (char *)&ph, off, sizeof(ph)) != sizeof(ph))
+		if (readi(ip, (char *) &ph, off, sizeof(ph)) != sizeof(ph))
 			goto bad;
 		if (ph.type != ELF_PROG_LOAD)
 			continue;
@@ -67,7 +68,7 @@ int exec(char *path, char **argv)
 			goto bad;
 		if (ph.vaddr % PGSIZE != 0)
 			goto bad;
-		if (loaduvm(pgdir, (char *)ph.vaddr, ip, ph.off, ph.filesz) < 0)
+		if (loaduvm(pgdir, (char *) ph.vaddr, ip, ph.off, ph.filesz) < 0)
 			goto bad;
 	}
 	iunlockput(ip);
@@ -79,7 +80,7 @@ int exec(char *path, char **argv)
 	sz = PGROUNDUP(sz);
 	if ((sz = allocuvm(pgdir, sz, sz + 2 * PGSIZE)) == 0)
 		goto bad;
-	clearpteu(pgdir, (char *)(sz - 2 * PGSIZE));
+	clearpteu(pgdir, (char *) (sz - 2 * PGSIZE));
 	sp = sz;
 
 	// Push argument strings, prepare rest of stack in ustack.
@@ -119,7 +120,7 @@ int exec(char *path, char **argv)
 //	unlockptable();
 	return 0;
 
-bad:
+	bad:
 	if (pgdir)
 		freevm(pgdir);
 	if (ip)
