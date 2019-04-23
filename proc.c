@@ -15,6 +15,7 @@ struct
 
 static struct proc *initproc;
 
+int nexttid = 1;
 int nextpid = 1;
 
 extern void forkret(void);
@@ -39,15 +40,13 @@ int cpuid()
 struct cpu *
 mycpu(void)
 {
-	int apicid, i;
-
 	if (readeflags() & FL_IF)
 		panic("mycpu called with interrupts enabled\n");
 
-	apicid = lapicid();
+	int apicid = apicid = lapicid();
 	// APIC IDs are not guaranteed to be contiguous. Maybe we should have
 	// a reverse map, or reserve a register to store &cpus[i].
-	for (i = 0; i < ncpu; ++i)
+	for (int i = 0; i < ncpu; ++i)
 	{
 		if (cpus[i].apicid == apicid)
 			return &cpus[i];
@@ -74,41 +73,28 @@ struct thread *mythread(void)
 	return t;
 }
 
-//PAGEBREAK: 32
-// Look in the process table for an UNUSED proc.
-// If found, change state to EMBRYO and initialize
-// state required to run in the kernel.
-// Otherwise return 0.
-static struct thread *
-allocproc(void)
+static void
+allocthread(struct proc *p)
 {
-	acquire(&ptable.lock);
-	struct proc *p;
-	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-		if (p->state == UNUSEDP)
-			goto found;
-
-	release(&ptable.lock);
-	return 0;
-
-found:
-	p->state = EMBRYO;
-	p->pid = nextpid++;
-
-	release(&ptable.lock);
-
-	// Allocate kernel stack.
 	struct thread *t;
 	for (t = p->threads; t < &p->threads[NTHREAD]; t++)
-		if (t->state == UNUSED)
+		if (t->state == THREAD_UNUSED)
 			break;
 
-	if ((t->kstack = kalloc()) == 0)
+	if (t == &p->threads[NTHREAD])
+		panic("allocthread failed");
+
+	t->tid = nexttid++;
+
+	t->owner = p;
+
+	t->killed = 0;
+	// Allocate kernel stack.
+	if ((t->kstack = kalloc()) == 0) //????
 	{
-		t->state = UNUSED;
-		return 0;
+		p->state = PROC_UNUSED;
 	}
-	char *sp = t->kstack + KSTACKSIZE;
+	char *sp = sp = t->kstack + KSTACKSIZE;
 
 	// Leave room for trap frame.
 	sp -= sizeof *t->tf;
@@ -123,46 +109,78 @@ found:
 	t->context = (struct context *)sp;
 	memset(t->context, 0, sizeof *t->context);
 	t->context->eip = (uint)forkret;
+}
 
-	return t;
+//PAGEBREAK: 32
+// Look in the process table for an UNUSED proc.
+// If found, change state to EMBRYO and initialize
+// state required to run in the kernel.
+// Otherwise return 0.
+static struct proc *
+allocproc(void)
+{
+	acquire(&ptable.lock);
+	struct proc *p;
+	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+		if (p->state == PROC_UNUSED)
+			goto found;
+
+	release(&ptable.lock);
+	return 0;
+
+found:
+	p->state = EMBRYO;
+	p->pid = nextpid++;
+
+	release(&ptable.lock);
+
+	// Allocate kernel stack.
+
+	struct thread *th;
+	for (th = p->threads; th < &p->threads[NTHREAD]; th++)
+		th->state == THREAD_UNUSED;
+	allocthread(p);
+	release(&ptable.lock);
+	return p;
 }
 
 //PAGEBREAK: 32
 // Set up first user process.
 void userinit(void)
 {
+	struct proc *p;
 	extern char _binary_initcode_start[], _binary_initcode_size[];
+	p = allocproc();
 
-	struct thread *t = allocproc();
-	struct proc *owner = t->owner;
-	initproc = owner;
-	if ((owner->pgdir = setupkvm()) == 0)
+	initproc = p;
+	if ((p->pgdir = setupkvm()) == 0)
 		panic("userinit: out of memory?");
-	inituvm(owner->pgdir, _binary_initcode_start, (int)_binary_initcode_size);
-	owner->sz = PGSIZE;
-	memset(t->tf, 0, sizeof(*t->tf));
-	t->tf->cs = (SEG_UCODE << 3) | DPL_USER;
-	t->tf->ds = (SEG_UDATA << 3) | DPL_USER;
-	t->tf->es = t->tf->ds;
-	t->tf->ss = t->tf->ds;
-	t->tf->eflags = FL_IF;
-	t->tf->esp = PGSIZE;
-	t->tf->eip = 0; // beginning of initcode.S
+	inituvm(p->pgdir, _binary_initcode_start, (int)_binary_initcode_size);
 
-	safestrcpy(owner->name, "initcode", sizeof(owner->name));
-	owner->cwd = namei("/");
+	p->sz = PGSIZE;
+	//allocate first thread tf in proc
+	struct trapframe *thread_tf = p->threads[0].tf;
+	memset(thread_tf, 0, sizeof(*thread_tf));
+	thread_tf->cs = (SEG_UCODE << 3) | DPL_USER;
+	thread_tf->ds = (SEG_UDATA << 3) | DPL_USER;
+	thread_tf->es = thread_tf->ds;
+	thread_tf->ss = thread_tf->ds;
+	thread_tf->eflags = FL_IF;
+	thread_tf->esp = PGSIZE;
+	thread_tf->eip = 0; // beginning of initcode.S
+	safestrcpy(p->name, "initcode", sizeof(p->name));
+	p->cwd = namei("/");
 
 	// this assignment to p->state lets other cores
 	// run this process. the acquire forces the above
 	// writes to be visible, and the lock is also needed
 	// because the assignment might not be atomic.
 	acquire(&ptable.lock);
-	owner->state = USED;
-	t->state = RUNNABLE;
+
+	p->threads[0].state = RUNNABLE;
 
 	release(&ptable.lock);
 }
-
 // Grow current process's memory by n bytes.
 // Return 0 on success, -1 on failure.
 int growproc(int n)
@@ -189,7 +207,7 @@ int growproc(int n)
 		}
 	}
 	curproc->sz = sz;
-	switchuvm(curproc, mythread());
+	switchuvm(mythread());
 	release(&ptable.lock);
 	return 0;
 }
@@ -199,72 +217,47 @@ int growproc(int n)
 // Caller must set state of returned proc to RUNNABLE.
 int fork(void)
 {
-	int i, pid;
-	struct thread *nt;
+	struct proc *np;
 	struct proc *curproc = myproc();
 	struct thread *curthread = mythread();
 
 	// Allocate process.
-	if ((nt = allocproc()) == 0)
+	if ((np = allocproc()) == 0)
 	{
 		return -1;
 	}
 
 	// Copy process state from proc.
-	if ((nt->owner->pgdir = copyuvm(curproc->pgdir, curproc->sz)) == 0)
+	if ((np->pgdir = copyuvm(curproc->pgdir, curproc->sz)) == 0)
 	{
-		kfree(nt->kstack);
-		nt->kstack = 0;
-		nt->state = UNUSED;
+		kfree(np->threads[0].kstack);
+		np->threads[0].kstack = 0;
+		np->state = PROC_UNUSED;
 		return -1;
 	}
-	nt->owner->sz = curproc->sz;
-	nt->owner->parent = curproc;
-	*nt->tf = *curthread->tf;
+	np->sz = curproc->sz;
+	np->parent = curproc;
+	*np->threads[0].tf = *curproc->threads[0].tf;
 
 	// Clear %eax so that fork returns 0 in the child.
-	nt->tf->eax = 0;
+	np->threads[0].tf->eax = 0;
 
-	for (i = 0; i < NOFILE; i++)
+	for (int i = 0; i < NOFILE; i++)
 		if (curproc->ofile[i])
-			nt->owner->ofile[i] = filedup(curproc->ofile[i]);
-	nt->owner->cwd = idup(curproc->cwd);
+			np->ofile[i] = filedup(curproc->ofile[i]);
+	np->cwd = idup(curproc->cwd);
 
-	safestrcpy(nt->owner->name, curproc->name, sizeof(curproc->name));
+	safestrcpy(np->name, curproc->name, sizeof(curproc->name));
 
-	pid = nt->tid;
+	int pid = np->pid;
 
 	acquire(&ptable.lock);
 
-	nt->owner->state = USED;
-	nt->state = RUNNABLE;
+	np->state = RUNNABLE;
 
 	release(&ptable.lock);
 
 	return pid;
-}
-
-void clearZombieThreads(struct thread threads[])
-{
-	for (struct thread *t = threads; t < &threads[NTHREAD]; t++)
-	{
-		if (t->state != ZOMBIE)
-			continue;
-		t->kstack = 0;
-		t->tid = 0;
-		kfree(t->kstack);
-		t->owner = 0;
-		t->state = UNUSED;
-	}
-}
-void killthread(struct thread *thread)
-{
-	thread->kstack = 0;
-	thread->tid = 0;
-	kfree(thread->kstack);
-	thread->owner = 0;
-	thread->state = ZOMBIE;
-	thread->killed = 0;
 }
 
 void lockptable()
@@ -418,6 +411,7 @@ void scheduler(void)
 	struct proc *p;
 	struct cpu *c = mycpu();
 	c->proc = 0;
+	c->thread = 0;
 
 	for (;;)
 	{
@@ -450,7 +444,7 @@ void scheduler(void)
 			if (!foundRunnableTrhread)
 				continue;
 			c->proc = p;
-			switchuvm(p, c->thread);
+			switchuvm(c->thread);
 			//p->state = RUNNING;
 
 			swtch(&(c->scheduler), c->thread->context);
