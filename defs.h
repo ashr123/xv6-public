@@ -157,17 +157,17 @@ int cpuid(void);
 
 void exit(void);
 
+void exit_thread(void); //added
+
 int fork(void);
 
 int growproc(int);
 
 int kill(int);
 
-void killthread(struct thread *thread);
+void lockptable();//added
 
-void lockptable();
-
-void unlockptable();
+void unlockptable();//added
 
 struct cpu *mycpu(void);
 

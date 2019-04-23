@@ -53,7 +53,7 @@ struct context
 };
 
 enum procstate
- { PROC_UNUSED, EMBRYO, ZOMBIE };
+ { PROC_UNUSED, EMBRYO, PROC_ZOMBIE };
 
 // Per-process state
 struct proc

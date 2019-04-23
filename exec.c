@@ -107,7 +107,7 @@ int exec(char *path, char **argv)
 	curproc->sz = sz;
 	mythread()->tf->eip = elf.entry; // main
 	mythread()->tf->esp = sp;
-	switchuvm(curproc, mythread());
+	switchuvm(mythread());
 	freevm(oldpgdir);
 	unlockptable();
 	return 0;

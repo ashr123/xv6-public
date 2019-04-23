@@ -269,80 +269,99 @@ void unlockptable()
 {
 	release(&ptable.lock);
 }
+
+void close_thread(struct thread *t)
+{
+	kfree(t->kstack);
+	t->kstack = 0;
+	t->tid = 0;
+	t->killed = 0;
+	t->state = THREAD_UNUSED;
+}
+
+void close_proc(struct proc *curproc)
+{
+	// Close all open files.
+	for (int fd = 0; fd < NOFILE; fd++)
+	{
+		if (curproc->ofile[fd])
+		{
+			fileclose(curproc->ofile[fd]);
+			curproc->ofile[fd] = 0;
+		}
+	}
+
+	begin_op();
+	iput(curproc->cwd);
+	end_op();
+	curproc->cwd = 0;
+
+	acquire(&ptable.lock);
+
+	// Parent might be sleeping in wait().
+	wakeup1(curproc->parent);
+
+	// Pass abandoned children to init.
+	for (struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+	{
+		if (p->parent == curproc)
+		{
+			p->parent = initproc;
+			if (p->state == PROC_ZOMBIE)
+				wakeup1(initproc);
+		}
+	}
+
+	// Jump into the scheduler, never to return.
+	curproc->state = PROC_ZOMBIE;
+}
+
+void exit_thread(void)
+{
+
+	struct proc *curproc = myproc();
+
+	struct thread *curthread = mythread();
+	struct thread *t;
+
+	acquire(&ptable.lock);
+	for (t = curproc->threads; t < &curproc->threads[NTHREAD]; t++)
+		if (t->tid != curthread->tid && (t->state == RUNNABLE || t->state == RUNNING || t->state == SLEEPING))
+		{
+			//this thread is not the last alive--makemyself zombie and ret to sched
+			curthread->state = THREAD_ZOMBIE;
+			sched();
+		}
+
+	release(&ptable.lock);
+	//THREAD IS THE LAST  IN PROC
+	close_proc(curproc);
+
+	curthread->state = THREAD_ZOMBIE;
+	sched();
+	panic("zombie exit");
+}
+
 // Exit the current process.  Does not return.
 // An exited process remains in the zombie state
 // until its parent calls wait() to find out it exited.
 void exit(void)
 {
 	struct proc *curproc = myproc();
-	struct proc *p;
-	int fd;
-
+	struct thread *t;
 	acquire(&ptable.lock);
 	if (curproc == initproc)
 		panic("init exiting");
-	struct thread *currthread = mythread();
-	//kill the father sign to allthreadss son to kill themself
-	//curproc->killed = 1;
-
-	//kill the current thread:
-	killthread(currthread);
-
-	// any sleeping thread should become runnable
-	int isNotlast = 0;
-	for (struct thread *t = curproc->threads; t < &curproc->threads[NTHREAD]; t++)
+	acquire(&ptable.lock);
+	//make all threads sonskill themself
+	for (t = curproc->threads; t < &curproc->threads[NTHREAD]; t++)
 	{
-		if (!(t->state == RUNNING || t->state == RUNNABLE))
-		{
+		if (t->state != THREAD_UNUSED)
 			t->killed = 1;
-		}
-
-		isNotlast = isNotlast || t->state == RUNNING || t->state == RUNNABLE || t->state == SLEEPING;
-		if (t->state == SLEEPING)
-			t->state = RUNNABLE;
 	}
+	curproc->killed = 1;
 	release(&ptable.lock);
-	// TODO if I'm last kill the proc else return to sched
-	if (!isNotlast)
-	{
-		// Close all open files.
-		for (fd = 0; fd < NOFILE; fd++)
-		{
-			if (curproc->ofile[fd])
-			{
-				fileclose(curproc->ofile[fd]);
-				curproc->ofile[fd] = 0;
-			}
-		}
-
-		begin_op();
-		iput(curproc->cwd);
-		end_op();
-		curproc->cwd = 0;
-
-		acquire(&ptable.lock);
-
-		// Parent might be sleeping in wait().
-		wakeup1(curproc->parent);
-
-		// Pass abandoned children to init.
-		for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-		{
-			if (p->parent == curproc)
-			{
-				p->parent = initproc;
-				if (p->state == ZOMBIEP)
-				{
-					wakeup1(initproc);
-				}
-			}
-		}
-
-		// Jump into the scheduler, never to return.
-		curproc->state = ZOMBIE;
-	}
-	sched();
-	panic("zombie exit");
+	exit_thread();
 }
 
 // Wait for a child process to exit and return its pid.
@@ -350,6 +369,7 @@ void exit(void)
 int wait(void)
 {
 	struct proc *p;
+	struct thread *t;
 	int havekids, pid;
 	struct proc *curproc = myproc();
 
@@ -363,20 +383,22 @@ int wait(void)
 			if (p->parent != curproc)
 				continue;
 			havekids = 1;
-			if (p->state == ZOMBIEP)
+			if (p->state == PROC_ZOMBIE)
 			{
 				// Found one.
 				pid = p->pid;
-
-				//clear all zombie threads sons
-				clearZombieThreads(p->threads);
-
 				freevm(p->pgdir);
 				p->pid = 0;
 				p->parent = 0;
 				p->name[0] = 0;
 				p->killed = 0;
-				p->state = UNUSEDP;
+				p->state = PROC_UNUSED;
+				for (t = curproc->threads; t < &curproc->threads[NTHREAD]; t++)
+				{
+					if (t->state == THREAD_ZOMBIE)
+						close_thread(t);
+				}
+
 				release(&ptable.lock);
 				return pid;
 			}
@@ -387,10 +409,6 @@ int wait(void)
 		{
 			release(&ptable.lock);
 			return -1;
-		}
-		if (mythread()->killed)
-		{
-			killthread(mythread());
 		}
 
 		// Wait for children to exit.  (See wakeup1 call in proc_exit.)
@@ -408,6 +426,7 @@ int wait(void)
 //      via swtch back to the scheduler.
 void scheduler(void)
 {
+	struct thread *t;
 	struct proc *p;
 	struct cpu *c = mycpu();
 	c->proc = 0;
@@ -422,7 +441,7 @@ void scheduler(void)
 		acquire(&ptable.lock);
 		for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
 		{
-			if (p->state != USED)
+			if (p->state != EMBRYO) //need to be used-like
 				continue;
 
 			// Switch to chosen process.  It is the process's job
@@ -430,29 +449,19 @@ void scheduler(void)
 			// before jumping back to us.
 
 			//get RUNNABLE thread from p
-			int foundRunnableTrhread = 0;
+
 			for (struct thread *t = p->threads; t < &p->threads[NTHREAD]; t++)
 			{
-				if (t->state == RUNNABLE)
-				{
-					foundRunnableTrhread = 1;
-					c->thread = t;
-					t->state = RUNNING;
-					break;
-				}
+				if (t->state != RUNNABLE)
+					continue;
+				c->thread = t;
+				c->proc = p;
+				switchuvm(t);
+				t->state = RUNNING;
+				swtch(&(c->scheduler), t->context);
+				switchkvm();
+				t->state = RUNNING;
 			}
-			if (!foundRunnableTrhread)
-				continue;
-			c->proc = p;
-			switchuvm(c->thread);
-			//p->state = RUNNING;
-
-			swtch(&(c->scheduler), c->thread->context);
-			switchkvm();
-
-			// Process is done running for now.
-			// It should have changed its p->state before coming back.
-			c->proc = 0;
 		}
 		release(&ptable.lock);
 	}
@@ -488,7 +497,6 @@ void yield(void)
 {
 	acquire(&ptable.lock); //DOC: yieldlock
 	mythread()->state = RUNNABLE;
-	myproc()->state = USED;
 	sched();
 	release(&ptable.lock);
 }
@@ -561,10 +569,9 @@ static void
 wakeup1(void *chan)
 {
 	for (struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-		if (p->state == USED)
-			for (struct thread *t = p->threads; t < &p->threads[NTHREAD]; t++)
-				if (t->state == SLEEPING && t->chan == chan)
-					t->state = RUNNABLE;
+		for (struct thread *t = p->threads; t < &p->threads[NTHREAD]; t++)
+			if (t->state == SLEEPING && t->chan == chan)
+				t->state = RUNNABLE;
 }
 
 // Wake up all processes sleeping on chan.
@@ -588,10 +595,12 @@ int kill(int pid)
 			p->killed = 1;
 			// Wake threads from sleep if necessary.
 			for (struct thread *t = p->threads; t < &p->threads[NTHREAD]; t++)
+			{
+				t->killed = 1;
 				if (t->state == SLEEPING)
 					t->state = RUNNABLE;
-			if (p->state == UNUSEDP)
-				p->state = USED;
+			}
+
 			release(&ptable.lock);
 			return 0;
 		}
@@ -604,6 +613,8 @@ int kill(int pid)
 // Print a process listing to console.  For debugging.
 // Runs when user types ^P on console.
 // No lock to avoid wedging a stuck machine further.
+
+/*
 void procdump(void)
 {
 	static char *states[] = {
@@ -634,3 +645,4 @@ void procdump(void)
 		cprintf("\n");
 	}
 }
+*/
