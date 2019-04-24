@@ -30,10 +30,9 @@ OBJS = \
 
 # Cross-compiling (e.g., on Mac OS X)
 # TOOLPREFIX = i386-jos-elf
-TOOLPREFIX = i386-elf-
 
 # Using native tools (e.g., on X86 Linux)
-#TOOLPREFIX =
+#TOOLPREFIX = 
 
 # Try to infer the correct TOOLPREFIX if not set
 ifndef TOOLPREFIX
@@ -167,28 +166,20 @@ mkfs: mkfs.c fs.h
 .PRECIOUS: %.o
 
 UPROGS=\
-	_cat\
-	_echo\
-	_forktest\
-	_grep\
-	_init\
-	_kill\
-	_ln\
-	_ls\
-	_mkdir\
-	_rm\
+	_quitXV6\
+	_OusertestsO\
 	_sh\
-	_stressfs\
-	_usertests\
-	_wc\
-	_zombie\
+	_init\
+	_ls\
+	_echo\
+	_cat\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
 
 -include *.d
 
-clean:
+clean: 
 	rm -f *.tex *.dvi *.idx *.aux *.log *.ind *.ilg \
 	*.o *.d *.asm *.sym vectors.S bootblock entryother \
 	initcode initcode.out kernel xv6.img fs.img kernelmemfs \
@@ -285,3 +276,45 @@ tar:
 	(cd /tmp; tar cf - xv6) | gzip >xv6-rev10.tar.gz  # the next one will be 10 (9/17)
 
 .PHONY: dist-test dist
+_quitXV6: $(ULIB)
+	gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie -c -o quitXV6.o ./Project_Test/XV6_Tests/quitXV6.c
+	ld -m elf_i386 -N -e main -Ttext 0 -o _quitXV6 quitXV6.o $(ULIB)
+	objdump -S _quitXV6 > quitXV6.asm
+	$(OBJDUMP) -t _quitXV6 | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > quitXV6.sym
+
+_OusertestsO: $(ULIB)
+	gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie -c -o OusertestsO.o ./Project_Test/XV6_Tests/OusertestsO.c
+	ld -m elf_i386 -N -e main -Ttext 0 -o _OusertestsO OusertestsO.o $(ULIB)
+	objdump -S _OusertestsO > OusertestsO.asm
+	$(OBJDUMP) -t _OusertestsO | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > OusertestsO.sym
+
+_sh: $(ULIB)
+	gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie -c -o sh.o sh.c
+	ld -m elf_i386 -N -e main -Ttext 0 -o _sh sh.o $(ULIB)
+	objdump -S _sh > sh.asm
+	$(OBJDUMP) -t _sh | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > sh.sym
+
+_init: $(ULIB)
+	gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie -c -o init.o init.c
+	ld -m elf_i386 -N -e main -Ttext 0 -o _init init.o $(ULIB)
+	objdump -S _init > init.asm
+	$(OBJDUMP) -t _init | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > init.sym
+
+_ls: $(ULIB)
+	gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie -c -o ls.o ls.c
+	ld -m elf_i386 -N -e main -Ttext 0 -o _ls ls.o $(ULIB)
+	objdump -S _ls > ls.asm
+	$(OBJDUMP) -t _ls | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > ls.sym
+
+_echo: $(ULIB)
+	gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie -c -o echo.o echo.c
+	ld -m elf_i386 -N -e main -Ttext 0 -o _echo echo.o $(ULIB)
+	objdump -S _echo > echo.asm
+	$(OBJDUMP) -t _echo | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > echo.sym
+
+_cat: $(ULIB)
+	gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie -c -o cat.o cat.c
+	ld -m elf_i386 -N -e main -Ttext 0 -o _cat cat.o $(ULIB)
+	objdump -S _cat > cat.asm
+	$(OBJDUMP) -t _cat | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > cat.sym
+
