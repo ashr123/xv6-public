@@ -106,7 +106,7 @@ int sys_fstat(void)
 	struct file *f;
 	struct stat *st;
 
-	if (argfd(0, 0, &f) < 0 || argptr(1, (void *)&st, sizeof(*st)) < 0)
+	if (argfd(0, 0, &f) < 0 || argptr(1, (void *) &st, sizeof(*st)) < 0)
 		return -1;
 	return filestat(f, st);
 }
@@ -154,7 +154,7 @@ int sys_link(void)
 
 	return 0;
 
-bad:
+	bad:
 	ilock(ip);
 	ip->nlink--;
 	iupdate(ip);
@@ -172,7 +172,7 @@ isdirempty(struct inode *dp)
 
 	for (off = 2 * sizeof(de); off < dp->size; off += sizeof(de))
 	{
-		if (readi(dp, (char *)&de, off, sizeof(de)) != sizeof(de))
+		if (readi(dp, (char *) &de, off, sizeof(de)) != sizeof(de))
 			panic("isdirempty: readi");
 		if (de.inum != 0)
 			return 0;
@@ -217,7 +217,7 @@ int sys_unlink(void)
 	}
 
 	memset(&de, 0, sizeof(de));
-	if (writei(dp, (char *)&de, off, sizeof(de)) != sizeof(de))
+	if (writei(dp, (char *) &de, off, sizeof(de)) != sizeof(de))
 		panic("unlink: writei");
 	if (ip->type == T_DIR)
 	{
@@ -234,7 +234,7 @@ int sys_unlink(void)
 
 	return 0;
 
-bad:
+	bad:
 	iunlockput(dp);
 	end_op();
 	return -1;
@@ -271,7 +271,7 @@ create(char *path, short type, short major, short minor)
 	iupdate(ip);
 
 	if (type == T_DIR)
-	{				 // Create . and .. entries.
+	{                 // Create . and .. entries.
 		dp->nlink++; // for ".."
 		iupdate(dp);
 		// No ip->nlink++ for ".": avoid cyclic ref count.
@@ -307,8 +307,7 @@ int sys_open(void)
 			end_op();
 			return -1;
 		}
-	}
-	else
+	} else
 	{
 		if ((ip = namei(path)) == 0)
 		{
@@ -367,9 +366,9 @@ int sys_mknod(void)
 
 	begin_op();
 	if ((argstr(0, &path)) < 0 ||
-		argint(1, &major) < 0 ||
-		argint(2, &minor) < 0 ||
-		(ip = create(path, T_DEV, major, minor)) == 0)
+	    argint(1, &major) < 0 ||
+	    argint(2, &minor) < 0 ||
+	    (ip = create(path, T_DEV, major, minor)) == 0)
 	{
 		end_op();
 		return -1;
@@ -411,7 +410,7 @@ int sys_exec(void)
 	int i;
 	uint uargv, uarg;
 
-	if (argstr(0, &path) < 0 || argint(1, (int *)&uargv) < 0)
+	if (argstr(0, &path) < 0 || argint(1, (int *) &uargv) < 0)
 	{
 		return -1;
 	}
@@ -420,7 +419,7 @@ int sys_exec(void)
 	{
 		if (i >= NELEM(argv))
 			return -1;
-		if (fetchint(uargv + 4 * i, (int *)&uarg) < 0)
+		if (fetchint(uargv + 4 * i, (int *) &uarg) < 0)
 			return -1;
 		if (uarg == 0)
 		{
@@ -439,7 +438,7 @@ int sys_pipe(void)
 	struct file *rf, *wf;
 	int fd0, fd1;
 
-	if (argptr(0, (void *)&fd, 2 * sizeof(fd[0])) < 0)
+	if (argptr(0, (void *) &fd, 2 * sizeof(fd[0])) < 0)
 		return -1;
 	if (pipealloc(&rf, &wf) < 0)
 		return -1;

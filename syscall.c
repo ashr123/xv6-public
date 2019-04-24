@@ -21,7 +21,7 @@ int fetchint(uint addr, int *ip)
 
 	if (addr >= curproc->sz || addr + 4 > curproc->sz)
 		return -1;
-	*ip = *(int *)(addr);
+	*ip = *(int *) (addr);
 	return 0;
 }
 
@@ -35,8 +35,8 @@ int fetchstr(uint addr, char **pp)
 
 	if (addr >= curproc->sz)
 		return -1;
-	*pp = (char *)addr;
-	ep = (char *)curproc->sz;
+	*pp = (char *) addr;
+	ep = (char *) curproc->sz;
 	for (s = *pp; s < ep; s++)
 	{
 		if (*s == 0)
@@ -61,9 +61,9 @@ int argptr(int n, void **pp, int size)
 
 	if (argint(n, &i) < 0)
 		return -1;
-	if (size < 0 || (uint)i >= curproc->sz || (uint)i + size > curproc->sz)
+	if (size < 0 || (uint) i >= curproc->sz || (uint) i + size > curproc->sz)
 		return -1;
-	*pp = (void *)i;
+	*pp = (void *) i;
 	return 0;
 }
 
@@ -130,31 +130,31 @@ extern int sys_kthread_exit(void); // Added
 extern int sys_kthread_join(void); // Added
 
 static int (*syscalls[])(void) = {
-	[SYS_fork] sys_fork,
-	[SYS_exit] sys_exit,
-	[SYS_wait] sys_wait,
-	[SYS_pipe] sys_pipe,
-	[SYS_read] sys_read,
-	[SYS_kill] sys_kill,
-	[SYS_exec] sys_exec,
-	[SYS_fstat] sys_fstat,
-	[SYS_chdir] sys_chdir,
-	[SYS_dup] sys_dup,
-	[SYS_getpid] sys_getpid,
-	[SYS_sbrk] sys_sbrk,
-	[SYS_sleep] sys_sleep,
-	[SYS_uptime] sys_uptime,
-	[SYS_open] sys_open,
-	[SYS_write] sys_write,
-	[SYS_mknod] sys_mknod,
-	[SYS_unlink] sys_unlink,
-	[SYS_link] sys_link,
-	[SYS_mkdir] sys_mkdir,
-	[SYS_close] sys_close,
-	[SYS_kthread_create] sys_kthread_create ,// Added
-	[SYS_kthread_id] sys_kthread_id ,// Added
-	[SYS_kthread_exit] sys_kthread_exit ,// Added
-	[SYS_kthread_join] sys_kthread_join,
+		[SYS_fork] sys_fork,
+		[SYS_exit] sys_exit,
+		[SYS_wait] sys_wait,
+		[SYS_pipe] sys_pipe,
+		[SYS_read] sys_read,
+		[SYS_kill] sys_kill,
+		[SYS_exec] sys_exec,
+		[SYS_fstat] sys_fstat,
+		[SYS_chdir] sys_chdir,
+		[SYS_dup] sys_dup,
+		[SYS_getpid] sys_getpid,
+		[SYS_sbrk] sys_sbrk,
+		[SYS_sleep] sys_sleep,
+		[SYS_uptime] sys_uptime,
+		[SYS_open] sys_open,
+		[SYS_write] sys_write,
+		[SYS_mknod] sys_mknod,
+		[SYS_unlink] sys_unlink,
+		[SYS_link] sys_link,
+		[SYS_mkdir] sys_mkdir,
+		[SYS_close] sys_close,
+		[SYS_kthread_create] sys_kthread_create,// Added
+		[SYS_kthread_id] sys_kthread_id,// Added
+		[SYS_kthread_exit] sys_kthread_exit,// Added
+		[SYS_kthread_join] sys_kthread_join,
 };
 
 void syscall(void)
@@ -167,11 +167,10 @@ void syscall(void)
 	if (num > 0 && num < NELEM(syscalls) && syscalls[num])
 	{
 		curthread->tf->eax = syscalls[num]();
-	}
-	else
+	} else
 	{
 		cprintf("%d %s: unknown sys call %d\n",
-				curproc->pid, curproc->name, num);
+		        curproc->pid, curproc->name, num);
 		curthread->tf->eax = -1;
 	}
 }

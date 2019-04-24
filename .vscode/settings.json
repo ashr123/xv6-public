@@ -1,8 +1,8 @@
 {
-    "files.associations": {
-        "kthread.h": "c",
-        "defs.h": "c",
-        "memlayout.h": "c",
-        "param.h": "c"
-    }
+  "files.associations": {
+    "kthread.h": "c",
+    "defs.h": "c",
+    "memlayout.h": "c",
+    "param.h": "c"
+  }
 }

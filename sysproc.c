@@ -85,7 +85,7 @@ int sys_kthread_create(void) // Added
 {
 	void (*start_func)();
 	void *stack;
-	if (argptr(0, (void **)&start_func, 0)<0 || argptr(1, &stack, MAX_STACK_SIZE)<0)
+	if (argptr(0, (void **) &start_func, 0) < 0 || argptr(1, &stack, MAX_STACK_SIZE) < 0)
 		return -1;
 	return kthread_create(start_func, stack);
 }

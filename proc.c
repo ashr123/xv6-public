@@ -98,17 +98,17 @@ allocthread(struct proc *p)
 
 	// Leave room for trap frame.
 	sp -= sizeof *t->tf;
-	t->tf = (struct trapframe *)sp;
+	t->tf = (struct trapframe *) sp;
 
 	// Set up new context to start executing at forkret,
 	// which returns to trapret.
 	sp -= 4;
-	*(uint *)sp = (uint)trapret;
+	*(uint *) sp = (uint) trapret;
 
 	sp -= sizeof *t->context;
-	t->context = (struct context *)sp;
+	t->context = (struct context *) sp;
 	memset(t->context, 0, sizeof *t->context);
-	t->context->eip = (uint)forkret;
+	t->context->eip = (uint) forkret;
 	return t->tid;
 }
 
@@ -129,7 +129,7 @@ allocproc(void)
 	release(&ptable.lock);
 	return 0;
 
-found:
+	found:
 	p->state = EMBRYO;
 	p->pid = nextpid++;
 
@@ -155,7 +155,7 @@ void userinit(void)
 	initproc = p;
 	if ((p->pgdir = setupkvm()) == 0)
 		panic("userinit: out of memory?");
-	inituvm(p->pgdir, _binary_initcode_start, (int)_binary_initcode_size);
+	inituvm(p->pgdir, _binary_initcode_start, (int) _binary_initcode_size);
 
 	p->sz = PGSIZE;
 	//allocate first thread tf in proc
@@ -198,8 +198,7 @@ int growproc(int n)
 			release(&ptable.lock);
 			return -1;
 		}
-	}
-	else if (n < 0)
+	} else if (n < 0)
 	{
 		if ((sz = deallocuvm(curproc->pgdir, sz, sz + n)) == 0)
 		{
@@ -546,7 +545,7 @@ void sleep(void *chan, struct spinlock *lk)
 	// (wakeup runs with ptable.lock locked),
 	// so it's okay to release lk.
 	if (lk != &ptable.lock)
-	{						   //DOC: sleeplock0
+	{                           //DOC: sleeplock0
 		acquire(&ptable.lock); //DOC: sleeplock1
 		release(lk);
 	}
@@ -649,17 +648,17 @@ int kthread_create(void (*start_func)(), void *stack)
 	char *sp = curtrd->kstack + KSTACKSIZE;
 	// Leave room for trap frame.
 	sp -= sizeof *curtrd->tf;
-	t->tf = (struct trapframe *)sp;
+	t->tf = (struct trapframe *) sp;
 	// Set up new context to start executing at forkret,
 	// which returns to trapret.
 	sp -= 4;
-	*(uint *)sp = (uint)trapret;
+	*(uint *) sp = (uint) trapret;
 	sp -= sizeof *curtrd->context;
-	t->context = (struct context *)sp;
+	t->context = (struct context *) sp;
 	//memset(firstProc(p)->context, 0, sizeof *firstProc(p)->context);
-	t->context->eip = (uint)forkret;
-	t->tf->eip = (uint)start_func;
-	t->tf->esp = (uint)stack + MAX_STACK_SIZE;
+	t->context->eip = (uint) forkret;
+	t->tf->eip = (uint) start_func;
+	t->tf->esp = (uint) stack + MAX_STACK_SIZE;
 	t->state = RUNNABLE;
 	release(&ptable.lock);
 	return t->tid;
@@ -701,8 +700,7 @@ int kthread_join(int thread_id)
 				close_thread(t);
 				release(&ptable.lock);
 				return 0;
-			}
-			else
+			} else
 			{
 				found = 1;
 			}
