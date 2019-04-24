@@ -1,0 +1,19 @@
+$ Creating thread 1
+Created thread 1 unsuccessfully
+Creating thread 2
+Created thread 2 unsuccessfully
+Creating thread 3
+Created thread 3 unsuccessfully
+Creating thread 4
+Created thread 4 unsuccessfully
+Creating thread 5
+Created thread 5 unsuccessfully
+Creating thread 6
+Created thread 6 unsuccessfully
+Creating thread 7
+Created thread 7 unsuccessfully
+Creating thread 8
+Created thread 8 unsuccessfully
+Creating thread 9
+lapicid 0: panic: release
+ 80104986 80103740 80105c6f 0 0 0 0 0 0 0

@@ -1,0 +1,2 @@
+$ lapicid 3: panic: release
+ 80104986 80103740 80105c6f 0 0 0 0 0 0 0

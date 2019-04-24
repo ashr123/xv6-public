@@ -1,0 +1,19 @@
+Project_Test/Tests/test_7/Makefile:322: warning: overriding recipe for target '_quitXV6'
+Project_Test/Tests/test_7/Makefile:280: warning: ignoring old recipe for target '_quitXV6'
+Project_Test/Tests/test_7/Makefile:334: warning: overriding recipe for target '_sh'
+Project_Test/Tests/test_7/Makefile:292: warning: ignoring old recipe for target '_sh'
+Project_Test/Tests/test_7/Makefile:340: warning: overriding recipe for target '_init'
+Project_Test/Tests/test_7/Makefile:298: warning: ignoring old recipe for target '_init'
+Project_Test/Tests/test_7/Makefile:346: warning: overriding recipe for target '_ls'
+Project_Test/Tests/test_7/Makefile:304: warning: ignoring old recipe for target '_ls'
+Project_Test/Tests/test_7/Makefile:352: warning: overriding recipe for target '_echo'
+Project_Test/Tests/test_7/Makefile:310: warning: ignoring old recipe for target '_echo'
+Project_Test/Tests/test_7/Makefile:358: warning: overriding recipe for target '_cat'
+Project_Test/Tests/test_7/Makefile:316: warning: ignoring old recipe for target '_cat'
+kt_sys6.o: In function `main':
+/home/elhanan/os2/xv6-public/./Project_Test/XV6_Tests/kt_sys6.c:180: undefined reference to `kthread_join'
+/home/elhanan/os2/xv6-public/./Project_Test/XV6_Tests/kt_sys6.c:196: undefined reference to `kthread_join'
+/home/elhanan/os2/xv6-public/./Project_Test/XV6_Tests/kt_sys6.c:222: undefined reference to `kthread_join'
+/home/elhanan/os2/xv6-public/./Project_Test/XV6_Tests/kt_sys6.c:238: undefined reference to `kthread_join'
+Project_Test/Tests/test_7/Makefile:328: recipe for target '_kt_sys6' failed
+make[1]: *** [_kt_sys6] Error 1
