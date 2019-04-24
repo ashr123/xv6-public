@@ -54,7 +54,7 @@ int argint(int n, int *ip)
 // Fetch the nth word-sized system call argument as a pointer
 // to a block of memory of size bytes.  Check that the pointer
 // lies within the process address space.
-int argptr(int n, char **pp, int size)
+int argptr(int n, void **pp, int size)
 {
 	int i;
 	struct proc *curproc = myproc();
@@ -63,7 +63,7 @@ int argptr(int n, char **pp, int size)
 		return -1;
 	if (size < 0 || (uint)i >= curproc->sz || (uint)i + size > curproc->sz)
 		return -1;
-	*pp = (char *)i;
+	*pp = (void *)i;
 	return 0;
 }
 
@@ -127,6 +127,8 @@ extern int sys_kthread_id(void); // Added
 
 extern int sys_kthread_exit(void); // Added
 
+extern int sys_kthread_join(void); // Added
+
 static int (*syscalls[])(void) = {
 	[SYS_fork] sys_fork,
 	[SYS_exit] sys_exit,
@@ -152,6 +154,7 @@ static int (*syscalls[])(void) = {
 	[SYS_kthread_create] sys_kthread_create ,// Added
 	[SYS_kthread_id] sys_kthread_id ,// Added
 	[SYS_kthread_exit] sys_kthread_exit ,// Added
+	[SYS_kthread_join] sys_kthread_join,
 };
 
 void syscall(void)

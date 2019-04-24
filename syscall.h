@@ -23,3 +23,4 @@
 #define SYS_kthread_create 22 // Added
 #define SYS_kthread_id 23 // Added
 #define SYS_kthread_exit 24 // Added
+#define SYS_kthread_join 25 // Added

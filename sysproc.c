@@ -83,11 +83,27 @@ int sys_uptime(void)
 
 int sys_kthread_create(void) // Added
 {
-
+	void (*start_func)();
+	void *stack;
+	if (argptr(0, (void **)&start_func, 0)<0 || argptr(1, &stack, MAX_STACK_SIZE)<0)
+		return -1;
+	return kthread_create(start_func, stack);
 }
-
 
 int sys_kthread_id(void) // Added
 {
 	return kthread_id();
+}
+
+void sys_kthread_exit(void)
+{
+	kthread_exit();
+}
+
+int sys_kthread_join(void)
+{
+	int tid_sleep;
+	if (argint(0, &tid_sleep) < 0)
+		return -1;
+	return kthread_join(tid_sleep);
 }

@@ -73,7 +73,7 @@ struct thread *mythread(void)
 	return t;
 }
 
-static void
+static int
 allocthread(struct proc *p)
 {
 	struct thread *t;
@@ -82,7 +82,7 @@ allocthread(struct proc *p)
 			break;
 
 	if (t == &p->threads[NTHREAD])
-		panic("allocthread failed");
+		return -1;
 
 	t->tid = nexttid++;
 
@@ -98,17 +98,18 @@ allocthread(struct proc *p)
 
 	// Leave room for trap frame.
 	sp -= sizeof *t->tf;
-	t->tf = (struct trapframe *) sp;
+	t->tf = (struct trapframe *)sp;
 
 	// Set up new context to start executing at forkret,
 	// which returns to trapret.
 	sp -= 4;
-	*(uint *) sp = (uint) trapret;
+	*(uint *)sp = (uint)trapret;
 
 	sp -= sizeof *t->context;
-	t->context = (struct context *) sp;
+	t->context = (struct context *)sp;
 	memset(t->context, 0, sizeof *t->context);
-	t->context->eip = (uint) forkret;
+	t->context->eip = (uint)forkret;
+	return t->tid;
 }
 
 //PAGEBREAK: 32
@@ -128,7 +129,7 @@ allocproc(void)
 	release(&ptable.lock);
 	return 0;
 
-	found:
+found:
 	p->state = EMBRYO;
 	p->pid = nextpid++;
 
@@ -137,7 +138,8 @@ allocproc(void)
 	struct thread *th;
 	for (th = p->threads; th < &p->threads[NTHREAD]; th++)
 		th->state = THREAD_UNUSED;
-	allocthread(p);
+	if (allocthread(p) < 0)
+		return 0; // null
 	release(&ptable.lock);
 	return p;
 }
@@ -153,7 +155,7 @@ void userinit(void)
 	initproc = p;
 	if ((p->pgdir = setupkvm()) == 0)
 		panic("userinit: out of memory?");
-	inituvm(p->pgdir, _binary_initcode_start, (int) _binary_initcode_size);
+	inituvm(p->pgdir, _binary_initcode_start, (int)_binary_initcode_size);
 
 	p->sz = PGSIZE;
 	//allocate first thread tf in proc
@@ -196,7 +198,8 @@ int growproc(int n)
 			release(&ptable.lock);
 			return -1;
 		}
-	} else if (n < 0)
+	}
+	else if (n < 0)
 	{
 		if ((sz = deallocuvm(curproc->pgdir, sz, sz + n)) == 0)
 		{
@@ -461,7 +464,6 @@ void scheduler(void)
 				swtch(&(c->scheduler), t->context);
 				switchkvm();
 
-
 				c->proc = 0;
 				c->thread = 0;
 			}
@@ -544,7 +546,7 @@ void sleep(void *chan, struct spinlock *lk)
 	// (wakeup runs with ptable.lock locked),
 	// so it's okay to release lk.
 	if (lk != &ptable.lock)
-	{                           //DOC: sleeplock0
+	{						   //DOC: sleeplock0
 		acquire(&ptable.lock); //DOC: sleeplock1
 		release(lk);
 	}
@@ -612,33 +614,116 @@ int kill(int pid)
 	return -1;
 }
 
-int kthread_create(void (*start_func)(), void *stack){
+int kthread_create(void (*start_func)(), void *stack)
+{
+	struct proc *p = myproc();
+	struct thread *curtrd = mythread();
+	struct thread *t;
+	acquire(&ptable.lock);
+	int isfound = 0;
+	for (t = p->threads; t < &p->threads[NTHREAD]; t++)
+	{
+		if (t->state == THREAD_UNUSED)
+		{
+			isfound = 1;
+		}
+	}
 
+	if (isfound == 0)
+	{
+		release(&ptable.lock);
+		return -1;
+	}
+
+	//found one:
+	t->tid = nexttid++;
+	t->killed = 0;
+
+	// Allocate kernel stack.
+	if ((t->kstack = kalloc()) == 0)
+	{
+		t->state = THREAD_UNUSED;
+		release(&ptable.lock);
+		return -1;
+	}
+	char *sp = curtrd->kstack + KSTACKSIZE;
+	// Leave room for trap frame.
+	sp -= sizeof *curtrd->tf;
+	t->tf = (struct trapframe *)sp;
+	// Set up new context to start executing at forkret,
+	// which returns to trapret.
+	sp -= 4;
+	*(uint *)sp = (uint)trapret;
+	sp -= sizeof *curtrd->context;
+	t->context = (struct context *)sp;
+	//memset(firstProc(p)->context, 0, sizeof *firstProc(p)->context);
+	t->context->eip = (uint)forkret;
+	t->tf->eip = (uint)start_func;
+	t->tf->esp = (uint)stack + MAX_STACK_SIZE;
+	t->state = RUNNABLE;
+	release(&ptable.lock);
+	return t->tid;
 }
 
-
-int kthread_id(){
+int kthread_id()
+{
 	int id = mythread()->tid;
-	if(id == 0)
+	if (id == 0)
 		return -1;
 	return id;
 }
 
-void kthread_exit(){
+void kthread_exit()
+{
 
-	if(myproc()==initproc){
-      	panic("exit from init proc");
+	if (myproc() == initproc)
+	{
+		panic("exit from init proc");
 	}
-	//there may bethreads sleeping on me
-    wakeup(mythread());
+	//there may be threads sleeping on me
+	wakeup(mythread());
 	exit_thread();
 }
 
-	//PAGEBREAK: 36
-	// Print a process listing to console.  For debugging.
-	// Runs when user types ^P on console.
-	// No lock to avoid wedging a stuck machine further.
-	/*
+int kthread_join(int thread_id)
+{
+
+	struct thread *t; //to sleep on
+	struct proc *p = myproc();
+	struct thread *curthreard = mythread();
+	acquire(&ptable.lock);
+	int found = 0;
+	for (t = p->threads; t < &p->threads[NTHREAD]; t++)
+		if (t->tid == thread_id && t != curthreard && t->state != THREAD_UNUSED)
+		{
+			if (t->state == THREAD_ZOMBIE)
+			{
+				close_thread(t);
+				release(&ptable.lock);
+				return 0;
+			}
+			else
+			{
+				found = 1;
+			}
+		}
+
+	if (found == 0)
+	{
+		release(&ptable.lock);
+		return -1;
+	}
+	//found:
+	sleep(t, &ptable.lock); //go to sleep on the thread itself
+	release(&ptable.lock);
+	return 0;
+}
+
+//PAGEBREAK: 36
+// Print a process listing to console.  For debugging.
+// Runs when user types ^P on console.
+// No lock to avoid wedging a stuck machine further.
+/*
 void procdump(void)
 {
 	static char *states[] = {

@@ -10,7 +10,7 @@ int kthread_create(void (*start_func)(), void *stack);
 
 int kthread_id();
 
-void kthread_exit();
+void kthread_exit() __attribute__((noreturn));
 
 int kthread_join(int thread_id);
 

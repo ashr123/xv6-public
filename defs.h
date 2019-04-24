@@ -1,3 +1,4 @@
+#pragma once         // Added
 #include "kthread.h" // Added
 
 struct buf;
@@ -244,7 +245,7 @@ char *strncpy(char *, const char *, int);
 // syscall.c
 int argint(int, int *);
 
-int argptr(int, char **, int);
+int argptr(int, void **, int);
 
 int argstr(int, char **);
 
