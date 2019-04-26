@@ -12,6 +12,12 @@ struct {
 	struct proc proc[NPROC];
 } ptable;
 
+
+struct kthread_mutex_t {
+	uint held, locked, tid;
+	struct spinlock lk;
+} kthread_mutexs[MAX_MUTEXES];
+
 static struct proc *initproc;
 
 int nexttid = 1;
@@ -659,17 +665,63 @@ kthread_join(int tid) {
 }
 
 int kthread_mutex_alloc() {
-	return 0;
+	static struct spinlock lock = {0, "", 0};
+	acquire(&lock);
+	for (int m = 0; m < MAX_MUTEXES; m++) {
+		if (!kthread_mutexs[m].held) {
+			initlock(&kthread_mutexs[m].lk, "kthread_mutex");
+			kthread_mutexs[m].held = 1;
+			release(&lock);
+			return m;
+		}
+	}
+	release(&lock);
+	return -1;
 }
 
 int kthread_mutex_dealloc(int mutex_id) {
-	return 0;
+	acquire(&kthread_mutexs[mutex_id].lk);
+	if (kthread_mutexs[mutex_id].locked || !kthread_mutexs[mutex_id].held) {
+		release(&kthread_mutexs[mutex_id].lk);
+		return -1;
+	} else {
+		kthread_mutexs[mutex_id].held = 0;
+		release(&kthread_mutexs[mutex_id].lk);
+		return 0;
+	}
+
+
 }
 
 int kthread_mutex_lock(int mutex_id) {
+	acquire(&kthread_mutexs[mutex_id].lk);
+	if (!kthread_mutexs[mutex_id].held){
+		release(&kthread_mutexs[mutex_id].lk);
+		return -1;
+	}
+	while (kthread_mutexs[mutex_id].locked) {
+		sleep(&kthread_mutexs[mutex_id], &kthread_mutexs[mutex_id].lk);
+	}
+	kthread_mutexs[mutex_id].tid=mythread()->tid;
+	kthread_mutexs[mutex_id].lk.locked = 1;
+	release(&kthread_mutexs[mutex_id].lk);
 	return 0;
 }
 
 int kthread_mutex_unlock(int mutex_id) {
+	acquire(&kthread_mutexs[mutex_id].lk);
+	if (!kthread_mutexs[mutex_id].held){
+		release(&kthread_mutexs[mutex_id].lk);
+		return -1;
+	}
+	if(kthread_mutexs[mutex_id].tid !=mythread()->tid)
+	{
+		release(&kthread_mutexs[mutex_id].lk);
+		return -1;
+	}
+	kthread_mutexs[mutex_id].lk.locked = 0;
+	release(&kthread_mutexs[mutex_id].lk);
 	return 0;
+
+
 }
