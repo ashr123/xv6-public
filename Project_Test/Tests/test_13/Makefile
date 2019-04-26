@@ -168,8 +168,7 @@ mkfs: mkfs.c fs.h
 
 UPROGS=\
 	_quitXV6\
-	_kt_sys12\
-	_doNoth\
+	_kt_sys1\
 	_sh\
 	_init\
 	_ls\
@@ -325,17 +324,11 @@ _quitXV6: $(ULIB)
 	objdump -S _quitXV6 > quitXV6.asm
 	$(OBJDUMP) -t _quitXV6 | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > quitXV6.sym
 
-_kt_sys12: $(ULIB)
-	gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie -c -o kt_sys12.o ./Project_Test/XV6_Tests/kt_sys12.c
-	ld -m elf_i386 -N -e main -Ttext 0 -o _kt_sys12 kt_sys12.o $(ULIB)
-	objdump -S _kt_sys12 > kt_sys12.asm
-	$(OBJDUMP) -t _kt_sys12 | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > kt_sys12.sym
-
-_doNoth: $(ULIB)
-	gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie -c -o doNoth.o ./Project_Test/XV6_Tests/doNoth.c
-	ld -m elf_i386 -N -e main -Ttext 0 -o _doNoth doNoth.o $(ULIB)
-	objdump -S _doNoth > doNoth.asm
-	$(OBJDUMP) -t _doNoth | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > doNoth.sym
+_kt_sys1: $(ULIB)
+	gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie -c -o kt_sys1.o ./Project_Test/XV6_Tests/kt_sys1.c
+	ld -m elf_i386 -N -e main -Ttext 0 -o _kt_sys1 kt_sys1.o $(ULIB)
+	objdump -S _kt_sys1 > kt_sys1.asm
+	$(OBJDUMP) -t _kt_sys1 | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > kt_sys1.sym
 
 _sh: $(ULIB)
 	gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie -c -o sh.o sh.c
