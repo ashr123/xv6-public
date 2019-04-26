@@ -11,50 +11,49 @@
 #define NUM_PROC 61
 #define STACK_SIZE 500
 
-int execute(char * command, char** args);
+int execute(char *command, char **args);
+
 void createProcess();
 
-int main(int argc, char *argv[]){
-    
-    for(int i = 0;i < 10;i++){
-        createProcess();
-        sleep(1000);
-    }
+int main(int argc, char *argv[]) {
 
-    exit();
+	for (int i = 0; i < 10; i++) {
+		createProcess();
+		sleep(1000);
+	}
+
+	exit();
 }
 
-void createProcess(){
-    char * command;
-    char *args[4];
+void createProcess() {
+	char *command;
+	char *args[4];
 
-    for(int i = 0;i < NUM_PROC;i++){
-        printf(1,"Creating process %d out of %d\n",i+1, NUM_PROC);
-        args[0] = "/cThreW16T";
-        args[1] = 0;
-        command = "/cThreW16T";
-        execute(command,args);
-    }
+	for (int i = 0; i < NUM_PROC; i++) {
+		printf(1, "Creating process %d out of %d\n", i + 1, NUM_PROC);
+		args[0] = "/cThreW16T";
+		args[1] = 0;
+		command = "/cThreW16T";
+		execute(command, args);
+	}
 
-    for(int i = 0;i < NUM_PROC;i++){
-        printf(1,"Waiting for process %d out of %d\n",i+1, NUM_PROC);
-        wait();
-    }
+	for (int i = 0; i < NUM_PROC; i++) {
+		printf(1, "Waiting for process %d out of %d\n", i + 1, NUM_PROC);
+		wait();
+	}
 }
 
-int execute(char * command, char** args){
-    int pid;
+int execute(char *command, char **args) {
+	int pid;
 
-    if((pid = fork()) == 0){
-        exec(command, args);
-        printf(1, "exec %s failed\n", command);
-        exit();
-    }
-    else if(pid > 0){
-        return pid;
-    }
-    else{
-        printf(1,"fork failed\n");
-        exit();
-    }
+	if ((pid = fork()) == 0) {
+		exec(command, args);
+		printf(1, "exec %s failed\n", command);
+		exit();
+	} else if (pid > 0) {
+		return pid;
+	} else {
+		printf(1, "fork failed\n");
+		exit();
+	}
 }

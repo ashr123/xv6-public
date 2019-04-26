@@ -13,7 +13,7 @@
 #define THREAD_NUM 1
 #define STACK_SIZE 500
 
- #define THREAD_START(name, id) \
+#define THREAD_START(name, id) \
     void name(){ \
         printf(1,"thread %d entering\n", id ); \
         sleep( id * 100); \
@@ -26,21 +26,21 @@
 
 THREAD_START(threadStart_1, 1)
 
-void (*threads_starts[])(void) = 
-    {threadStart_1};
+void (*threads_starts[])(void) =
+		{threadStart_1};
 
-int main(int argc, char *argv[]){
-    THREAD_STACK(threadStack_1)
-   
-    void (*threads_stacks[])(void) = 
-        {threadStack_1};
+int main(int argc, char *argv[]) {
+	THREAD_STACK(threadStack_1)
 
-    for(int i = 0;i < THREAD_NUM;i++){
-        kthread_create(threads_starts[i], threads_stacks[i]);
-    }
+	void (*threads_stacks[])(void) =
+			{threadStack_1};
 
-    sleep(1000);
+	for (int i = 0; i < THREAD_NUM; i++) {
+		kthread_create(threads_starts[i], threads_stacks[i]);
+	}
 
-    exit();
+	sleep(1000);
+
+	exit();
 }
 

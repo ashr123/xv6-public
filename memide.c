@@ -19,16 +19,14 @@ static int disksize;
 static uchar *memdisk;
 
 void
-ideinit(void)
-{
+ideinit(void) {
 	memdisk = _binary_fs_img_start;
 	disksize = (uint) _binary_fs_img_size / BSIZE;
 }
 
 // Interrupt handler.
 void
-ideintr(void)
-{
+ideintr(void) {
 	// no-op
 }
 
@@ -36,8 +34,7 @@ ideintr(void)
 // If B_DIRTY is set, write buf to disk, clear B_DIRTY, set B_VALID.
 // Else if B_VALID is not set, read buf from disk, set B_VALID.
 void
-iderw(struct buf *b)
-{
+iderw(struct buf *b) {
 	uchar *p;
 
 	if (!holdingsleep(&b->lock))
@@ -51,8 +48,7 @@ iderw(struct buf *b)
 
 	p = memdisk + b->blockno * BSIZE;
 
-	if (b->flags & B_DIRTY)
-	{
+	if (b->flags & B_DIRTY) {
 		b->flags &= ~B_DIRTY;
 		memmove(p, b->data, BSIZE);
 	} else

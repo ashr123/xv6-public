@@ -8,7 +8,7 @@
 #include "../../traps.h"
 #include "../../memlayout.h"
 
-int main(int argc, char *argv[]){
-    printf(1,"From all threads, become one thread due to exec\n");
-    exit();
+int main(int argc, char *argv[]) {
+	printf(1, "From all threads, become one thread due to exec\n");
+	exit();
 }

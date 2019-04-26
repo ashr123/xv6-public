@@ -32,3 +32,8 @@ SYSCALL(uptime)
 SYSCALL(kthread_create) # Added
 SYSCALL(kthread_id) # Added
 SYSCALL(kthread_exit) # Added
+SYSCALL(kthread_join) # Added
+SYSCALL(kthread_mutex_alloc)# Added
+SYSCALL(kthread_mutex_dealloc)# Added
+SYSCALL(kthread_mutex_lock)# Added
+SYSCALL(kthread_mutex_unlock)# Added

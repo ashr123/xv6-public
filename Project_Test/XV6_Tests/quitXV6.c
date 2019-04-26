@@ -8,7 +8,7 @@
 #include "../../traps.h"
 #include "../../memlayout.h"
 
-int main(int argc, char *argv[]){
-    printf(1,"Finished Yehonatan Peleg Test, quiting...\n");
-    exit();
+int main(int argc, char *argv[]) {
+	printf(1, "Finished Yehonatan Peleg Test, quiting...\n");
+	exit();
 }

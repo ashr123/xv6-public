@@ -1,6 +1,7 @@
 #pragma once         // Added
 
 #include "kthread.h" // Added
+#include "types.h"
 
 struct stat;
 struct rtcdate;

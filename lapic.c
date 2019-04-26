@@ -45,15 +45,13 @@ volatile uint *lapic;  // Initialized in mp.c
 
 //PAGEBREAK!
 static void
-lapicw(int index, int value)
-{
+lapicw(int index, int value) {
 	lapic[index] = value;
 	lapic[ID];  // wait for write to finish, by reading
 }
 
 void
-lapicinit(void)
-{
+lapicinit(void) {
 	if (!lapic)
 		return;
 
@@ -97,8 +95,7 @@ lapicinit(void)
 }
 
 int
-lapicid(void)
-{
+lapicid(void) {
 	if (!lapic)
 		return 0;
 	return lapic[ID] >> 24;
@@ -106,8 +103,7 @@ lapicid(void)
 
 // Acknowledge interrupt.
 void
-lapiceoi(void)
-{
+lapiceoi(void) {
 	if (lapic)
 		lapicw(EOI, 0);
 }
@@ -115,8 +111,7 @@ lapiceoi(void)
 // Spin for a given number of microseconds.
 // On real hardware would want to tune this dynamically.
 void
-microdelay(int us)
-{
+microdelay(int us) {
 }
 
 #define CMOS_PORT    0x70
@@ -125,8 +120,7 @@ microdelay(int us)
 // Start additional processor running entry code at addr.
 // See Appendix B of MultiProcessor Specification.
 void
-lapicstartap(uchar apicid, uint addr)
-{
+lapicstartap(uchar apicid, uint addr) {
 	int i;
 	ushort *wrv;
 
@@ -152,8 +146,7 @@ lapicstartap(uchar apicid, uint addr)
 	// when it is in the halted state due to an INIT.  So the second
 	// should be ignored, but it is part of the official Intel algorithm.
 	// Bochs complains about the second one.  Too bad for Bochs.
-	for (i = 0; i < 2; i++)
-	{
+	for (i = 0; i < 2; i++) {
 		lapicw(ICRHI, apicid << 24);
 		lapicw(ICRLO, STARTUP | (addr >> 12));
 		microdelay(200);
@@ -172,8 +165,7 @@ lapicstartap(uchar apicid, uint addr)
 #define YEAR    0x09
 
 static uint
-cmos_read(uint reg)
-{
+cmos_read(uint reg) {
 	outb(CMOS_PORT, reg);
 	microdelay(200);
 
@@ -181,8 +173,7 @@ cmos_read(uint reg)
 }
 
 static void
-fill_rtcdate(struct rtcdate *r)
-{
+fill_rtcdate(struct rtcdate *r) {
 	r->second = cmos_read(SECS);
 	r->minute = cmos_read(MINS);
 	r->hour = cmos_read(HOURS);
@@ -193,8 +184,7 @@ fill_rtcdate(struct rtcdate *r)
 
 // qemu seems to use 24-hour GWT and the values are BCD encoded
 void
-cmostime(struct rtcdate *r)
-{
+cmostime(struct rtcdate *r) {
 	struct rtcdate t1, t2;
 	int sb, bcd;
 
@@ -203,8 +193,7 @@ cmostime(struct rtcdate *r)
 	bcd = (sb & (1 << 2)) == 0;
 
 	// make sure CMOS doesn't modify time while we read it
-	for (;;)
-	{
+	for (;;) {
 		fill_rtcdate(&t1);
 		if (cmos_read(CMOS_STATA) & CMOS_UIP)
 			continue;
@@ -214,8 +203,7 @@ cmostime(struct rtcdate *r)
 	}
 
 	// convert
-	if (bcd)
-	{
+	if (bcd) {
 #define    CONV(x)     (t1.x = ((t1.x >> 4) * 10) + (t1.x & 0xf))
 		CONV(second);
 		CONV(minute);

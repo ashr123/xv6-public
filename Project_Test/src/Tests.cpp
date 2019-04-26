@@ -28,10 +28,10 @@ using std::stringstream;
 #define RESET "\e[0m"
 
 // Defining Global Variables
-vector<string> testsInputs;
-vector<string> testsExpected;
-vector<vector<string>> testsUserPrograms;
-vector<string> testsHints;
+vector <string> testsInputs;
+vector <string> testsExpected;
+vector <vector<string>> testsUserPrograms;
+vector <string> testsHints;
 vector<int> tesTimeLimits;
 
 std::stringstream ss;
@@ -41,76 +41,73 @@ extern int timeForSmallTest;
 extern int testToExecute;
 
 // Initializing before execution of tests
-void Initialize()
-{ 
-  //change the underlying cout buffer and save the old buffer
-  old_buf = std::cout.rdbuf(ss.rdbuf());
+void Initialize() {
+	//change the underlying cout buffer and save the old buffer
+	old_buf = std::cout.rdbuf(ss.rdbuf());
 
-  // Catching signal
-  signal(SIGINT,sigintHandler);
-  signal(SIGQUIT,sigquitHandler);
+	// Catching signal
+	signal(SIGINT, sigintHandler);
+	signal(SIGQUIT, sigquitHandler);
 }
 
 // Finialize after execution of tests
-void Finialize()
-{   
-    // Restoring cout buffer
-    std::cout.rdbuf(old_buf);
+void Finialize() {
+	// Restoring cout buffer
+	std::cout.rdbuf(old_buf);
 
-    // Printing cout output
-    std::string text_output = ss.str();
-    std::cout << text_output;
+	// Printing cout output
+	std::string text_output = ss.str();
+	std::cout << text_output;
 }
 
 // Initializing tests to be executed
-void InitializingTests()
-{
-    /* ### Example of use ###
+void InitializingTests() {
+	/* ### Example of use ###
 
-     testsFunctions.push_back();
+	 testsFunctions.push_back();
 
-    */
+	*/
 
-    // Initializing tests to be executed
-    testsFunctions.push_back(Operating_System_Test);
+	// Initializing tests to be executed
+	testsFunctions.push_back(Operating_System_Test);
 
-    // Defining tests
-    string test_0_Input = R"V0G0N(
+	// Defining tests
+	string test_0_Input = R"V0G0N(
 OforktestO
     )V0G0N";
-    string test_0_Expected = R"V0G0N(
+	string test_0_Expected = R"V0G0N(
 $ fork test
 fork test OK
 $ $ Finished Yehonatan Peleg Test, quiting...
 )V0G0N";
-    vector<string> test_0_UserPrograms = {"quitXV6","OforktestO"};
-    string test_0_Hint = "General problem with xv6 due to changes made to it.";
-    int test_0_time_limit = 240000;
+	vector <string> test_0_UserPrograms = {"quitXV6", "OforktestO"};
+	string test_0_Hint = "General problem with xv6 due to changes made to it.";
+	int test_0_time_limit = 240000;
 
-    string test_1_Input = R"V0G0N(
+	string test_1_Input = R"V0G0N(
 OusertestsO
 )V0G0N";
-    string test_1_Expected = "#ALL TESTS PASSED"; 
-    vector<string> test_1_UserPrograms = {"quitXV6","OusertestsO"};
-    string test_1_Hint = "General problem with xv6 due to changes made to it."; 
-    int test_1_time_limit = 1800000;
+	string test_1_Expected = "#ALL TESTS PASSED";
+	vector <string> test_1_UserPrograms = {"quitXV6", "OusertestsO"};
+	string test_1_Hint = "General problem with xv6 due to changes made to it.";
+	int test_1_time_limit = 1800000;
 
-    string test_2_Input = R"V0G0N(
+	string test_2_Input = R"V0G0N(
 kt_sys1
     )V0G0N";
-    string test_2_Expected = R"V0G0N(
+	string test_2_Expected = R"V0G0N(
 $ thread 1 entering
 thread 1 exiting
 $ $ Finished Yehonatan Peleg Test, quiting...
 )V0G0N";
-    vector<string> test_2_UserPrograms = {"quitXV6","kt_sys1"};
-    string test_2_Hint = "Problem with creating threads and exiting threads.";
-    int test_2_time_limit = 240000;
+	vector <string> test_2_UserPrograms = {"quitXV6", "kt_sys1"};
+	string test_2_Hint = "Problem with creating threads and exiting threads.";
+	int test_2_time_limit = 240000;
 
-    string test_3_Input = R"V0G0N(
+	string test_3_Input = R"V0G0N(
 kt_sys2
     )V0G0N";
-    string test_3_Expected = R"V0G0N(
+	string test_3_Expected = R"V0G0N(
 $ thread 1 entering
 thread 1 exiting
 thread 2 entering
@@ -133,14 +130,14 @@ thread 10 entering
 thread 10 exiting
 $ $ Finished Yehonatan Peleg Test, quiting...
 )V0G0N";
-    vector<string> test_3_UserPrograms = {"quitXV6","kt_sys2"};
-    string test_3_Hint = "Problem with creating threads and exiting threads.";
-    int test_3_time_limit = 240000;
+	vector <string> test_3_UserPrograms = {"quitXV6", "kt_sys2"};
+	string test_3_Hint = "Problem with creating threads and exiting threads.";
+	int test_3_time_limit = 240000;
 
-    string test_4_Input = R"V0G0N(
+	string test_4_Input = R"V0G0N(
 kt_sys3
     )V0G0N";
-    string test_4_Expected = R"V0G0N(
+	string test_4_Expected = R"V0G0N(
 $ Starting joining threads, should indicate when each thread was sucessfully joined soon
 thread 1 entering
 thread 1 exiting
@@ -172,26 +169,16 @@ Finished joing thread 9
 thread 10 entering
 thread 10 exiting
 Finished joing thread 10
-Thread 1 isn't my thread anymore, as it should be
-Thread 2 isn't my thread anymore, as it should be
-Thread 3 isn't my thread anymore, as it should be
-Thread 4 isn't my thread anymore, as it should be
-Thread 5 isn't my thread anymore, as it should be
-Thread 6 isn't my thread anymore, as it should be
-Thread 7 isn't my thread anymore, as it should be
-Thread 8 isn't my thread anymore, as it should be
-Thread 9 isn't my thread anymore, as it should be
-Thread 10 isn't my thread anymore, as it should be
 $ $ Finished Yehonatan Peleg Test, quiting...
 )V0G0N";
-    vector<string> test_4_UserPrograms = {"quitXV6","kt_sys3","sleep"};
-    string test_4_Hint = "Problem with joing on threads.";
-    int test_4_time_limit = 240000;
+	vector <string> test_4_UserPrograms = {"quitXV6", "kt_sys3", "sleep"};
+	string test_4_Hint = "Problem with joing on threads.";
+	int test_4_time_limit = 240000;
 
-    string test_5_Input = R"V0G0N(
+	string test_5_Input = R"V0G0N(
 kt_sys4
     )V0G0N";
-    string test_5_Expected = R"V0G0N(
+	string test_5_Expected = R"V0G0N(
 $ Creating thread 1
 Finished creating thread 1
 Creating thread 2
@@ -217,14 +204,14 @@ Sleep starting sleep !!!
 Sleep exiting !!!
 $ $ Finished Yehonatan Peleg Test, quiting...
 )V0G0N";
-    vector<string> test_5_UserPrograms = {"quitXV6","kt_sys4","sleep"};
-    string test_5_Hint = "Problem with exec with threads alive.";
-    int test_5_time_limit = 240000;
+	vector <string> test_5_UserPrograms = {"quitXV6", "kt_sys4", "sleep"};
+	string test_5_Hint = "Problem with exec with threads alive.";
+	int test_5_time_limit = 240000;
 
-    string test_6_Input = R"V0G0N(
+	string test_6_Input = R"V0G0N(
 kt_sys5
     )V0G0N";
-    string test_6_Expected = R"V0G0N(
+	string test_6_Expected = R"V0G0N(
 $ Creating thread 1
 Created thread 1 successfully
 Creating thread 2
@@ -294,14 +281,14 @@ Finished creating thread 16 unsuccessfully
 Should have sucessfully created all threads but one
 $ $ Finished Yehonatan Peleg Test, quiting...
 )V0G0N";
-    vector<string> test_6_UserPrograms = {"quitXV6","kt_sys5","creThreads"};
-    string test_6_Hint = "Problem with exec with threads alive.";
-    int test_6_time_limit = 240000;
+	vector <string> test_6_UserPrograms = {"quitXV6", "kt_sys5", "creThreads"};
+	string test_6_Hint = "Problem with exec with threads alive.";
+	int test_6_time_limit = 240000;
 
-    string test_7_Input = R"V0G0N(
+	string test_7_Input = R"V0G0N(
 kt_sys6
     )V0G0N";
-    string test_7_Expected = R"V0G0N(
+	string test_7_Expected = R"V0G0N(
 $ Created thread 1 successfully
 Created thread 2 successfully
 Created thread 3 successfully
@@ -525,14 +512,14 @@ Attempting to join thread 32
 Thread 32 isn't my thread anymore, as it should be
 $ $ Finished Yehonatan Peleg Test, quiting...
 )V0G0N";
-    vector<string> test_7_UserPrograms = {"quitXV6","kt_sys6"};
-    string test_7_Hint = "Problem with cleaning after threads in thread join.";
-    int test_7_time_limit = 420000;
+	vector <string> test_7_UserPrograms = {"quitXV6", "kt_sys6"};
+	string test_7_Hint = "Problem with cleaning after threads in thread join.";
+	int test_7_time_limit = 420000;
 
-    string test_8_Input = R"V0G0N(
+	string test_8_Input = R"V0G0N(
 kt_sys7
     )V0G0N";
-    string test_8_Expected = R"V0G0N(
+	string test_8_Expected = R"V0G0N(
 $ Creating process 1 out of 61
 Creating process 2 out of 61
 Creating process 3 out of 61
@@ -1756,15 +1743,15 @@ Waiting for process 61 out of 61
 $ $ Finished Yehonatan Peleg Test, quiting...
 
 )V0G0N";
-    vector<string> test_8_UserPrograms = {"quitXV6","kt_sys7","cThreW16T"};
-    string test_8_Hint = "Problem with exit when other threads are alive and running, exiting dosen't leave the system in "
-                         "consistent state.";
-    int test_8_time_limit = 420000;
+	vector <string> test_8_UserPrograms = {"quitXV6", "kt_sys7", "cThreW16T"};
+	string test_8_Hint = "Problem with exit when other threads are alive and running, exiting dosen't leave the system in "
+	                     "consistent state.";
+	int test_8_time_limit = 420000;
 
-    string test_9_Input = R"V0G0N(
+	string test_9_Input = R"V0G0N(
 kt_sys8
     )V0G0N";
-    string test_9_Expected = R"V0G0N(
+	string test_9_Expected = R"V0G0N(
 $ Starting joining threads, should indicate when each thread was sucessfully joined soon
 Attempting to join thread 1
 Finished joing thread 1
@@ -1798,14 +1785,14 @@ Thread 9 isn't my thread anymore, as it should be
 Thread 10 isn't my thread anymore, as it should be
 $ $ Finished Yehonatan Peleg Test, quiting...
 )V0G0N";
-    vector<string> test_9_UserPrograms = {"quitXV6","kt_sys8"};
-    string test_9_Hint = "Problem with kthread join, didn't catch threads that exit immediately";
-    int test_9_time_limit = 240000;
+	vector <string> test_9_UserPrograms = {"quitXV6", "kt_sys8"};
+	string test_9_Hint = "Problem with kthread join, didn't catch threads that exit immediately";
+	int test_9_time_limit = 240000;
 
-    string test_10_Input = R"V0G0N(
+	string test_10_Input = R"V0G0N(
 kt_sys9
     )V0G0N";
-    string test_10_Expected = R"V0G0N(
+	string test_10_Expected = R"V0G0N(
 $ Creating thread 1
 Created thread 1 successfully
 Creating thread 2
@@ -1899,14 +1886,14 @@ Attempting to join thread 15
 Thread 15 isn't my thread anymore, as it should be
 $ $ Finished Yehonatan Peleg Test, quiting...
 )V0G0N";
-    vector<string> test_10_UserPrograms = {"quitXV6","kt_sys9"};
-    string test_10_Hint = "Problem with kthread id, using thread join so it should work also";
-    int test_10_time_limit = 240000;
-    
-    string test_11_Input = R"V0G0N(
+	vector <string> test_10_UserPrograms = {"quitXV6", "kt_sys9"};
+	string test_10_Hint = "Problem with kthread id, using thread join so it should work also";
+	int test_10_time_limit = 240000;
+
+	string test_11_Input = R"V0G0N(
 kt_sys10
     )V0G0N";
-    string test_11_Expected = R"V0G0N(
+	string test_11_Expected = R"V0G0N(
 $ Creating thread 1
 Created thread 1 successfully
 Creating thread 2
@@ -1940,14 +1927,14 @@ Created thread 15 successfully
 From all threads, become one thread due to exec
 $ $ Finished Yehonatan Peleg Test, quiting...
 )V0G0N";
-    vector<string> test_11_UserPrograms = {"quitXV6","kt_sys10","allBut1"};
-    string test_11_Hint = "Problem with exec, multiple exec calls do not work when multiple threads are alive and doing exec";
-    int test_11_time_limit = 240000;
+	vector <string> test_11_UserPrograms = {"quitXV6", "kt_sys10", "allBut1"};
+	string test_11_Hint = "Problem with exec, multiple exec calls do not work when multiple threads are alive and doing exec";
+	int test_11_time_limit = 240000;
 
-    string test_12_Input = R"V0G0N(
+	string test_12_Input = R"V0G0N(
 kt_sys11
     )V0G0N";
-    string test_12_Expected = R"V0G0N(
+	string test_12_Expected = R"V0G0N(
 $ Creating thread 1
 Created thread 1 successfully
 Creating thread 2
@@ -1981,14 +1968,14 @@ Created thread 15 successfully
 Program has exited successfully with kthread_exit
 $ $ Finished Yehonatan Peleg Test, quiting...
 )V0G0N";
-    vector<string> test_12_UserPrograms = {"quitXV6","kt_sys11"};
-    string test_12_Hint = "Problem with kthread_exit, should end process when last thread calls";
-    int test_12_time_limit = 240000;
+	vector <string> test_12_UserPrograms = {"quitXV6", "kt_sys11"};
+	string test_12_Hint = "Problem with kthread_exit, should end process when last thread calls";
+	int test_12_time_limit = 240000;
 
-    string test_13_Input = R"V0G0N(
+	string test_13_Input = R"V0G0N(
 kt_sys12
     )V0G0N";
-    string test_13_Expected = R"V0G0N(
+	string test_13_Expected = R"V0G0N(
 $ Creating thread 1
 Created thread 1 successfully
 Creating thread 2
@@ -2022,14 +2009,14 @@ Created thread 15 successfully
 Main test program exiting 
 $ $ Finished Yehonatan Peleg Test, quiting...
 )V0G0N";
-    vector<string> test_13_UserPrograms = {"quitXV6","kt_sys12","doNoth"};
-    string test_13_Hint = "Problem with exit and exec, if executing simultaneously";
-    int test_13_time_limit = 420000;
+	vector <string> test_13_UserPrograms = {"quitXV6", "kt_sys12", "doNoth"};
+	string test_13_Hint = "Problem with exit and exec, if executing simultaneously";
+	int test_13_time_limit = 420000;
 
-    string test_14_Input = R"V0G0N(
+	string test_14_Input = R"V0G0N(
 mutex1
     )V0G0N";
-    string test_14_Expected = R"V0G0N(
+	string test_14_Expected = R"V0G0N(
 $ Attempting to join thread 1
 Finished joing thread 1
 Attempting to join thread 2
@@ -2062,14 +2049,14 @@ Attempting to join thread 15
 Finished joing thread 15
 $ $ Finished Yehonatan Peleg Test, quiting...
 )V0G0N";
-    vector<string> test_14_UserPrograms = {"quitXV6","mutex1"};
-    string test_14_Hint = "Problem with mutex sys calls, basic implementation";
-    int test_14_time_limit = 240000;
+	vector <string> test_14_UserPrograms = {"quitXV6", "mutex1"};
+	string test_14_Hint = "Problem with mutex sys calls, basic implementation";
+	int test_14_time_limit = 240000;
 
-    string test_15_Input = R"V0G0N(
+	string test_15_Input = R"V0G0N(
 mutex2
     )V0G0N";
-    string test_15_Expected = R"V0G0N(
+	string test_15_Expected = R"V0G0N(
 $ Starting allocating a lot of mutexes in different process without deallocating
 Waiting for 0 process
 Waiting for 1 process
@@ -2274,15 +2261,15 @@ Waiting for 199 process
 Finished allocating a lot of mutexes in different process without deallocating
 $ $ Finished Yehonatan Peleg Test, quiting...
 )V0G0N";
-    vector<string> test_15_UserPrograms = {"quitXV6","mutex2"};
-    string test_15_Hint = "Problem with mutex allocation deallocation, allocating a lot of mutexes in different " 
-                          "proccesses without explicitly deallocating shouldn't prevent new mutexes to be allocated";
-    int test_15_time_limit = 240000;
+	vector <string> test_15_UserPrograms = {"quitXV6", "mutex2"};
+	string test_15_Hint = "Problem with mutex allocation deallocation, allocating a lot of mutexes in different "
+	                      "proccesses without explicitly deallocating shouldn't prevent new mutexes to be allocated";
+	int test_15_time_limit = 240000;
 
-    string test_16_Input = R"V0G0N(
+	string test_16_Input = R"V0G0N(
 mutex3
     )V0G0N";
-    string test_16_Expected = R"V0G0N(
+	string test_16_Expected = R"V0G0N(
 $ Attempting to join thread 1
 Finished joing thread 1
 Attempting to join thread 2
@@ -2315,14 +2302,14 @@ Attempting to join thread 15
 Finished joing thread 15
 $ $ Finished Yehonatan Peleg Test, quiting...
 )V0G0N";
-    vector<string> test_16_UserPrograms = {"quitXV6","mutex3"};
-    string test_16_Hint = "Problem with mutex allocation deallocation";
-    int test_16_time_limit = 240000;
+	vector <string> test_16_UserPrograms = {"quitXV6", "mutex3"};
+	string test_16_Hint = "Problem with mutex allocation deallocation";
+	int test_16_time_limit = 240000;
 
-    string test_17_Input = R"V0G0N(
+	string test_17_Input = R"V0G0N(
 mutex4
     )V0G0N";
-    string test_17_Expected = R"V0G0N(
+	string test_17_Expected = R"V0G0N(
 $ Attempting to join thread 1
 mutual exclusion satisfied
 Finished joing thread 1
@@ -2334,14 +2321,14 @@ Attempting to join thread 4
 Finished joing thread 4
 $ $ Finished Yehonatan Peleg Test, quiting...
 )V0G0N";
-    vector<string> test_17_UserPrograms = {"quitXV6","mutex4"};
-    string test_17_Hint = "Problem with mutex, mutual exclusion not satisfied";
-    int test_17_time_limit = 240000;
+	vector <string> test_17_UserPrograms = {"quitXV6", "mutex4"};
+	string test_17_Hint = "Problem with mutex, mutual exclusion not satisfied";
+	int test_17_time_limit = 240000;
 
-    string test_18_Input = R"V0G0N(
+	string test_18_Input = R"V0G0N(
 mutex5
     )V0G0N";
-    string test_18_Expected = R"V0G0N(
+	string test_18_Expected = R"V0G0N(
 $ Attempting to join thread 1
 Finished joing thread 1
 Attempting to join thread 2
@@ -2375,28 +2362,28 @@ Finished joing thread 15
 Sum is 7500
 $ $ Finished Yehonatan Peleg Test, quiting...
 )V0G0N";
-    vector<string> test_18_UserPrograms = {"quitXV6","mutex5"};
-    string test_18_Hint = "Problem with mutex, mutual exclusion not satisfied";
-    int test_18_time_limit = 420000;
+	vector <string> test_18_UserPrograms = {"quitXV6", "mutex5"};
+	string test_18_Hint = "Problem with mutex, mutual exclusion not satisfied";
+	int test_18_time_limit = 420000;
 
-    string test_19_Input = R"V0G0N(
+	string test_19_Input = R"V0G0N(
 mutex6
     )V0G0N";
-    string test_19_Expected = R"V0G0N(
+	string test_19_Expected = R"V0G0N(
 $ Attempting to join thread 1
 Finished joing thread 1
 Attempting to join thread 2
 Finished joing thread 2
 $ $ Finished Yehonatan Peleg Test, quiting...
 )V0G0N";
-    vector<string> test_19_UserPrograms = {"quitXV6","mutex6"};
-    string test_19_Hint = "Problem with mutex, deallocated while locked is not prevented";
-    int test_19_time_limit = 420000;
+	vector <string> test_19_UserPrograms = {"quitXV6", "mutex6"};
+	string test_19_Hint = "Problem with mutex, deallocated while locked is not prevented";
+	int test_19_time_limit = 420000;
 
-    string test_20_Input = R"V0G0N(
+	string test_20_Input = R"V0G0N(
 mutex7
     )V0G0N";
-    string test_20_Expected = R"V0G0N(
+	string test_20_Expected = R"V0G0N(
 $ Attempting to join thread 1
 Finished joing thread 1
 Attempting to join thread 2
@@ -2460,14 +2447,14 @@ Finished joing thread 15
 Sum is 15000
 $ $ Finished Yehonatan Peleg Test, quiting...
 )V0G0N";
-    vector<string> test_20_UserPrograms = {"quitXV6","mutex7"};
-    string test_20_Hint = "Problem with mutex, mutual exclusion not satisfied";
-    int test_20_time_limit = 900000;
+	vector <string> test_20_UserPrograms = {"quitXV6", "mutex7"};
+	string test_20_Hint = "Problem with mutex, mutual exclusion not satisfied";
+	int test_20_time_limit = 900000;
 
-    string test_21_Input = R"V0G0N(
+	string test_21_Input = R"V0G0N(
 mutex8
     )V0G0N";
-    string test_21_Expected = R"V0G0N(
+	string test_21_Expected = R"V0G0N(
 $ Attempting to join thread 1
 Thread 1 starting...
 Thread 1 unlocking unlocked lock...
@@ -2484,50 +2471,50 @@ Attempting to join thread 2
 Finished joing thread 2
 $ $ Finished Yehonatan Peleg Test, quiting...
 )V0G0N";
-    vector<string> test_21_UserPrograms = {"quitXV6","mutex8"};
-    string test_21_Hint = "Problem with mutex, locking and unlocking semantics-i.e., "
-    "unlocking an unlock mutex should not be allowed, unlocking mutex when current thread "
-    "is not the owner should not be allowed, etc...";
-    int test_21_time_limit = 240000;
+	vector <string> test_21_UserPrograms = {"quitXV6", "mutex8"};
+	string test_21_Hint = "Problem with mutex, locking and unlocking semantics-i.e., "
+	                      "unlocking an unlock mutex should not be allowed, unlocking mutex when current thread "
+	                      "is not the owner should not be allowed, etc...";
+	int test_21_time_limit = 240000;
 
-    string test_22_Input = R"V0G0N(
+	string test_22_Input = R"V0G0N(
 trntree1
     )V0G0N";
-    string test_22_Expected = R"V0G0N(
+	string test_22_Expected = R"V0G0N(
 $ $ $ Finished Yehonatan Peleg Test, quiting...
 )V0G0N";
-    vector<string> test_22_UserPrograms = {"quitXV6","trntree1"};
-    string test_22_Hint = "Problem with tournament tree, allocation deallocation";
-    int test_22_time_limit = 240000;
+	vector <string> test_22_UserPrograms = {"quitXV6", "trntree1"};
+	string test_22_Hint = "Problem with tournament tree, allocation deallocation";
+	int test_22_time_limit = 240000;
 
-    string test_23_Input = R"V0G0N(
+	string test_23_Input = R"V0G0N(
 trntree2
     )V0G0N";
-    string test_23_Expected = R"V0G0N(
+	string test_23_Expected = R"V0G0N(
 $ $ $ Finished Yehonatan Peleg Test, quiting...
 )V0G0N";
-    vector<string> test_23_UserPrograms = {"quitXV6","trntree2"};
-    string test_23_Hint = "Problem with tournament tree, acquiring and releasing";
-    int test_23_time_limit = 240000;
+	vector <string> test_23_UserPrograms = {"quitXV6", "trntree2"};
+	string test_23_Hint = "Problem with tournament tree, acquiring and releasing";
+	int test_23_time_limit = 240000;
 
-    string test_24_Input = R"V0G0N(
+	string test_24_Input = R"V0G0N(
 trntree3
     )V0G0N";
-    string test_24_Expected = R"V0G0N(
+	string test_24_Expected = R"V0G0N(
 $ Attempting to join thread 1
 Finished joing thread 1
 Attempting to join thread 2
 Finished joing thread 2
 $ $ Finished Yehonatan Peleg Test, quiting...
 )V0G0N";
-    vector<string> test_24_UserPrograms = {"quitXV6","trntree3"};
-    string test_24_Hint = "Problem with tournament tree, acquiring and releasing and dealloc while in use";
-    int test_24_time_limit = 240000;
+	vector <string> test_24_UserPrograms = {"quitXV6", "trntree3"};
+	string test_24_Hint = "Problem with tournament tree, acquiring and releasing and dealloc while in use";
+	int test_24_time_limit = 240000;
 
-    string test_25_Input = R"V0G0N(
+	string test_25_Input = R"V0G0N(
 trntree4
     )V0G0N";
-    string test_25_Expected = R"V0G0N(
+	string test_25_Expected = R"V0G0N(
 $ Starting tournament test 4
 
 ---------------------------------------
@@ -2574,14 +2561,14 @@ Finished current test for 3 depth
 ---------------------------------------
 $ $ Finished Yehonatan Peleg Test, quiting...
 )V0G0N";
-    vector<string> test_25_UserPrograms = {"quitXV6","trntree4"};
-    string test_25_Hint = "Problem with tournament tree, allocaing deallocating, acquiring and releasing in threads and not in main thread";
-    int test_25_time_limit = 240000;
+	vector <string> test_25_UserPrograms = {"quitXV6", "trntree4"};
+	string test_25_Hint = "Problem with tournament tree, allocaing deallocating, acquiring and releasing in threads and not in main thread";
+	int test_25_time_limit = 240000;
 
-    string test_26_Input = R"V0G0N(
+	string test_26_Input = R"V0G0N(
 trntree5
     )V0G0N";
-    string test_26_Expected = R"V0G0N(
+	string test_26_Expected = R"V0G0N(
 $ Attempting to join thread 1
 mutual exclusion satisfied
 Finished joing thread 1
@@ -2593,14 +2580,14 @@ Attempting to join thread 4
 Finished joing thread 4
 $ $ Finished Yehonatan Peleg Test, quiting...
 )V0G0N";
-    vector<string> test_26_UserPrograms = {"quitXV6","trntree5"};
-    string test_26_Hint = "Problem with tournament tree, mutual exculision in depth 1";
-    int test_26_time_limit = 240000;
+	vector <string> test_26_UserPrograms = {"quitXV6", "trntree5"};
+	string test_26_Hint = "Problem with tournament tree, mutual exculision in depth 1";
+	int test_26_time_limit = 240000;
 
-    string test_27_Input = R"V0G0N(
+	string test_27_Input = R"V0G0N(
 trntree6
     )V0G0N";
-    string test_27_Expected = R"V0G0N(
+	string test_27_Expected = R"V0G0N(
 $ Starting tournament test 6
 
 ---------------------------------------
@@ -2688,28 +2675,28 @@ Finished current test for 4 depth
 ---------------------------------------
 $ $ Finished Yehonatan Peleg Test, quiting...
 )V0G0N";
-    vector<string> test_27_UserPrograms = {"quitXV6","trntree6"};
-    string test_27_Hint = "Problem with tournament tree, mutual exculision not satisfied";
-    int test_27_time_limit = 900000;
+	vector <string> test_27_UserPrograms = {"quitXV6", "trntree6"};
+	string test_27_Hint = "Problem with tournament tree, mutual exculision not satisfied";
+	int test_27_time_limit = 900000;
 
-    string test_28_Input = R"V0G0N(
+	string test_28_Input = R"V0G0N(
 trntree7
     )V0G0N";
-    string test_28_Expected = R"V0G0N(
+	string test_28_Expected = R"V0G0N(
 $ Attempting to join thread 1
 Finished joing thread 1
 Attempting to join thread 2
 Finished joing thread 2
 $ $ Finished Yehonatan Peleg Test, quiting...
 )V0G0N";
-    vector<string> test_28_UserPrograms = {"quitXV6","trntree7"};
-    string test_28_Hint = "Problem with tournament tree, deallocated while locked is not prevented";
-    int test_28_time_limit = 240000;
+	vector <string> test_28_UserPrograms = {"quitXV6", "trntree7"};
+	string test_28_Hint = "Problem with tournament tree, deallocated while locked is not prevented";
+	int test_28_time_limit = 240000;
 
-    string test_29_Input = R"V0G0N(
+	string test_29_Input = R"V0G0N(
 trntree8
     )V0G0N";
-    string test_29_Expected = R"V0G0N(
+	string test_29_Expected = R"V0G0N(
 $ Starting tournament test 8
 
 ---------------------------------------
@@ -2857,14 +2844,14 @@ Finished current test for 4 depth
 ---------------------------------------
 $ $ Finished Yehonatan Peleg Test, quiting...
 )V0G0N";
-    vector<string> test_29_UserPrograms = {"quitXV6","trntree8"};
-    string test_29_Hint = "Problem with tournament tree, mutual exculision not satisfied";
-    int test_29_time_limit = 900000;
+	vector <string> test_29_UserPrograms = {"quitXV6", "trntree8"};
+	string test_29_Hint = "Problem with tournament tree, mutual exculision not satisfied";
+	int test_29_time_limit = 900000;
 
-    string test_30_Input = R"V0G0N(
+	string test_30_Input = R"V0G0N(
 trntree9
     )V0G0N";
-    string test_30_Expected = R"V0G0N(
+	string test_30_Expected = R"V0G0N(
 $ Starting tournament test 9
 
 ---------------------------------------
@@ -3128,196 +3115,196 @@ Finished current test for 4 depth
 ---------------------------------------
 $ $ Finished Yehonatan Peleg Test, quiting...
 )V0G0N";
-    vector<string> test_30_UserPrograms = {"quitXV6","trntree9"};
-    string test_30_Hint = "Problem with tournament tree, dealloc while in use";
-    int test_30_time_limit = 900000;
+	vector <string> test_30_UserPrograms = {"quitXV6", "trntree9"};
+	string test_30_Hint = "Problem with tournament tree, dealloc while in use";
+	int test_30_time_limit = 900000;
 
-    // Adding Tests inputs and expected
-    testsInputs.push_back(test_0_Input);
-    testsExpected.push_back(test_0_Expected);
-    testsUserPrograms.push_back(test_0_UserPrograms);
-    testsHints.push_back(test_0_Hint);
-    tesTimeLimits.push_back(test_0_time_limit);
+	// Adding Tests inputs and expected
+	testsInputs.push_back(test_0_Input);
+	testsExpected.push_back(test_0_Expected);
+	testsUserPrograms.push_back(test_0_UserPrograms);
+	testsHints.push_back(test_0_Hint);
+	tesTimeLimits.push_back(test_0_time_limit);
 
-    testsInputs.push_back(test_1_Input);
-    testsExpected.push_back(test_1_Expected);
-    testsUserPrograms.push_back(test_1_UserPrograms);
-    testsHints.push_back(test_1_Hint);
-    tesTimeLimits.push_back(test_1_time_limit);
+	testsInputs.push_back(test_1_Input);
+	testsExpected.push_back(test_1_Expected);
+	testsUserPrograms.push_back(test_1_UserPrograms);
+	testsHints.push_back(test_1_Hint);
+	tesTimeLimits.push_back(test_1_time_limit);
 
-    testsInputs.push_back(test_2_Input);
-    testsExpected.push_back(test_2_Expected);
-    testsUserPrograms.push_back(test_2_UserPrograms);
-    testsHints.push_back(test_2_Hint);
-    tesTimeLimits.push_back(test_2_time_limit);
+	testsInputs.push_back(test_2_Input);
+	testsExpected.push_back(test_2_Expected);
+	testsUserPrograms.push_back(test_2_UserPrograms);
+	testsHints.push_back(test_2_Hint);
+	tesTimeLimits.push_back(test_2_time_limit);
 
-    testsInputs.push_back(test_3_Input);
-    testsExpected.push_back(test_3_Expected);
-    testsUserPrograms.push_back(test_3_UserPrograms);
-    testsHints.push_back(test_3_Hint);
-    tesTimeLimits.push_back(test_3_time_limit);
+	testsInputs.push_back(test_3_Input);
+	testsExpected.push_back(test_3_Expected);
+	testsUserPrograms.push_back(test_3_UserPrograms);
+	testsHints.push_back(test_3_Hint);
+	tesTimeLimits.push_back(test_3_time_limit);
 
-    testsInputs.push_back(test_4_Input);
-    testsExpected.push_back(test_4_Expected);
-    testsUserPrograms.push_back(test_4_UserPrograms);
-    testsHints.push_back(test_4_Hint);
-    tesTimeLimits.push_back(test_4_time_limit);
+	testsInputs.push_back(test_4_Input);
+	testsExpected.push_back(test_4_Expected);
+	testsUserPrograms.push_back(test_4_UserPrograms);
+	testsHints.push_back(test_4_Hint);
+	tesTimeLimits.push_back(test_4_time_limit);
 
-    testsInputs.push_back(test_5_Input);
-    testsExpected.push_back(test_5_Expected);
-    testsUserPrograms.push_back(test_5_UserPrograms);
-    testsHints.push_back(test_5_Hint);
-    tesTimeLimits.push_back(test_5_time_limit);
+	testsInputs.push_back(test_5_Input);
+	testsExpected.push_back(test_5_Expected);
+	testsUserPrograms.push_back(test_5_UserPrograms);
+	testsHints.push_back(test_5_Hint);
+	tesTimeLimits.push_back(test_5_time_limit);
 
-    testsInputs.push_back(test_6_Input);
-    testsExpected.push_back(test_6_Expected);
-    testsUserPrograms.push_back(test_6_UserPrograms);
-    testsHints.push_back(test_6_Hint);
-    tesTimeLimits.push_back(test_6_time_limit);
+	testsInputs.push_back(test_6_Input);
+	testsExpected.push_back(test_6_Expected);
+	testsUserPrograms.push_back(test_6_UserPrograms);
+	testsHints.push_back(test_6_Hint);
+	tesTimeLimits.push_back(test_6_time_limit);
 
-    testsInputs.push_back(test_7_Input);
-    testsExpected.push_back(test_7_Expected);
-    testsUserPrograms.push_back(test_7_UserPrograms);
-    testsHints.push_back(test_7_Hint);
-    tesTimeLimits.push_back(test_7_time_limit);
+	testsInputs.push_back(test_7_Input);
+	testsExpected.push_back(test_7_Expected);
+	testsUserPrograms.push_back(test_7_UserPrograms);
+	testsHints.push_back(test_7_Hint);
+	tesTimeLimits.push_back(test_7_time_limit);
 
-    testsInputs.push_back(test_8_Input);
-    testsExpected.push_back(test_8_Expected);
-    testsUserPrograms.push_back(test_8_UserPrograms);
-    testsHints.push_back(test_8_Hint);
-    tesTimeLimits.push_back(test_8_time_limit);
+	testsInputs.push_back(test_8_Input);
+	testsExpected.push_back(test_8_Expected);
+	testsUserPrograms.push_back(test_8_UserPrograms);
+	testsHints.push_back(test_8_Hint);
+	tesTimeLimits.push_back(test_8_time_limit);
 
-    testsInputs.push_back(test_9_Input);
-    testsExpected.push_back(test_9_Expected);
-    testsUserPrograms.push_back(test_9_UserPrograms);
-    testsHints.push_back(test_9_Hint);
-    tesTimeLimits.push_back(test_9_time_limit);
+	testsInputs.push_back(test_9_Input);
+	testsExpected.push_back(test_9_Expected);
+	testsUserPrograms.push_back(test_9_UserPrograms);
+	testsHints.push_back(test_9_Hint);
+	tesTimeLimits.push_back(test_9_time_limit);
 
-    testsInputs.push_back(test_10_Input);
-    testsExpected.push_back(test_10_Expected);
-    testsUserPrograms.push_back(test_10_UserPrograms);
-    testsHints.push_back(test_10_Hint);
-    tesTimeLimits.push_back(test_10_time_limit);
+	testsInputs.push_back(test_10_Input);
+	testsExpected.push_back(test_10_Expected);
+	testsUserPrograms.push_back(test_10_UserPrograms);
+	testsHints.push_back(test_10_Hint);
+	tesTimeLimits.push_back(test_10_time_limit);
 
-    testsInputs.push_back(test_11_Input);
-    testsExpected.push_back(test_11_Expected);
-    testsUserPrograms.push_back(test_11_UserPrograms);
-    testsHints.push_back(test_11_Hint);
-    tesTimeLimits.push_back(test_11_time_limit);
+	testsInputs.push_back(test_11_Input);
+	testsExpected.push_back(test_11_Expected);
+	testsUserPrograms.push_back(test_11_UserPrograms);
+	testsHints.push_back(test_11_Hint);
+	tesTimeLimits.push_back(test_11_time_limit);
 
-    testsInputs.push_back(test_12_Input);
-    testsExpected.push_back(test_12_Expected);
-    testsUserPrograms.push_back(test_12_UserPrograms);
-    testsHints.push_back(test_12_Hint);
-    tesTimeLimits.push_back(test_12_time_limit);
+	testsInputs.push_back(test_12_Input);
+	testsExpected.push_back(test_12_Expected);
+	testsUserPrograms.push_back(test_12_UserPrograms);
+	testsHints.push_back(test_12_Hint);
+	tesTimeLimits.push_back(test_12_time_limit);
 
-    testsInputs.push_back(test_13_Input);
-    testsExpected.push_back(test_13_Expected);
-    testsUserPrograms.push_back(test_13_UserPrograms);
-    testsHints.push_back(test_13_Hint);
-    tesTimeLimits.push_back(test_13_time_limit);
+	testsInputs.push_back(test_13_Input);
+	testsExpected.push_back(test_13_Expected);
+	testsUserPrograms.push_back(test_13_UserPrograms);
+	testsHints.push_back(test_13_Hint);
+	tesTimeLimits.push_back(test_13_time_limit);
 
-    testsInputs.push_back(test_14_Input);
-    testsExpected.push_back(test_14_Expected);
-    testsUserPrograms.push_back(test_14_UserPrograms);
-    testsHints.push_back(test_14_Hint);
-    tesTimeLimits.push_back(test_14_time_limit);
+	testsInputs.push_back(test_14_Input);
+	testsExpected.push_back(test_14_Expected);
+	testsUserPrograms.push_back(test_14_UserPrograms);
+	testsHints.push_back(test_14_Hint);
+	tesTimeLimits.push_back(test_14_time_limit);
 
-    testsInputs.push_back(test_15_Input);
-    testsExpected.push_back(test_15_Expected);
-    testsUserPrograms.push_back(test_15_UserPrograms);
-    testsHints.push_back(test_15_Hint);
-    tesTimeLimits.push_back(test_15_time_limit);
+	testsInputs.push_back(test_15_Input);
+	testsExpected.push_back(test_15_Expected);
+	testsUserPrograms.push_back(test_15_UserPrograms);
+	testsHints.push_back(test_15_Hint);
+	tesTimeLimits.push_back(test_15_time_limit);
 
-    testsInputs.push_back(test_16_Input);
-    testsExpected.push_back(test_16_Expected);
-    testsUserPrograms.push_back(test_16_UserPrograms);
-    testsHints.push_back(test_16_Hint);
-    tesTimeLimits.push_back(test_16_time_limit);
+	testsInputs.push_back(test_16_Input);
+	testsExpected.push_back(test_16_Expected);
+	testsUserPrograms.push_back(test_16_UserPrograms);
+	testsHints.push_back(test_16_Hint);
+	tesTimeLimits.push_back(test_16_time_limit);
 
-    testsInputs.push_back(test_17_Input);
-    testsExpected.push_back(test_17_Expected);
-    testsUserPrograms.push_back(test_17_UserPrograms);
-    testsHints.push_back(test_17_Hint);
-    tesTimeLimits.push_back(test_17_time_limit);
+	testsInputs.push_back(test_17_Input);
+	testsExpected.push_back(test_17_Expected);
+	testsUserPrograms.push_back(test_17_UserPrograms);
+	testsHints.push_back(test_17_Hint);
+	tesTimeLimits.push_back(test_17_time_limit);
 
-    testsInputs.push_back(test_18_Input);
-    testsExpected.push_back(test_18_Expected);
-    testsUserPrograms.push_back(test_18_UserPrograms);
-    testsHints.push_back(test_18_Hint);
-    tesTimeLimits.push_back(test_18_time_limit);
+	testsInputs.push_back(test_18_Input);
+	testsExpected.push_back(test_18_Expected);
+	testsUserPrograms.push_back(test_18_UserPrograms);
+	testsHints.push_back(test_18_Hint);
+	tesTimeLimits.push_back(test_18_time_limit);
 
-    testsInputs.push_back(test_19_Input);
-    testsExpected.push_back(test_19_Expected);
-    testsUserPrograms.push_back(test_19_UserPrograms);
-    testsHints.push_back(test_19_Hint);
-    tesTimeLimits.push_back(test_19_time_limit);
+	testsInputs.push_back(test_19_Input);
+	testsExpected.push_back(test_19_Expected);
+	testsUserPrograms.push_back(test_19_UserPrograms);
+	testsHints.push_back(test_19_Hint);
+	tesTimeLimits.push_back(test_19_time_limit);
 
-    testsInputs.push_back(test_20_Input);
-    testsExpected.push_back(test_20_Expected);
-    testsUserPrograms.push_back(test_20_UserPrograms);
-    testsHints.push_back(test_20_Hint);
-    tesTimeLimits.push_back(test_20_time_limit);
+	testsInputs.push_back(test_20_Input);
+	testsExpected.push_back(test_20_Expected);
+	testsUserPrograms.push_back(test_20_UserPrograms);
+	testsHints.push_back(test_20_Hint);
+	tesTimeLimits.push_back(test_20_time_limit);
 
-    testsInputs.push_back(test_21_Input);
-    testsExpected.push_back(test_21_Expected);
-    testsUserPrograms.push_back(test_21_UserPrograms);
-    testsHints.push_back(test_21_Hint);
-    tesTimeLimits.push_back(test_21_time_limit);
+	testsInputs.push_back(test_21_Input);
+	testsExpected.push_back(test_21_Expected);
+	testsUserPrograms.push_back(test_21_UserPrograms);
+	testsHints.push_back(test_21_Hint);
+	tesTimeLimits.push_back(test_21_time_limit);
 
-    testsInputs.push_back(test_22_Input);
-    testsExpected.push_back(test_22_Expected);
-    testsUserPrograms.push_back(test_22_UserPrograms);
-    testsHints.push_back(test_22_Hint);
-    tesTimeLimits.push_back(test_22_time_limit);
+	testsInputs.push_back(test_22_Input);
+	testsExpected.push_back(test_22_Expected);
+	testsUserPrograms.push_back(test_22_UserPrograms);
+	testsHints.push_back(test_22_Hint);
+	tesTimeLimits.push_back(test_22_time_limit);
 
-    testsInputs.push_back(test_23_Input);
-    testsExpected.push_back(test_23_Expected);
-    testsUserPrograms.push_back(test_23_UserPrograms);
-    testsHints.push_back(test_23_Hint);
-    tesTimeLimits.push_back(test_23_time_limit);
+	testsInputs.push_back(test_23_Input);
+	testsExpected.push_back(test_23_Expected);
+	testsUserPrograms.push_back(test_23_UserPrograms);
+	testsHints.push_back(test_23_Hint);
+	tesTimeLimits.push_back(test_23_time_limit);
 
-    testsInputs.push_back(test_24_Input);
-    testsExpected.push_back(test_24_Expected);
-    testsUserPrograms.push_back(test_24_UserPrograms);
-    testsHints.push_back(test_24_Hint);
-    tesTimeLimits.push_back(test_24_time_limit);
+	testsInputs.push_back(test_24_Input);
+	testsExpected.push_back(test_24_Expected);
+	testsUserPrograms.push_back(test_24_UserPrograms);
+	testsHints.push_back(test_24_Hint);
+	tesTimeLimits.push_back(test_24_time_limit);
 
-    testsInputs.push_back(test_25_Input);
-    testsExpected.push_back(test_25_Expected);
-    testsUserPrograms.push_back(test_25_UserPrograms);
-    testsHints.push_back(test_25_Hint);
-    tesTimeLimits.push_back(test_25_time_limit);
+	testsInputs.push_back(test_25_Input);
+	testsExpected.push_back(test_25_Expected);
+	testsUserPrograms.push_back(test_25_UserPrograms);
+	testsHints.push_back(test_25_Hint);
+	tesTimeLimits.push_back(test_25_time_limit);
 
-    testsInputs.push_back(test_26_Input);
-    testsExpected.push_back(test_26_Expected);
-    testsUserPrograms.push_back(test_26_UserPrograms);
-    testsHints.push_back(test_26_Hint);
-    tesTimeLimits.push_back(test_26_time_limit);
+	testsInputs.push_back(test_26_Input);
+	testsExpected.push_back(test_26_Expected);
+	testsUserPrograms.push_back(test_26_UserPrograms);
+	testsHints.push_back(test_26_Hint);
+	tesTimeLimits.push_back(test_26_time_limit);
 
-    testsInputs.push_back(test_27_Input);
-    testsExpected.push_back(test_27_Expected);
-    testsUserPrograms.push_back(test_27_UserPrograms);
-    testsHints.push_back(test_27_Hint);
-    tesTimeLimits.push_back(test_27_time_limit);
+	testsInputs.push_back(test_27_Input);
+	testsExpected.push_back(test_27_Expected);
+	testsUserPrograms.push_back(test_27_UserPrograms);
+	testsHints.push_back(test_27_Hint);
+	tesTimeLimits.push_back(test_27_time_limit);
 
-    testsInputs.push_back(test_28_Input);
-    testsExpected.push_back(test_28_Expected);
-    testsUserPrograms.push_back(test_28_UserPrograms);
-    testsHints.push_back(test_28_Hint);
-    tesTimeLimits.push_back(test_28_time_limit);
+	testsInputs.push_back(test_28_Input);
+	testsExpected.push_back(test_28_Expected);
+	testsUserPrograms.push_back(test_28_UserPrograms);
+	testsHints.push_back(test_28_Hint);
+	tesTimeLimits.push_back(test_28_time_limit);
 
-    testsInputs.push_back(test_29_Input);
-    testsExpected.push_back(test_29_Expected);
-    testsUserPrograms.push_back(test_29_UserPrograms);
-    testsHints.push_back(test_29_Hint);
-    tesTimeLimits.push_back(test_29_time_limit);
+	testsInputs.push_back(test_29_Input);
+	testsExpected.push_back(test_29_Expected);
+	testsUserPrograms.push_back(test_29_UserPrograms);
+	testsHints.push_back(test_29_Hint);
+	tesTimeLimits.push_back(test_29_time_limit);
 
-    testsInputs.push_back(test_30_Input);
-    testsExpected.push_back(test_30_Expected);
-    testsUserPrograms.push_back(test_30_UserPrograms);
-    testsHints.push_back(test_30_Hint);
-    tesTimeLimits.push_back(test_30_time_limit);
+	testsInputs.push_back(test_30_Input);
+	testsExpected.push_back(test_30_Expected);
+	testsUserPrograms.push_back(test_30_UserPrograms);
+	testsHints.push_back(test_30_Hint);
+	tesTimeLimits.push_back(test_30_time_limit);
 }
 
 /* ### Example of use ###
@@ -3345,413 +3332,396 @@ void DEMO_TEST()
 */
 
 // Processing test
-bool procceseTest(string testName,unsigned int testNumber){
-    // Initializing 
-    string testBaseFolder = "Tests/" + testName;
-    string testFolder = "./Project_Test/" + testBaseFolder;
-    string testInputFileName = "/testInput.txt";
-    string testOutputFileName = "/testOutput.txt";
-    string testMakefileErrorFileName = "/makefileError.txt";
-    string testExecuteTestFileName = "/executeTest.sh";
-    string testExecuteTestGDBFileName = "/executeTestGDB.sh";
-    string testsExpectedFileName = "/testExpected.txt";
-    int testCompletedFlag;
+bool procceseTest(string testName, unsigned int testNumber) {
+	// Initializing
+	string testBaseFolder = "Tests/" + testName;
+	string testFolder = "./Project_Test/" + testBaseFolder;
+	string testInputFileName = "/testInput.txt";
+	string testOutputFileName = "/testOutput.txt";
+	string testMakefileErrorFileName = "/makefileError.txt";
+	string testExecuteTestFileName = "/executeTest.sh";
+	string testExecuteTestGDBFileName = "/executeTestGDB.sh";
+	string testsExpectedFileName = "/testExpected.txt";
+	int testCompletedFlag;
 
-    // Setting test time limist 
-    timeForSmallTest = tesTimeLimits.at(testNumber);
-    
-    // Creating XV6 Tests Folder
-    createXV6_TestMakefile(testBaseFolder + "/Makefile",testsUserPrograms.at(testNumber));
+	// Setting test time limist
+	timeForSmallTest = tesTimeLimits.at(testNumber);
 
-    // Executing test
-    string test_makefileCommand = "make --makefile=" + testFolder +  "/Makefile clean qemu";
-    string test_command = "cd .. && " + test_makefileCommand + " -s < " + testFolder + testInputFileName;
-    string got_test = GetStdoutFromCommandAsync(test_command,"Finished Yehonatan Peleg Test, quiting...",timeForSmallTest,testCompletedFlag);    
-    
-    // Cleaning after test
-    string clean_makefileCommand = "make --makefile=" + testFolder +  "/Makefile clean";
-    string clean_command = "cd .. && " + clean_makefileCommand;
-    GetStdoutFromCommand(clean_command);
+	// Creating XV6 Tests Folder
+	createXV6_TestMakefile(testBaseFolder + "/Makefile", testsUserPrograms.at(testNumber));
 
-    // Creating test execute file
-    std::ofstream outTestExecuteCommand(testBaseFolder + testExecuteTestFileName);
-    outTestExecuteCommand << test_makefileCommand;
-    outTestExecuteCommand.close();
+	// Executing test
+	string test_makefileCommand = "make --makefile=" + testFolder + "/Makefile clean qemu";
+	string test_command = "cd .. && " + test_makefileCommand + " -s < " + testFolder + testInputFileName;
+	string got_test = GetStdoutFromCommandAsync(test_command, "Finished Yehonatan Peleg Test, quiting...",
+	                                            timeForSmallTest, testCompletedFlag);
 
-    // Creating test execute GDB file
-    std::ofstream outTestExecuteGDBCommand(testBaseFolder + testExecuteTestGDBFileName);
-    outTestExecuteGDBCommand << test_makefileCommand + "-gdb";
-    outTestExecuteGDBCommand.close();
+	// Cleaning after test
+	string clean_makefileCommand = "make --makefile=" + testFolder + "/Makefile clean";
+	string clean_command = "cd .. && " + clean_makefileCommand;
+	GetStdoutFromCommand(clean_command);
 
-    // Authorizing executing test execute file
-    string authorizeExecuteTestFile_command = "chmod +x " + testBaseFolder + testExecuteTestFileName;
-    GetStdoutFromCommand(authorizeExecuteTestFile_command);
+	// Creating test execute file
+	std::ofstream outTestExecuteCommand(testBaseFolder + testExecuteTestFileName);
+	outTestExecuteCommand << test_makefileCommand;
+	outTestExecuteCommand.close();
 
-    // Authorizing executing test execute GDB file
-    string authorizeExecuteTestGDBFile_command = "chmod +x " + testBaseFolder + testExecuteTestGDBFileName;
-    GetStdoutFromCommand(authorizeExecuteTestGDBFile_command);
-    
-    // Processing test output
-    got_test = processTestOutput(got_test);
+	// Creating test execute GDB file
+	std::ofstream outTestExecuteGDBCommand(testBaseFolder + testExecuteTestGDBFileName);
+	outTestExecuteGDBCommand << test_makefileCommand + "-gdb";
+	outTestExecuteGDBCommand.close();
 
-    // Writing test output to file
-    std::ofstream out(testBaseFolder + testOutputFileName);
-    out << got_test;
-    out.close();
+	// Authorizing executing test execute file
+	string authorizeExecuteTestFile_command = "chmod +x " + testBaseFolder + testExecuteTestFileName;
+	GetStdoutFromCommand(authorizeExecuteTestFile_command);
 
-    // Retrieving test hint 
-    string test_hint = testsHints.at(testNumber);
+	// Authorizing executing test execute GDB file
+	string authorizeExecuteTestGDBFile_command = "chmod +x " + testBaseFolder + testExecuteTestGDBFileName;
+	GetStdoutFromCommand(authorizeExecuteTestGDBFile_command);
 
-    // Asserting test completed
-    if(testCompletedFlag == 1){
-        // Retrieving test expected
-        string expected_test = processCompareString(testsExpected.at(testNumber));
+	// Processing test output
+	got_test = processTestOutput(got_test);
 
-        if(expected_test.at(0) == '#'){
-          if(got_test.find(expected_test.substr(1)) != std::string::npos){
-              test(testNumber,"","$$$ DECLARE GOOD TEST $$$");
-          }
-          else{
-              test(testNumber,got_test,"Output should have contain this: \n" + expected_test,vector<string>{"String value with /n",test_hint});
-          }
-          
-        }
-        else if(expected_test.at(0) == '+'){
-            if(countSubStr(got_test,expected_test.substr(2)) == (expected_test.at(1) - '0')){
-                test(testNumber,"","$$$ DECLARE GOOD TEST $$$");
-            }
-            else{
-               test(testNumber,got_test,"Output should have contain this: \n" + expected_test.substr(2) + "\n" + 
-                    expected_test.at(1) + " times",vector<string>{"String value with /n",test_hint});
-            }
-        }
-        else{
-            test(testNumber,got_test,expected_test,vector<string>{"String value with /n",test_hint});
-        }
-    }
-    else if(testCompletedFlag == 0){
-      // Creating Test Expected
-      std::ofstream outError(testBaseFolder + testMakefileErrorFileName);
-      outError << got_test;
-      outError.close();
+	// Writing test output to file
+	std::ofstream out(testBaseFolder + testOutputFileName);
+	out << got_test;
+	out.close();
 
-      // Declaring Test Execution Ended With Timeout
-      test(testNumber,"$$$ SMALL TEST EXECUTION TIMED OUT $$$","",vector<string>{"",test_hint});
-    }
-    else if(testCompletedFlag == 2){
-      // Declaring Test Execution Was Terminated By User
-      test(testNumber,"$$$ USER TERMINATED TEST $$$","");
-    }
-    else{
-      // Declaring Test Execution Ended With Error
-      test(testNumber,"$$$ TEST EXECUTION ERROR $$$","");
-    }
+	// Retrieving test hint
+	string test_hint = testsHints.at(testNumber);
 
-    return 0;
+	// Asserting test completed
+	if (testCompletedFlag == 1) {
+		// Retrieving test expected
+		string expected_test = processCompareString(testsExpected.at(testNumber));
+
+		if (expected_test.at(0) == '#') {
+			if (got_test.find(expected_test.substr(1)) != std::string::npos) {
+				test(testNumber, "", "$$$ DECLARE GOOD TEST $$$");
+			} else {
+				test(testNumber, got_test, "Output should have contain this: \n" + expected_test,
+				     vector < string > {"String value with /n", test_hint});
+			}
+
+		} else if (expected_test.at(0) == '+') {
+			if (countSubStr(got_test, expected_test.substr(2)) == (expected_test.at(1) - '0')) {
+				test(testNumber, "", "$$$ DECLARE GOOD TEST $$$");
+			} else {
+				test(testNumber, got_test, "Output should have contain this: \n" + expected_test.substr(2) + "\n" +
+				                           expected_test.at(1) + " times",
+				     vector < string > {"String value with /n", test_hint});
+			}
+		} else {
+			test(testNumber, got_test, expected_test, vector < string > {"String value with /n", test_hint});
+		}
+	} else if (testCompletedFlag == 0) {
+		// Creating Test Expected
+		std::ofstream outError(testBaseFolder + testMakefileErrorFileName);
+		outError << got_test;
+		outError.close();
+
+		// Declaring Test Execution Ended With Timeout
+		test(testNumber, "$$$ SMALL TEST EXECUTION TIMED OUT $$$", "", vector < string > {"", test_hint});
+	} else if (testCompletedFlag == 2) {
+		// Declaring Test Execution Was Terminated By User
+		test(testNumber, "$$$ USER TERMINATED TEST $$$", "");
+	} else {
+		// Declaring Test Execution Ended With Error
+		test(testNumber, "$$$ TEST EXECUTION ERROR $$$", "");
+	}
+
+	return 0;
 }
 
 // Running specific test
-void runSpecificTest(int testToExecute){
-    // Initializing
-    string test_name = "test_" + std::to_string(testToExecute);
-  
-    // Declaring specific test is running
-    printf("Running ");
-    printf("test_");
-    printf("%d for specific test request\n\n",testToExecute);
+void runSpecificTest(int testToExecute) {
+	// Initializing
+	string test_name = "test_" + std::to_string(testToExecute);
 
-    // Runnig specific test
-    procceseTest(test_name,testToExecute);
+	// Declaring specific test is running
+	printf("Running ");
+	printf("test_");
+	printf("%d for specific test request\n\n", testToExecute);
+
+	// Runnig specific test
+	procceseTest(test_name, testToExecute);
 }
 
 // Creating Tests
-unsigned int CreateTests()
-{
-  // Creating Tests Folder
-  string createTestFolderCommand = "rm -rf Tests && mkdir Tests";
-  string got_createTestFolder = GetStdoutFromCommand(createTestFolderCommand);
+unsigned int CreateTests() {
+	// Creating Tests Folder
+	string createTestFolderCommand = "rm -rf Tests && mkdir Tests";
+	string got_createTestFolder = GetStdoutFromCommand(createTestFolderCommand);
 
-   // Creating Tests
-  for(unsigned int i = 0;i < testsInputs.size();i++)
-  { 
-    // Retrieving current test to create
-    string currentTestInput = testsInputs.at(i);
-    string currentTestExpected = testsExpected.at(i);
+	// Creating Tests
+	for (unsigned int i = 0; i < testsInputs.size(); i++) {
+		// Retrieving current test to create
+		string currentTestInput = testsInputs.at(i);
+		string currentTestExpected = testsExpected.at(i);
 
-    // Defining Test Folder
-    string testFolder = "./Tests/test_" + std::to_string(i);
-    string testFile = testFolder + "/" + "testInput" + ".txt";
-    string testExpectedFile = testFolder + "/" + "testExpected" + ".txt";
+		// Defining Test Folder
+		string testFolder = "./Tests/test_" + std::to_string(i);
+		string testFile = testFolder + "/" + "testInput" + ".txt";
+		string testExpectedFile = testFolder + "/" + "testExpected" + ".txt";
 
-    // Creating Current Test Files  
-    string createTestsFilesCommand = "mkdir " + testFolder + " && touch " + testFile;
-    string got_createTestsFilesCommand  = GetStdoutFromCommand(createTestsFilesCommand );
+		// Creating Current Test Files
+		string createTestsFilesCommand = "mkdir " + testFolder + " && touch " + testFile;
+		string got_createTestsFilesCommand = GetStdoutFromCommand(createTestsFilesCommand);
 
-    // Creating Test Input
-    std::ofstream outInput(testFile);
-    outInput << currentTestInput + "\nquitXV6\n";
-    outInput.close();
+		// Creating Test Input
+		std::ofstream outInput(testFile);
+		outInput << currentTestInput + "\nquitXV6\n";
+		outInput.close();
 
-    // Creating Test Expected
-    std::ofstream outExpected(testExpectedFile);
-    outExpected << processCompareString(currentTestExpected);
-    outExpected.close();
-  }
+		// Creating Test Expected
+		std::ofstream outExpected(testExpectedFile);
+		outExpected << processCompareString(currentTestExpected);
+		outExpected.close();
+	}
 
-  return testsInputs.size();
+	return testsInputs.size();
 }
 
 // Signal handler for SIGINT
-void sigintHandler(int num){
-    // Declaring execution should be aborted
-    abortExecution = 1;
-    
-    // Catching signal
-    signal(SIGINT,sigintHandler);
+void sigintHandler(int num) {
+	// Declaring execution should be aborted
+	abortExecution = 1;
+
+	// Catching signal
+	signal(SIGINT, sigintHandler);
 }
 
 // Signal handler for SIGQUIT
-void sigquitHandler(int num){
-    // Catching signal
-    signal(SIGQUIT,sigquitHandler);
+void sigquitHandler(int num) {
+	// Catching signal
+	signal(SIGQUIT, sigquitHandler);
 }
 
 // Processing test output
-string processTestOutput(string output){
-  // Serching for start of test code
-  unsigned int inputStartPos = output.find("$",0);
+string processTestOutput(string output) {
+	// Serching for start of test code
+	unsigned int inputStartPos = output.find("$", 0);
 
-  // Returning test code
-  if(inputStartPos < output.length() && inputStartPos >= 0){
-      return processCompareString(output.substr(inputStartPos,output.length())); 
-  }
-  else{
-      return output;
-  }
+	// Returning test code
+	if (inputStartPos < output.length() && inputStartPos >= 0) {
+		return processCompareString(output.substr(inputStartPos, output.length()));
+	} else {
+		return output;
+	}
 }
 
 // Processing compare string, i.e removing spaces from edges
-string processCompareString(string str){
-    // Initializing
-    int start = -1;
-    int end = -1;
+string processCompareString(string str) {
+	// Initializing
+	int start = -1;
+	int end = -1;
 
-    // Retrieving location of first space from start
-    for(unsigned int i = 0;i < str.length();i++){
-      if(str.at(i) > 32){
-        start = i;
-        break;
-      }
-    }
+	// Retrieving location of first space from start
+	for (unsigned int i = 0; i < str.length(); i++) {
+		if (str.at(i) > 32) {
+			start = i;
+			break;
+		}
+	}
 
-    // Retrieving location of first space from end
-    for(unsigned int i = str.length() - 1;i >= 0;i--){
-      if(str.at(i) > 32){
-        end = i;
-        break;
-      }
-    }
+	// Retrieving location of first space from end
+	for (unsigned int i = str.length() - 1; i >= 0; i--) {
+		if (str.at(i) > 32) {
+			end = i;
+			break;
+		}
+	}
 
-    // Asserting there are spaces at the edegs and if so removing them
-    if(start == -1 || end == -1){
-      return str;
-    }
-    else{
-      return str.substr(start,end - start + 1);
-    }
+	// Asserting there are spaces at the edegs and if so removing them
+	if (start == -1 || end == -1) {
+		return str;
+	} else {
+		return str.substr(start, end - start + 1);
+	}
 
 }
 
 // Creating XV6 Tests Makefile
-void createXV6_TestMakefile(string makefilePath,vector<string> userspacePrograms){
-    // Initializing
-    string data;
-    FILE * stream = fopen("../Makefile","r");
-    const int max_buffer = 4000;
-    char buffer[max_buffer];
-    vector<string> defaultUserspacePrograms;
-    string xv6TestsBaseFolder = "XV6_Tests/";
-    string xv6TestsQEMUFolder = "./Project_Test/" + xv6TestsBaseFolder;
+void createXV6_TestMakefile(string makefilePath, vector <string> userspacePrograms) {
+	// Initializing
+	string data;
+	FILE *stream = fopen("../Makefile", "r");
+	const int max_buffer = 4000;
+	char buffer[max_buffer];
+	vector <string> defaultUserspacePrograms;
+	string xv6TestsBaseFolder = "XV6_Tests/";
+	string xv6TestsQEMUFolder = "./Project_Test/" + xv6TestsBaseFolder;
 
-    // Creating default user space programs
-    defaultUserspacePrograms = {"sh", "init","ls", "echo", "cat"};
+	// Creating default user space programs
+	defaultUserspacePrograms = {"sh", "init", "ls", "echo", "cat"};
 
-    // Reading project makefile and adding tests user space programs
-    // while code is for telling the makefile to include these user space programs
-    while (!feof(stream))
-    { 
-      // Reading line of test output
-      if (fgets(buffer, max_buffer, stream) != NULL){
-            if(strstr(buffer,"UPROGS=\\")){
-              data.append(buffer);
-              eraseUserPrograms(data, stream);
-              data.append(processAppendMakefileUPROGS(userspacePrograms));
-              data.append(processAppendMakefileUPROGS(defaultUserspacePrograms));
-              data.append("\n");
-            }
-            else{
-              data.append(buffer);
-            }
-      }
-     
-    }
+	// Reading project makefile and adding tests user space programs
+	// while code is for telling the makefile to include these user space programs
+	while (!feof(stream)) {
+		// Reading line of test output
+		if (fgets(buffer, max_buffer, stream) != NULL) {
+			if (strstr(buffer, "UPROGS=\\")) {
+				data.append(buffer);
+				eraseUserPrograms(data, stream);
+				data.append(processAppendMakefileUPROGS(userspacePrograms));
+				data.append(processAppendMakefileUPROGS(defaultUserspacePrograms));
+				data.append("\n");
+			} else {
+				data.append(buffer);
+			}
+		}
 
-    // Adding build commands for each user space program
-    addUserProgramsBuildCommands(data, userspacePrograms, xv6TestsQEMUFolder);
-    addUserProgramsBuildCommands(data, defaultUserspacePrograms, "");
-    
-    // Creating Tests Makefile
-    std::ofstream outMakefile(makefilePath);
-    outMakefile << data;
-    outMakefile.close();
+	}
+
+	// Adding build commands for each user space program
+	addUserProgramsBuildCommands(data, userspacePrograms, xv6TestsQEMUFolder);
+	addUserProgramsBuildCommands(data, defaultUserspacePrograms, "");
+
+	// Creating Tests Makefile
+	std::ofstream outMakefile(makefilePath);
+	outMakefile << data;
+	outMakefile.close();
 }
 
 // Processing user space programs and creating an entry for each one 
 // inorder to take the makefile of the xv6 to include them
-string processAppendMakefileUPROGS(vector<string> append){
-    // Initializinh
-    string result;
+string processAppendMakefileUPROGS(vector <string> append) {
+	// Initializinh
+	string result;
 
-    // Creating entries
-    for (vector<string>::iterator it = append.begin() ; it != append.end(); ++it){
-      result.append("\t_" + *it + "\\\n");
-    }
+	// Creating entries
+	for (vector<string>::iterator it = append.begin(); it != append.end(); ++it) {
+		result.append("\t_" + *it + "\\\n");
+	}
 
-    return result;
+	return result;
 }
 
 // Erasing user space programs
-void eraseUserPrograms(string &data, FILE * stream){
-    // Initializing
-    const int max_buffer = 4000;
-    char buffer[max_buffer];
+void eraseUserPrograms(string &data, FILE *stream) {
+	// Initializing
+	const int max_buffer = 4000;
+	char buffer[max_buffer];
 
-     // Erasing user space programs
-     while (!feof(stream))
-    {  
-        // Reading line from stream and asserting if its a user program
-      if (fgets(buffer, max_buffer, stream) != NULL){
-            // If its not a user program, appending to buffer and exiting
-            if(!(strstr(buffer,"\\") && strstr(buffer,"\n"))){
-                break;
-            }
-      }
-    }
+	// Erasing user space programs
+	while (!feof(stream)) {
+		// Reading line from stream and asserting if its a user program
+		if (fgets(buffer, max_buffer, stream) != NULL) {
+			// If its not a user program, appending to buffer and exiting
+			if (!(strstr(buffer, "\\") && strstr(buffer, "\n"))) {
+				break;
+			}
+		}
+	}
 }
 
 // Adding build command for user programs
-void addUserProgramsBuildCommands(string &data, vector<string> &userspacePrograms, string folder){
-    // Initializing
-    string userSpaceProgramMakeCode =  
-    "_%: $(ULIB)\n" 
-        "\tgcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie -c -o %.o #.c\n"
-        "\tld -m elf_i386 -N -e main -Ttext 0 -o _% %.o $(ULIB)\n" 
-        "\tobjdump -S _% > %.asm\n" 
-        "\t$(OBJDUMP) -t _% | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > %.sym\n";
+void addUserProgramsBuildCommands(string &data, vector <string> &userspacePrograms, string folder) {
+	// Initializing
+	string userSpaceProgramMakeCode =
+			"_%: $(ULIB)\n"
+			"\tgcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie -c -o %.o #.c\n"
+			"\tld -m elf_i386 -N -e main -Ttext 0 -o _% %.o $(ULIB)\n"
+			"\tobjdump -S _% > %.asm\n"
+			"\t$(OBJDUMP) -t _% | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > %.sym\n";
 
-    // Adding build command for user programs
-    for (vector<string>::iterator it = userspacePrograms.begin() ; it != userspacePrograms.end(); ++it){
-      string temp = replaceInString(userSpaceProgramMakeCode,'%',*it) + "\n";
-      string temp2 = replaceInString(temp,'#',folder + *it);
-      data.append(temp2);
-    }
+	// Adding build command for user programs
+	for (vector<string>::iterator it = userspacePrograms.begin(); it != userspacePrograms.end(); ++it) {
+		string temp = replaceInString(userSpaceProgramMakeCode, '%', *it) + "\n";
+		string temp2 = replaceInString(temp, '#', folder + *it);
+		data.append(temp2);
+	}
 }
 
 // Replacing all occurences of toReplace char with replaceWith string in str
-string replaceInString(string str,char toReplace,string replaceWith){
-    // Initializing
-    string result;
+string replaceInString(string str, char toReplace, string replaceWith) {
+	// Initializing
+	string result;
 
-    // Replacing
-    for (string::iterator it=str.begin(); it!=str.end(); ++it){
-        if(*it == toReplace){
-          result.append(replaceWith);
-        }
-        else{
-          result.append(1,*it);
-        }
-    }
+	// Replacing
+	for (string::iterator it = str.begin(); it != str.end(); ++it) {
+		if (*it == toReplace) {
+			result.append(replaceWith);
+		} else {
+			result.append(1, *it);
+		}
+	}
 
-    return result;
+	return result;
 }
 
 // Finding number of occurences of substr in string
-int countSubStr(string str,string findSubStr){
-    // Initializing
-    int occurrences = 0;
-    string::size_type pos = 0;
+int countSubStr(string str, string findSubStr) {
+	// Initializing
+	int occurrences = 0;
+	string::size_type pos = 0;
 
-    // Counting
-    while ((pos = str.find(findSubStr, pos)) != std::string::npos) {
-          ++occurrences;
-          pos += findSubStr.length();
-    }
-   
-   return occurrences;
+	// Counting
+	while ((pos = str.find(findSubStr, pos)) != std::string::npos) {
+		++occurrences;
+		pos += findSubStr.length();
+	}
+
+	return occurrences;
 }
 
 // Executing Operating_System_Test
-void Operating_System_Test()
-{
-  // Initializing
-  currentTestName = "Operating_System_Test";
-  char arr[50];
-  memset(arr,' ',50);
-  arr[50] = 0;
-  int progress_index = 0;
-  int progress;
-  const char* no_error_progress = "\r\e[38;5;082m[%s]\e[38;5;226m%i%% %d/%d\r\e[0m";
-  const char* yes_error_progress = "\r\e[38;5;082m[%s]\e[38;5;196m%i%% %d/%d\r\e[0m";
+void Operating_System_Test() {
+	// Initializing
+	currentTestName = "Operating_System_Test";
+	char arr[50];
+	memset(arr, ' ', 50);
+	arr[50] = 0;
+	int progress_index = 0;
+	int progress;
+	const char *no_error_progress = "\r\e[38;5;082m[%s]\e[38;5;226m%i%% %d/%d\r\e[0m";
+	const char *yes_error_progress = "\r\e[38;5;082m[%s]\e[38;5;196m%i%% %d/%d\r\e[0m";
 
-  // Creating Tests
-  unsigned int numberOfTests = CreateTests();
-  
-  // Running specific test if demanded
-  if(0 <=  testToExecute && ((unsigned int)testToExecute) < numberOfTests){
-      runSpecificTest(testToExecute);
-      return;
-  }
-  else if(testToExecute != -1){
-      printf("Specific test request was out of bounds(%d)\n\n",testToExecute);
-  }
+	// Creating Tests
+	unsigned int numberOfTests = CreateTests();
 
-  // Printing initial progress
-  printf(no_error_progress,arr,0,0,numberOfTests);
-  fflush(stdout);
+	// Running specific test if demanded
+	if (0 <= testToExecute && ((unsigned int) testToExecute) < numberOfTests) {
+		runSpecificTest(testToExecute);
+		return;
+	} else if (testToExecute != -1) {
+		printf("Specific test request was out of bounds(%d)\n\n", testToExecute);
+	}
 
-  // Testing
-  for(unsigned int i = 0;i < numberOfTests;i++)
-  { 
-    // Testing
-    if(abortExecution == 0){
-      procceseTest("test_" + std::to_string(i),i);
-    }
-    else{
-      // Declaring test was aborted
-      cout << RED << std::endl << "Operating System Test Was Aborted With " << i << " Tests Executed Out Of " << numberOfTests << " !!!" << RESET << std::endl;
-      red = red + (numberOfTests - i);
-      break;
-    }
+	// Printing initial progress
+	printf(no_error_progress, arr, 0, 0, numberOfTests);
+	fflush(stdout);
 
-    float float_index = (float)(i + 1);
-    progress = (float_index/numberOfTests) * 100;
+	// Testing
+	for (unsigned int i = 0; i < numberOfTests; i++) {
+		// Testing
+		if (abortExecution == 0) {
+			procceseTest("test_" + std::to_string(i), i);
+		} else {
+			// Declaring test was aborted
+			cout << RED << std::endl << "Operating System Test Was Aborted With " << i << " Tests Executed Out Of "
+			     << numberOfTests << " !!!" << RESET << std::endl;
+			red = red + (numberOfTests - i);
+			break;
+		}
 
-    // Updating progress 
-    if(progress > progress_index)
-    { 
-      progress_index += 1;
-      memset(arr,'#',(int)((float_index/numberOfTests) * 50));
-    }
-    
-    if(red == 0){
-      printf(no_error_progress,arr,progress,i+1,numberOfTests);
-    }
-    else{
-      printf(yes_error_progress,arr,progress,i+1,numberOfTests);
-    }
-    fflush(stdout);
-  }
-  
-  // Cleaning after progress bar
-  printf("\r                                                                                   \r");
+		float float_index = (float) (i + 1);
+		progress = (float_index / numberOfTests) * 100;
+
+		// Updating progress
+		if (progress > progress_index) {
+			progress_index += 1;
+			memset(arr, '#', (int) ((float_index / numberOfTests) * 50));
+		}
+
+		if (red == 0) {
+			printf(no_error_progress, arr, progress, i + 1, numberOfTests);
+		} else {
+			printf(yes_error_progress, arr, progress, i + 1, numberOfTests);
+		}
+		fflush(stdout);
+	}
+
+	// Cleaning after progress bar
+	printf("\r                                                                                   \r");
 }

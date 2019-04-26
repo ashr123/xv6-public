@@ -29,14 +29,4 @@ Finished joing thread 9
 thread 10 entering
 thread 10 exiting
 Finished joing thread 10
-Thread 1 isn't my thread anymore, as it should be
-Thread 2 isn't my thread anymore, as it should be
-Thread 3 isn't my thread anymore, as it should be
-Thread 4 isn't my thread anymore, as it should be
-Thread 5 isn't my thread anymore, as it should be
-Thread 6 isn't my thread anymore, as it should be
-Thread 7 isn't my thread anymore, as it should be
-Thread 8 isn't my thread anymore, as it should be
-Thread 9 isn't my thread anymore, as it should be
-Thread 10 isn't my thread anymore, as it should be
 $ $ Finished Yehonatan Peleg Test, quiting...

@@ -8,6 +8,6 @@
 #include "../../traps.h"
 #include "../../memlayout.h"
 
-int main(int argc, char *argv[]){
-    exit();
+int main(int argc, char *argv[]) {
+	exit();
 }
