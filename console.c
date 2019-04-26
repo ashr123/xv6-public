@@ -19,14 +19,15 @@ static void consputc(int);
 
 static int panicked = 0;
 
-static struct {
+static struct
+{
 	struct spinlock lock;
 	int locking;
 } cons;
 
 static void
-printint(int xx, int base, int sign) {
-	static char digits[] = "0123456789abcdef";
+printint(int xx, int base, int sign)
+{
 	char buf[16];
 	int i;
 	uint x;
@@ -37,8 +38,9 @@ printint(int xx, int base, int sign) {
 		x = xx;
 
 	i = 0;
-	do {
-		buf[i++] = digits[x % base];
+	do
+	{
+		buf[i++] = "0123456789abcdef"[x % base];
 	} while ((x /= base) != 0);
 
 	if (sign)
@@ -50,7 +52,8 @@ printint(int xx, int base, int sign) {
 //PAGEBREAK: 50
 
 // Print to the console. only understands %d, %x, %p, %s.
-void cprintf(char *fmt, ...) {
+void cprintf(char *fmt, ...)
+{
 	int i, c, locking;
 	uint *argp;
 	char *s;

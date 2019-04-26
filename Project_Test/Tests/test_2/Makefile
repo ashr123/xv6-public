@@ -30,9 +30,10 @@ OBJS = \
 
 # Cross-compiling (e.g., on Mac OS X)
 # TOOLPREFIX = i386-jos-elf
+TOOLPREFIX = i386-elf-
 
 # Using native tools (e.g., on X86 Linux)
-#TOOLPREFIX = 
+#TOOLPREFIX =
 
 # Try to infer the correct TOOLPREFIX if not set
 ifndef TOOLPREFIX
@@ -179,7 +180,7 @@ fs.img: mkfs README $(UPROGS)
 
 -include *.d
 
-clean: 
+clean:
 	rm -f *.tex *.dvi *.idx *.aux *.log *.ind *.ilg \
 	*.o *.d *.asm *.sym vectors.S bootblock entryother \
 	initcode initcode.out kernel xv6.img fs.img kernelmemfs \
@@ -317,7 +318,6 @@ _cat: $(ULIB)
 	ld -m elf_i386 -N -e main -Ttext 0 -o _cat cat.o $(ULIB)
 	objdump -S _cat > cat.asm
 	$(OBJDUMP) -t _cat | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > cat.sym
-
 _quitXV6: $(ULIB)
 	gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie -c -o quitXV6.o ./Project_Test/XV6_Tests/quitXV6.c
 	ld -m elf_i386 -N -e main -Ttext 0 -o _quitXV6 quitXV6.o $(ULIB)

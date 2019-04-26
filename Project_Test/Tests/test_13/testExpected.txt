@@ -28,5 +28,5 @@ Creating thread 14
 Created thread 14 successfully
 Creating thread 15
 Created thread 15 successfully
-Main test program exiting 
+Main test program exiting
 $ $ Finished Yehonatan Peleg Test, quiting...
