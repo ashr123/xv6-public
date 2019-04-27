@@ -10,7 +10,8 @@
 
 #define PIPESIZE 512
 
-struct pipe {
+struct pipe
+{
 	struct spinlock lock;
 	char data[PIPESIZE];
 	uint nread;    // number of bytes read
@@ -19,7 +20,8 @@ struct pipe {
 	int writeopen; // write fd is still open
 };
 
-int pipealloc(struct file **f0, struct file **f1) {
+int pipealloc(struct file **f0, struct file **f1)
+{
 	struct pipe *p;
 
 	p = 0;
@@ -54,16 +56,20 @@ int pipealloc(struct file **f0, struct file **f1) {
 	return -1;
 }
 
-void pipeclose(struct pipe *p, int writable) {
+void pipeclose(struct pipe *p, int writable)
+{
 	acquire(&p->lock);
-	if (writable) {
+	if (writable)
+	{
 		p->writeopen = 0;
 		wakeup(&p->nread);
-	} else {
+	} else
+	{
 		p->readopen = 0;
 		wakeup(&p->nwrite);
 	}
-	if (p->readopen == 0 && p->writeopen == 0) {
+	if (p->readopen == 0 && p->writeopen == 0)
+	{
 		release(&p->lock);
 		kfree((char *) p);
 	} else
@@ -71,13 +77,17 @@ void pipeclose(struct pipe *p, int writable) {
 }
 
 //PAGEBREAK: 40
-int pipewrite(struct pipe *p, char *addr, int n) {
+int pipewrite(struct pipe *p, char *addr, int n)
+{
 	int i;
 
 	acquire(&p->lock);
-	for (i = 0; i < n; i++) {
-		while (p->nwrite == p->nread + PIPESIZE) { //DOC: pipewrite-full
-			if (p->readopen == 0 || myproc()->killed) {
+	for (i = 0; i < n; i++)
+	{
+		while (p->nwrite == p->nread + PIPESIZE)
+		{ //DOC: pipewrite-full
+			if (p->readopen == 0 || myproc()->killed)
+			{
 				release(&p->lock);
 				return -1;
 			}
@@ -91,18 +101,22 @@ int pipewrite(struct pipe *p, char *addr, int n) {
 	return n;
 }
 
-int piperead(struct pipe *p, char *addr, int n) {
+int piperead(struct pipe *p, char *addr, int n)
+{
 	int i;
 
 	acquire(&p->lock);
-	while (p->nread == p->nwrite && p->writeopen) { //DOC: pipe-empty
-		if (myproc()->killed) {
+	while (p->nread == p->nwrite && p->writeopen)
+	{ //DOC: pipe-empty
+		if (myproc()->killed)
+		{
 			release(&p->lock);
 			return -1;
 		}
 		sleep(&p->nread, &p->lock); //DOC: piperead-sleep
 	}
-	for (i = 0; i < n; i++) { //DOC: piperead-copy
+	for (i = 0; i < n; i++)
+	{ //DOC: piperead-copy
 		if (p->nread == p->nwrite)
 			break;
 		addr[i] = p->data[p->nread++ % PIPESIZE];

@@ -1,10 +1,12 @@
 #define NTHREAD 16
 
-enum threadstate {
+enum threadstate
+{
 	RUNNABLE, RUNNING, SLEEPING, THREAD_ZOMBIE, THREAD_UNUSED
 };
 
-struct thread {
+struct thread
+{
 	int tid;                 // Thread id
 	struct proc *owner;         // The proccess owning the thread
 	enum threadstate state;  // Process state
@@ -16,7 +18,8 @@ struct thread {
 };
 
 // Per-CPU state
-struct cpu {
+struct cpu
+{
 	uchar apicid;               // Local APIC ID
 	struct context *scheduler; // swtch() here to enter scheduler
 	struct taskstate ts;       // Used by x86 to find stack for interrupt
@@ -42,7 +45,8 @@ extern int ncpu;
 // The layout of the context matches the layout of the stack in swtch.S
 // at the "Switch stacks" comment. Switch doesn't save eip explicitly,
 // but it is on the stack and allocproc() manipulates it.
-struct context {
+struct context
+{
 	uint edi;
 	uint esi;
 	uint ebx;
@@ -50,12 +54,14 @@ struct context {
 	uint eip;
 };
 
-enum procstate {
+enum procstate
+{
 	PROC_UNUSED, EMBRYO, PROC_ZOMBIE
 };
 
 // Per-process state
-struct proc {
+struct proc
+{
 	uint sz;                        // Size of process memory (bytes)
 	pde_t *pgdir;                    // Page table
 	//	char *kstack;				// Bottom of kernel stack for this process

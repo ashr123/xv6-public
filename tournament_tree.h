@@ -1,4 +1,5 @@
-typedef struct trnmnt_tree {
+typedef struct trnmnt_tree
+{
 	int a;
 	int b;
 } trnmnt_tree;

@@ -7,19 +7,23 @@
 #include "mmu.h"
 #include "proc.h"
 
-int sys_fork(void) {
+int sys_fork(void)
+{
 	return fork();
 }
 
-void sys_exit(void) {
+void sys_exit(void)
+{
 	exit();
 }
 
-int sys_wait(void) {
+int sys_wait(void)
+{
 	return wait();
 }
 
-int sys_kill(void) {
+int sys_kill(void)
+{
 	int pid;
 
 	if (argint(0, &pid) < 0)
@@ -27,11 +31,13 @@ int sys_kill(void) {
 	return kill(pid);
 }
 
-int sys_getpid(void) {
+int sys_getpid(void)
+{
 	return kthread_id();
 }
 
-int sys_sbrk(void) {
+int sys_sbrk(void)
+{
 	int addr;
 	int n;
 
@@ -43,7 +49,8 @@ int sys_sbrk(void) {
 	return addr;
 }
 
-int sys_sleep(void) {
+int sys_sleep(void)
+{
 	int n;
 	uint ticks0;
 
@@ -51,8 +58,10 @@ int sys_sleep(void) {
 		return -1;
 	acquire(&tickslock);
 	ticks0 = ticks;
-	while (ticks - ticks0 < n) {
-		if (myproc()->killed) {
+	while (ticks - ticks0 < n)
+	{
+		if (myproc()->killed)
+		{
 			release(&tickslock);
 			return -1;
 		}
@@ -64,62 +73,64 @@ int sys_sleep(void) {
 
 // return how many clock tick interrupts have occurred
 // since start.
-int sys_uptime(void) {
+int sys_uptime(void)
+{
 	acquire(&tickslock);
 	uint xticks = ticks;
 	release(&tickslock);
 	return xticks;
 }
 
-int
-sys_kthread_create(void) {
-	int stack, start_func;
-	if (argint(0, &start_func) < 0 || argint(1, &stack) < 0)
+int sys_kthread_create(void)
+{
+	void (*start_func)();
+	void *stack;
+	if (argptr(0, (void **) &start_func, 0) < 0 || argptr(1, &stack, 0) < 0)
 		return -1;
-	return kthread_create((void (*)(void *)) start_func, (void *) stack);
+	return kthread_create(start_func, stack);
 }
-
 
 int sys_kthread_id(void) // Added
 {
 	return kthread_id();
 }
 
-void sys_kthread_exit(void) {
+void sys_kthread_exit(void) // Added
+{
 	kthread_exit();
 }
 
-int sys_kthread_join(void) {
+int sys_kthread_join(void) // Added
+{
 	int tid_sleep;
 	if (argint(0, &tid_sleep) < 0)
 		return -1;
 	return kthread_join(tid_sleep);
 }
 
-
-int
-sys_kthread_mutex_alloc(void) {
+int sys_kthread_mutex_alloc(void) // Added
+{
 	return kthread_mutex_alloc();
 }
 
-int
-sys_kthread_mutex_dealloc(void) {
+int sys_kthread_mutex_dealloc(void) // Added
+{
 	int pid;
 	if (argint(0, &pid) < 0)
 		return -1;
 	return kthread_mutex_dealloc(pid);
 }
 
-int
-sys_kthread_mutex_lock(void) {
+int sys_kthread_mutex_lock(void) // Added
+{
 	int pid;
 	if (argint(0, &pid) < 0)
 		return -1;
 	return kthread_mutex_lock(pid);
 }
 
-int
-sys_kthread_mutex_unlock(void) {
+int sys_kthread_mutex_unlock(void) // Added
+{
 	int pid;
 	if (argint(0, &pid) < 0)
 		return -1;

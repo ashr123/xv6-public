@@ -11,7 +11,8 @@
 //
 // mkfs computes the super block and builds an initial file system. The
 // super block describes the disk layout:
-struct superblock {
+struct superblock
+{
 	uint size;         // Size of file system image (blocks)
 	uint nblocks;      // Number of data blocks
 	uint ninodes;      // Number of inodes.
@@ -26,7 +27,8 @@ struct superblock {
 #define MAXFILE (NDIRECT + NINDIRECT)
 
 // On-disk inode structure
-struct dinode {
+struct dinode
+{
 	short type;           // File type
 	short major;          // Major device number (T_DEV only)
 	short minor;          // Minor device number (T_DEV only)
@@ -50,7 +52,8 @@ struct dinode {
 // Directory is a file containing a sequence of dirent structures.
 #define DIRSIZ 14
 
-struct dirent {
+struct dirent
+{
 	ushort inum;
 	char name[DIRSIZ];
 };

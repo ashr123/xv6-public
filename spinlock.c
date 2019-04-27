@@ -10,7 +10,8 @@
 #include "spinlock.h"
 
 void
-initlock(struct spinlock *lk, char *name) {
+initlock(struct spinlock *lk, char *name)
+{
 	lk->name = name;
 	lk->locked = 0;
 	lk->cpu = 0;
@@ -21,7 +22,8 @@ initlock(struct spinlock *lk, char *name) {
 // Holding a lock for a long time may cause
 // other CPUs to waste time spinning to acquire it.
 void
-acquire(struct spinlock *lk) {
+acquire(struct spinlock *lk)
+{
 	pushcli(); // disable interrupts to avoid deadlock.
 	if (holding(lk))
 		panic("acquire");
@@ -41,7 +43,8 @@ acquire(struct spinlock *lk) {
 
 // Release the lock.
 void
-release(struct spinlock *lk) {
+release(struct spinlock *lk)
+{
 	if (!holding(lk))
 		panic("release");
 
@@ -65,12 +68,14 @@ release(struct spinlock *lk) {
 
 // Record the current call stack in pcs[] by following the %ebp chain.
 void
-getcallerpcs(void *v, uint pcs[]) {
+getcallerpcs(void *v, uint pcs[])
+{
 	uint *ebp;
 	int i;
 
 	ebp = (uint *) v - 2;
-	for (i = 0; i < 10; i++) {
+	for (i = 0; i < 10; i++)
+	{
 		if (ebp == 0 || ebp < (uint *) KERNBASE || ebp == (uint *) 0xffffffff)
 			break;
 		pcs[i] = ebp[1];     // saved %eip
@@ -82,7 +87,8 @@ getcallerpcs(void *v, uint pcs[]) {
 
 // Check whether this cpu is holding the lock.
 int
-holding(struct spinlock *lock) {
+holding(struct spinlock *lock)
+{
 	int r;
 	pushcli();
 	r = lock->locked && lock->cpu == mycpu();
@@ -96,7 +102,8 @@ holding(struct spinlock *lock) {
 // are off, then pushcli, popcli leaves them off.
 
 void
-pushcli(void) {
+pushcli(void)
+{
 	int eflags;
 
 	eflags = readeflags();
@@ -107,7 +114,8 @@ pushcli(void) {
 }
 
 void
-popcli(void) {
+popcli(void)
+{
 	if (readeflags() & FL_IF)
 		panic("popcli - interruptible");
 	if (--mycpu()->ncli < 0)

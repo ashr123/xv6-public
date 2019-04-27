@@ -25,26 +25,30 @@
 volatile struct ioapic *ioapic;
 
 // IO APIC MMIO structure: write reg, then read or write data.
-struct ioapic {
+struct ioapic
+{
 	uint reg;
 	uint pad[3];
 	uint data;
 };
 
 static uint
-ioapicread(int reg) {
+ioapicread(int reg)
+{
 	ioapic->reg = reg;
 	return ioapic->data;
 }
 
 static void
-ioapicwrite(int reg, uint data) {
+ioapicwrite(int reg, uint data)
+{
 	ioapic->reg = reg;
 	ioapic->data = data;
 }
 
 void
-ioapicinit(void) {
+ioapicinit(void)
+{
 	int i, id, maxintr;
 
 	ioapic = (volatile struct ioapic *) IOAPIC;
@@ -55,14 +59,16 @@ ioapicinit(void) {
 
 	// Mark all interrupts edge-triggered, active high, disabled,
 	// and not routed to any CPUs.
-	for (i = 0; i <= maxintr; i++) {
+	for (i = 0; i <= maxintr; i++)
+	{
 		ioapicwrite(REG_TABLE + 2 * i, INT_DISABLED | (T_IRQ0 + i));
 		ioapicwrite(REG_TABLE + 2 * i + 1, 0);
 	}
 }
 
 void
-ioapicenable(int irq, int cpunum) {
+ioapicenable(int irq, int cpunum)
+{
 	// Mark interrupt edge-triggered, active high,
 	// enabled, and routed to the given cpunum,
 	// which happens to be that cpu's APIC ID.

@@ -1,4 +1,5 @@
-struct buf {
+struct buf
+{
 	int flags;
 	uint dev;
 	uint blockno;

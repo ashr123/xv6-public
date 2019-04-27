@@ -7,7 +7,8 @@
 #include "x86.h"
 #include "elf.h"
 
-int exec(char *path, char **argv) {
+int exec(char *path, char **argv)
+{
 	char *s, *last;
 	int i, off;
 	uint argc, sz, sp, ustack[3 + MAXARG + 1];
@@ -19,15 +20,18 @@ int exec(char *path, char **argv) {
 	struct thread *curthread = mythread();
 	lockptable();
 
-	if (curthread->killed) {
+	if (curthread->killed)
+	{
 		unlockptable();
 		exit_thread();
 	}
 
-	for (struct thread *t = myproc()->threads; t < &myproc()->threads[NTHREAD]; t++) {
+	for (struct thread *t = myproc()->threads; t < &myproc()->threads[NTHREAD]; t++)
+	{
 		if (t->tid != mythread()->tid && (t->state != THREAD_UNUSED || t->state != THREAD_ZOMBIE))
 			t->killed = 1;
-		if (t->state == SLEEPING) {
+		if (t->state == SLEEPING)
+		{
 			t->state = RUNNABLE;
 		}
 	}
@@ -35,7 +39,8 @@ int exec(char *path, char **argv) {
 	unlockptable();
 	begin_op();
 
-	if ((ip = namei(path)) == 0) {
+	if ((ip = namei(path)) == 0)
+	{
 		end_op();
 		cprintf("exec: fail\n");
 		return -1;
@@ -54,7 +59,8 @@ int exec(char *path, char **argv) {
 
 	// Load program into memory.
 	sz = 0;
-	for (i = 0, off = elf.phoff; i < elf.phnum; i++, off += sizeof(ph)) {
+	for (i = 0, off = elf.phoff; i < elf.phnum; i++, off += sizeof(ph))
+	{
 		if (readi(ip, (char *) &ph, off, sizeof(ph)) != sizeof(ph))
 			goto bad;
 		if (ph.type != ELF_PROG_LOAD)
@@ -83,7 +89,8 @@ int exec(char *path, char **argv) {
 	sp = sz;
 
 	// Push argument strings, prepare rest of stack in ustack.
-	for (argc = 0; argv[argc]; argc++) {
+	for (argc = 0; argv[argc]; argc++)
+	{
 		if (argc >= MAXARG)
 			goto bad;
 		sp = (sp - (strlen(argv[argc]) + 1)) & ~3;
@@ -121,7 +128,8 @@ int exec(char *path, char **argv) {
 	bad:
 	if (pgdir)
 		freevm(pgdir);
-	if (ip) {
+	if (ip)
+	{
 		iunlockput(ip);
 		end_op();
 	}
