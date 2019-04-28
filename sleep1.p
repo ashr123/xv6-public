@@ -85,8 +85,7 @@ acquire(lk)
 fi
 }
 
-inline wakeup()
-{
+inline wakeup() {
 	w = 0;
 	do
 		::w < N->
@@ -99,8 +98,7 @@ inline wakeup()
 
 active[N]
 
-proctype consumer()
-{
+proctype consumer() {
 	byte i, x;
 
 	i = 0;
@@ -122,8 +120,7 @@ proctype consumer()
 
 active[N]
 
-proctype producer()
-{
+proctype producer() {
 	byte i, x, w;
 
 	i = 0;

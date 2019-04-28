@@ -37,8 +37,7 @@ static void idestart(struct buf *);
 
 // Wait for IDE disk to become ready.
 static int
-idewait(int checkerr)
-{
+idewait(int checkerr) {
 	int r;
 
 	while (((r = inb(0x1f7)) & (IDE_BSY | IDE_DRDY)) != IDE_DRDY);
@@ -48,8 +47,7 @@ idewait(int checkerr)
 }
 
 void
-ideinit(void)
-{
+ideinit(void) {
 	int i;
 
 	initlock(&idelock, "ide");
@@ -58,10 +56,8 @@ ideinit(void)
 
 	// Check if disk 1 is present
 	outb(0x1f6, 0xe0 | (1 << 4));
-	for (i = 0; i < 1000; i++)
-	{
-		if (inb(0x1f7) != 0)
-		{
+	for (i = 0; i < 1000; i++) {
+		if (inb(0x1f7) != 0) {
 			havedisk1 = 1;
 			break;
 		}
@@ -73,8 +69,7 @@ ideinit(void)
 
 // Start the request for b.  Caller must hold idelock.
 static void
-idestart(struct buf *b)
-{
+idestart(struct buf *b) {
 	if (b == 0)
 		panic("idestart");
 	if (b->blockno >= FSSIZE)
@@ -93,27 +88,23 @@ idestart(struct buf *b)
 	outb(0x1f4, (sector >> 8) & 0xff);
 	outb(0x1f5, (sector >> 16) & 0xff);
 	outb(0x1f6, 0xe0 | ((b->dev & 1) << 4) | ((sector >> 24) & 0x0f));
-	if (b->flags & B_DIRTY)
-	{
+	if (b->flags & B_DIRTY) {
 		outb(0x1f7, write_cmd);
 		outsl(0x1f0, b->data, BSIZE / 4);
-	} else
-	{
+	} else {
 		outb(0x1f7, read_cmd);
 	}
 }
 
 // Interrupt handler.
 void
-ideintr(void)
-{
+ideintr(void) {
 	struct buf *b;
 
 	// First queued buffer is the active request.
 	acquire(&idelock);
 
-	if ((b = idequeue) == 0)
-	{
+	if ((b = idequeue) == 0) {
 		release(&idelock);
 		return;
 	}
@@ -140,8 +131,7 @@ ideintr(void)
 // If B_DIRTY is set, write buf to disk, clear B_DIRTY, set B_VALID.
 // Else if B_VALID is not set, read buf from disk, set B_VALID.
 void
-iderw(struct buf *b)
-{
+iderw(struct buf *b) {
 	struct buf **pp;
 
 	if (!holdingsleep(&b->lock))
@@ -164,8 +154,7 @@ iderw(struct buf *b)
 		idestart(b);
 
 	// Wait for request to finish.
-	while ((b->flags & (B_VALID | B_DIRTY)) != B_VALID)
-	{
+	while ((b->flags & (B_VALID | B_DIRTY)) != B_VALID) {
 		sleep(b, &idelock);
 	}
 

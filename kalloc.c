@@ -14,13 +14,11 @@ void freerange(void *vstart, void *vend);
 extern char end[]; // first address after kernel loaded from ELF file
 // defined by the kernel linker script in kernel.ld
 
-struct run
-{
+struct run {
 	struct run *next;
 };
 
-struct
-{
+struct {
 	struct spinlock lock;
 	int use_lock;
 	struct run *freelist;
@@ -32,23 +30,20 @@ struct
 // 2. main() calls kinit2() with the rest of the physical pages
 // after installing a full page table that maps them on all cores.
 void
-kinit1(void *vstart, void *vend)
-{
+kinit1(void *vstart, void *vend) {
 	initlock(&kmem.lock, "kmem");
 	kmem.use_lock = 0;
 	freerange(vstart, vend);
 }
 
 void
-kinit2(void *vstart, void *vend)
-{
+kinit2(void *vstart, void *vend) {
 	freerange(vstart, vend);
 	kmem.use_lock = 1;
 }
 
 void
-freerange(void *vstart, void *vend)
-{
+freerange(void *vstart, void *vend) {
 	char *p;
 	p = (char *) PGROUNDUP((uint) vstart);
 	for (; p + PGSIZE <= (char *) vend; p += PGSIZE)
@@ -61,8 +56,7 @@ freerange(void *vstart, void *vend)
 // call to kalloc().  (The exception is when
 // initializing the allocator; see kinit above.)
 void
-kfree(char *v)
-{
+kfree(char *v) {
 	struct run *r;
 
 	if ((uint) v % PGSIZE || v < end || V2P(v) >= PHYSTOP)
@@ -84,8 +78,7 @@ kfree(char *v)
 // Returns a pointer that the kernel can use.
 // Returns 0 if the memory cannot be allocated.
 char *
-kalloc(void)
-{
+kalloc(void) {
 	struct run *r;
 
 	if (kmem.use_lock)
