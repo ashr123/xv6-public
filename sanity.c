@@ -1,151 +1,165 @@
+האחסון שלי
+// Test that fork fails gracefully.
+// Tiny executable so that the limit can be filling the proc table.
+
+#include "param.h"
+#include "types.h"
+#include "stat.h"
 #include "user.h"
+#include "fs.h"
+#include "fcntl.h"
+#include "syscall.h"
+#include "traps.h"
+#include "memlayout.h"
+#include "kthread.h"
+#include "tournament_tree.h"
 
-#define THREAD_NUM 15
-#define STACK_SIZE 500
-#define STACK_SIZE 500
+#define MAX_STACK_SIZE 4000
 
-int num;
-volatile int dontStart;
+int counter = 0;
+int mid;
+int help;
+trnmnt_tree *tree;
 
-#define THREAD_START(name, id) \
-    void name(){ \
-        int mid; \
-        int result; \
-        mid = kthread_mutex_alloc(); \
-        if(mid == -1){ \
-            printf(1,"mutex allocated unsuccessfully\n"); \
-        } \
-        result = kthread_mutex_lock(mid); \
-        if(result < 0){  \
-            printf(1,"mutex locked unsuccessfully\n"); \
-        } \
-        result = kthread_mutex_unlock(mid); \
-        if(result < 0){ \
-            printf(1,"mutex unlocked unsuccessfully\n"); \
-        } \
-        result = kthread_mutex_dealloc(mid); \
-        if(result == 0){} \
-        else if(result == -1){ \
-            printf(1,"mutex deallocated unsuccessfully\n"); \
-        } \
-        else{ \
-            printf(1,"unkown return code from mutex dealloc\n"); \
-        } \
-        kthread_exit(); \
-    }
+void
+test2_1(void)
+{
+	char *cmd = "echo";
+	int pid;
+	char *cmds[2];
+	cmds[0] = "echo";
+	cmds[1] = "echo work just fine!";
+	if ((pid = fork()) == 0)
+	{
+		exec(cmd, cmds);
+	}
+	if (pid > 0)
+	{
+		wait();
+		printf(1, "child finish echo!\n");
+		exit();
+	} else
+	{
+		printf(1, "fork failed\n");
+	}
+}
 
-#define THREAD_STACK(name) \
-    void * name = ((char *) malloc(STACK_SIZE * sizeof(char))) + STACK_SIZE;
+void
+thread_task22()
+{
+	int tid = kthread_id();
+	sleep(100 * tid);
+	printf(1, "thread %d entering\n", tid);
+	printf(1, "thread %d exiting\n", tid);
+	kthread_exit();
+}
 
-THREAD_START(threadStart_1, 1)
 
-THREAD_START(threadStart_2, 2)
+void
+test2_2(void)
+{
+	void *stack;
+	int threads[8];
+	for (int i = 0; i < 8; i++)
+	{
+		stack = malloc(MAX_STACK_SIZE);
+		threads[i] = kthread_create(&thread_task22, stack);
+		if (threads[i] < 0)
+			printf(1, "kthread_create failed\n");
+	}
 
-THREAD_START(threadStart_3, 3)
 
-THREAD_START(threadStart_4, 4)
+	for (int i = 0; i < 8; i++)
+		if (kthread_join(threads[i]) < 0)
+			printf(1, "join failed\n");
 
-THREAD_START(threadStart_5, 5)
 
-THREAD_START(threadStart_6, 6)
+	printf(1, "finish join 8 threads\n");
+}
 
-THREAD_START(threadStart_7, 7)
 
-THREAD_START(threadStart_8, 8)
+void
+thread_task31(void)
+{
+	if (kthread_mutex_lock(mid) < 0)
+	{
+		printf(1, "lock failed!\n");
+	}
 
-THREAD_START(threadStart_9, 9)
+	counter++;
+	if (kthread_mutex_unlock(mid) < 0)
+		printf(1, "unlock failed! thread 2\n");
+	kthread_exit();
+}
 
-THREAD_START(threadStart_10, 10)
+void
+test3_1(void)
+{
 
-THREAD_START(threadStart_11, 11)
+	mid = kthread_mutex_alloc();
+	if (kthread_mutex_lock(mid) < 0)
+		printf(1, "lock failed!\n");
+	printf(1, "lock %d !\n", mid);
+	void *stack;
+	if ((stack = malloc(MAX_STACK_SIZE)) < 0)
+		printf(1, "malloc(MAX_STACK_SIZE) failed!\n");
+	int thread = kthread_create(&thread_task31, stack);
+	if (thread == -1)
+		printf(1, "test3_1: kthread_create failed!");
+	printf(1, "counter = %d , need to be 0\n", counter);
+	// sleep(1000);
+	if (kthread_mutex_unlock(mid) < 0)
+		printf(1, "unlock failed! main\n");
+	kthread_join(thread);
+	printf(1, "counter = %d , need to be 1\n", counter);
+	printf(1, "unlock %d !\n", mid);
 
-THREAD_START(threadStart_12, 12)
+}
 
-THREAD_START(threadStart_13, 13)
+void
+thread_task32(void)
+{
+	if (trnmnt_tree_acquire(tree, kthread_id() - help - 1) < 0)
+		printf(1, "aquire failed\n");
+	counter++;
+	printf(1, "thread %d made counter = %d\n", kthread_id() - help, counter);
+	if (trnmnt_tree_release(tree, kthread_id() - help - 1) < 0)
+		printf(1, "release failed\n");
+	kthread_exit();
 
-THREAD_START(threadStart_14, 14)
+}
 
-THREAD_START(threadStart_15, 15)
+void
+test3_2(void)
+{
+	tree = trnmnt_tree_alloc(3);
+	help = kthread_id();
+	void *stack;
+	int tids[10];
+	for (int i = 0; i < 8; i++)
+	{
+		stack = malloc(MAX_STACK_SIZE);
+		tids[i] = kthread_create(&thread_task32, stack);
+	}
+	for (int i = 0; i < 8; i++)
+	{
+		kthread_join(tids[i]);
+	}
+	if (trnmnt_tree_dealloc(tree) < 0)
+		printf(1, "dealloc failed\n");
+	printf(1, "joined eveyone and the counter is %d when it should be 8", counter);
+}
 
-void (*threads_starts[])(void) =
-		{threadStart_1,
-		 threadStart_2,
-		 threadStart_3,
-		 threadStart_4,
-		 threadStart_5,
-		 threadStart_6,
-		 threadStart_7,
-		 threadStart_8,
-		 threadStart_9,
-		 threadStart_10,
-		 threadStart_11,
-		 threadStart_12,
-		 threadStart_13,
-		 threadStart_14,
-		 threadStart_15};
-
-void initiateMutexTest();
-
-int main(int argc, char *argv[]) {
-	initiateMutexTest();
+int
+main(void)
+{
+	// printf(1,"test 2.1 :\n");  
+	// test2_1();
+	// printf(1,"test 2.2 :\n");  
+	// test2_2();
+	printf(1, "test 3.1 :\n");
+	test3_1();
+	// printf(1,"test 3.2 :\n");  
+	// test3_2();
 	exit();
 }
-
-void initiateMutexTest() {
-	dontStart = 1;
-	int pids[THREAD_NUM];
-
-	THREAD_STACK(threadStack_1)
-	THREAD_STACK(threadStack_2)
-	THREAD_STACK(threadStack_3)
-	THREAD_STACK(threadStack_4)
-	THREAD_STACK(threadStack_5)
-	THREAD_STACK(threadStack_6)
-	THREAD_STACK(threadStack_7)
-	THREAD_STACK(threadStack_8)
-	THREAD_STACK(threadStack_9)
-	THREAD_STACK(threadStack_10)
-	THREAD_STACK(threadStack_11)
-	THREAD_STACK(threadStack_12)
-	THREAD_STACK(threadStack_13)
-	THREAD_STACK(threadStack_14)
-	THREAD_STACK(threadStack_15)
-
-	void (*threads_stacks[])(void) =
-			{threadStack_1,
-			 threadStack_2,
-			 threadStack_3,
-			 threadStack_4,
-			 threadStack_5,
-			 threadStack_6,
-			 threadStack_7,
-			 threadStack_8,
-			 threadStack_9,
-			 threadStack_10,
-			 threadStack_11,
-			 threadStack_12,
-			 threadStack_13,
-			 threadStack_14,
-			 threadStack_15};
-
-
-	for (int i = 0; i < THREAD_NUM; i++) {
-		pids[i] = kthread_create(threads_starts[i], threads_stacks[i]);
-	}
-
-	dontStart = 0;
-
-	for (int i = 0; i < THREAD_NUM; i++) {
-		printf(1, "Attempting to join thread %d\n", i + 1);
-
-		int result = kthread_join(pids[i]);
-		if (result == 0) {
-			printf(1, "Finished joing thread %d\n", i + 1);
-		} else if (result == -1) {
-			printf(1, "Error in joing thread %d\n", i + 1);
-		} else {
-			printf(1, "Unknown result code from join\n");
-		}
-	}
-}
-
