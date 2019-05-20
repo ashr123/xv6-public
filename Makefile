@@ -30,6 +30,7 @@ OBJS = \
 
 # Cross-compiling (e.g., on Mac OS X)
 # TOOLPREFIX = i386-jos-elf
+TOOLPREFIX = i386-elf-  # <- for ubuntu users needs to be deleted!!!
 
 # Using native tools (e.g., on X86 Linux)
 #TOOLPREFIX = 
