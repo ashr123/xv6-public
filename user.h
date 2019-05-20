@@ -1,21 +1,16 @@
-#pragma once         // Added
-
-#include "kthread.h" // Added
-#include "types.h"
-
 struct stat;
 struct rtcdate;
 
 // system calls
 int fork(void);
 
-void exit(void) __attribute__((noreturn));
+int exit(void) __attribute__((noreturn));
 
 int wait(void);
 
 int pipe(int *);
 
-int write(int, const void *, int);
+int write(int, void *, int);
 
 int read(int, void *, int);
 
@@ -25,19 +20,19 @@ int kill(int);
 
 int exec(char *, char **);
 
-int open(const char *, int);
+int open(char *, int);
 
-int mknod(const char *, short, short);
+int mknod(char *, short, short);
 
-int unlink(const char *);
+int unlink(char *);
 
 int fstat(int fd, struct stat *);
 
-int link(const char *, const char *);
+int link(char *, char *);
 
-int mkdir(const char *);
+int mkdir(char *);
 
-int chdir(const char *);
+int chdir(char *);
 
 int dup(int);
 
@@ -49,22 +44,24 @@ int sleep(int);
 
 int uptime(void);
 
+int yield(void);
+
 // ulib.c
-int stat(const char *, struct stat *);
+int stat(char *, struct stat *);
 
-char *strcpy(char *, const char *);
+char *strcpy(char *, char *);
 
-void *memmove(void *, const void *, int);
+void *memmove(void *, void *, int);
 
 char *strchr(const char *, char c);
 
 int strcmp(const char *, const char *);
 
-void printf(int, const char *, ...);
+void printf(int, char *, ...);
 
 char *gets(char *, int max);
 
-uint strlen(const char *);
+uint strlen(char *);
 
 void *memset(void *, int, uint);
 

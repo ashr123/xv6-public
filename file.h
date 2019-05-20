@@ -1,5 +1,7 @@
-struct file {
-	enum {
+struct file
+{
+	enum
+	{
 		FD_NONE, FD_PIPE, FD_INODE
 	} type;
 	int ref; // reference count
@@ -12,7 +14,8 @@ struct file {
 
 
 // in-memory copy of an inode
-struct inode {
+struct inode
+{
 	uint dev;           // Device number
 	uint inum;          // Inode number
 	int ref;            // Reference count
@@ -29,7 +32,8 @@ struct inode {
 
 // table mapping major device number to
 // device functions
-struct devsw {
+struct devsw
+{
 	int (*read)(struct inode *, char *, int);
 
 	int (*write)(struct inode *, char *, int);

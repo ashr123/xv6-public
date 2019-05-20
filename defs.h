@@ -1,14 +1,9 @@
-#pragma once         // Added
-
-#include "kthread.h" // Added
-
 struct buf;
 struct context;
 struct file;
 struct inode;
 struct pipe;
 struct proc;
-struct thread;
 struct rtcdate;
 struct spinlock;
 struct sleeplock;
@@ -86,6 +81,14 @@ void stati(struct inode *, struct stat *);
 
 int writei(struct inode *, char *, uint, uint);
 
+int createSwapFile(struct proc *p);
+
+int readFromSwapFile(struct proc *p, char *buffer, uint placeOnFile, uint size);
+
+int writeToSwapFile(struct proc *p, char *buffer, uint placeOnFile, uint size);
+
+int removeSwapFile(struct proc *p);
+
 // ide.c
 void ideinit(void);
 
@@ -159,9 +162,7 @@ int pipewrite(struct pipe *, char *, int);
 // proc.c
 int cpuid(void);
 
-void exit(void) __attribute__((noreturn));
-
-void exit_thread(void) __attribute__((noreturn)); //added
+void exit(void);
 
 int fork(void);
 
@@ -169,16 +170,9 @@ int growproc(int);
 
 int kill(int);
 
-
-void lockptable();//added
-//
-void unlockptable();//added
-
 struct cpu *mycpu(void);
 
 struct proc *myproc();
-
-struct thread *mythread();
 
 void pinit(void);
 
@@ -202,6 +196,11 @@ void yield(void);
 
 // swtch.S
 void swtch(struct context **, struct context *);
+
+// sysfile
+struct inode *create(char *path, short type, short major, short minor);
+
+int isdirempty(struct inode *dp);
 
 // spinlock.c
 void acquire(struct spinlock *);
@@ -245,7 +244,7 @@ char *strncpy(char *, const char *, int);
 // syscall.c
 int argint(int, int *);
 
-int argptr(int, void **, int);
+int argptr(int, char **, int);
 
 int argstr(int, char **);
 
@@ -295,7 +294,7 @@ int loaduvm(pde_t *, char *, struct inode *, uint, uint);
 
 pde_t *copyuvm(pde_t *, uint);
 
-void switchuvm(struct thread *);
+void switchuvm(struct proc *);
 
 void switchkvm(void);
 

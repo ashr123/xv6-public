@@ -7,7 +7,9 @@
 #include "x86.h"
 #include "elf.h"
 
-int exec(char *path, char **argv) {
+int
+exec(char *path, char **argv)
+{
 	char *s, *last;
 	int i, off;
 	uint argc, sz, sp, ustack[3 + MAXARG + 1];
@@ -16,26 +18,11 @@ int exec(char *path, char **argv) {
 	struct proghdr ph;
 	pde_t *pgdir, *oldpgdir;
 	struct proc *curproc = myproc();
-	struct thread *curthread = mythread();
-	lockptable();
 
-	if (curthread->killed) {
-		unlockptable();
-		exit_thread();
-	}
-
-	for (struct thread *t = myproc()->threads; t < &myproc()->threads[NTHREAD]; t++) {
-		if (t->tid != mythread()->tid && (t->state != THREAD_UNUSED || t->state != THREAD_ZOMBIE))
-			t->killed = 1;
-		if (t->state == SLEEPING) {
-			t->state = RUNNABLE;
-		}
-	}
-
-	unlockptable();
 	begin_op();
 
-	if ((ip = namei(path)) == 0) {
+	if ((ip = namei(path)) == 0)
+	{
 		end_op();
 		cprintf("exec: fail\n");
 		return -1;
@@ -54,7 +41,8 @@ int exec(char *path, char **argv) {
 
 	// Load program into memory.
 	sz = 0;
-	for (i = 0, off = elf.phoff; i < elf.phnum; i++, off += sizeof(ph)) {
+	for (i = 0, off = elf.phoff; i < elf.phnum; i++, off += sizeof(ph))
+	{
 		if (readi(ip, (char *) &ph, off, sizeof(ph)) != sizeof(ph))
 			goto bad;
 		if (ph.type != ELF_PROG_LOAD)
@@ -83,7 +71,8 @@ int exec(char *path, char **argv) {
 	sp = sz;
 
 	// Push argument strings, prepare rest of stack in ustack.
-	for (argc = 0; argv[argc]; argc++) {
+	for (argc = 0; argv[argc]; argc++)
+	{
 		if (argc >= MAXARG)
 			goto bad;
 		sp = (sp - (strlen(argv[argc]) + 1)) & ~3;
@@ -93,9 +82,9 @@ int exec(char *path, char **argv) {
 	}
 	ustack[3 + argc] = 0;
 
-	ustack[0] = 0xffffffff; // fake return PC
+	ustack[0] = 0xffffffff;  // fake return PC
 	ustack[1] = argc;
-	ustack[2] = sp - (argc + 1) * 4; // argv pointer
+	ustack[2] = sp - (argc + 1) * 4;  // argv pointer
 
 	sp -= (3 + argc + 1) * 4;
 	if (copyout(pgdir, sp, ustack, (3 + argc + 1) * 4) < 0)
@@ -111,20 +100,19 @@ int exec(char *path, char **argv) {
 	oldpgdir = curproc->pgdir;
 	curproc->pgdir = pgdir;
 	curproc->sz = sz;
-	mythread()->tf->eip = elf.entry; // main
-	mythread()->tf->esp = sp;
-	switchuvm(mythread());
+	curproc->tf->eip = elf.entry;  // main
+	curproc->tf->esp = sp;
+	switchuvm(curproc);
 	freevm(oldpgdir);
-
 	return 0;
 
 	bad:
 	if (pgdir)
 		freevm(pgdir);
-	if (ip) {
+	if (ip)
+	{
 		iunlockput(ip);
 		end_op();
 	}
-
 	return -1;
 }
