@@ -82,12 +82,11 @@ int getPageOutIndex()
 {
 #if LIFO
 	return getLIFO();
-#endif
-#if SCFIFO
+#elif SCFIFO
 	return getSCFIFO();
-#endif
+#else
 	panic("Unrecognized paging machanism");
-
+#endif
 }
 
 //This method cannot be replaced with mappages because mappages cannot turn off PTE_PG bit
