@@ -5,8 +5,7 @@
 #include "x86.h"
 
 char *
-strcpy(char *s, char *t)
-{
+strcpy(char *s, char *t) {
 	char *os;
 
 	os = s;
@@ -15,16 +14,14 @@ strcpy(char *s, char *t)
 }
 
 int
-strcmp(const char *p, const char *q)
-{
+strcmp(const char *p, const char *q) {
 	while (*p && *p == *q)
 		p++, q++;
 	return (uchar) *p - (uchar) *q;
 }
 
 uint
-strlen(char *s)
-{
+strlen(char *s) {
 	int n;
 
 	for (n = 0; s[n]; n++);
@@ -32,15 +29,13 @@ strlen(char *s)
 }
 
 void *
-memset(void *dst, int c, uint n)
-{
+memset(void *dst, int c, uint n) {
 	stosb(dst, c, n);
 	return dst;
 }
 
 char *
-strchr(const char *s, char c)
-{
+strchr(const char *s, char c) {
 	for (; *s; s++)
 		if (*s == c)
 			return (char *) s;
@@ -48,13 +43,11 @@ strchr(const char *s, char c)
 }
 
 char *
-gets(char *buf, int max)
-{
+gets(char *buf, int max) {
 	int i, cc;
 	char c;
 
-	for (i = 0; i + 1 < max;)
-	{
+	for (i = 0; i + 1 < max;) {
 		cc = read(0, &c, 1);
 		if (cc < 1)
 			break;
@@ -67,8 +60,7 @@ gets(char *buf, int max)
 }
 
 int
-stat(char *n, struct stat *st)
-{
+stat(char *n, struct stat *st) {
 	int fd;
 	int r;
 
@@ -81,8 +73,7 @@ stat(char *n, struct stat *st)
 }
 
 int
-atoi(const char *s)
-{
+atoi(const char *s) {
 	int n;
 
 	n = 0;
@@ -92,8 +83,7 @@ atoi(const char *s)
 }
 
 void *
-memmove(void *vdst, void *vsrc, int n)
-{
+memmove(void *vdst, void *vsrc, int n) {
 	char *dst, *src;
 
 	dst = vdst;

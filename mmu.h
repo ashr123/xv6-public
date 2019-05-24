@@ -1,4 +1,3 @@
-#pragma once
 // This file contains definitions for the
 // x86 memory management unit (MMU).
 
@@ -52,8 +51,7 @@
 
 #ifndef __ASSEMBLER__
 // Segment Descriptor
-struct segdesc
-{
+struct segdesc {
 	uint lim_15_0 : 16;  // Low bits of segment limit
 	uint base_15_0 : 16; // Low bits of segment base address
 	uint base_23_16 : 8; // Middle bits of segment base address
@@ -133,10 +131,6 @@ struct segdesc
 #define PGROUNDUP(sz)  (((sz)+PGSIZE-1) & ~(PGSIZE-1))
 #define PGROUNDDOWN(a) (((a)) & ~(PGSIZE-1))
 
-
-#define MAX_PYSC_PAGES 15
-#define MAX_TOTAL_PAGES 30
-
 // Page table/directory entry flags.
 #define PTE_P           0x001   // Present
 #define PTE_W           0x002   // Writeable
@@ -147,7 +141,10 @@ struct segdesc
 #define PTE_D           0x040   // Dirty
 #define PTE_PS          0x080   // Page Size
 #define PTE_MBZ         0x180   // Bits must be zero
-#define PTE_PG          0x200   // Paged out to secondary storage
+#define PTE_PG          0x200   // Paged out to secondary storage 
+
+#define MAX_PYSC_PAGES 15
+#define MAX_TOTAL_PAGES 30
 
 // Address in page table or page directory entry
 #define PTE_ADDR(pte)   ((uint)(pte) & ~0xFFF)
@@ -157,8 +154,7 @@ struct segdesc
 typedef uint pte_t;
 
 // Task state segment format
-struct taskstate
-{
+struct taskstate {
 	uint link;         // Old ts selector
 	uint esp0;         // Stack pointers and segment selectors
 	ushort ss0;        //   after an increase in privilege level
@@ -200,8 +196,7 @@ struct taskstate
 
 // PAGEBREAK: 12
 // Gate descriptors for interrupts and traps
-struct gatedesc
-{
+struct gatedesc {
 	uint off_15_0 : 16;   // low 16 bits of offset in segment
 	uint cs : 16;         // code segment selector
 	uint args : 5;        // # args, 0 for interrupt/trap gates

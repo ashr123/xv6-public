@@ -24,7 +24,7 @@ void consoleinit(void);
 
 void cprintf(char *, ...);
 
-void consoleintr(int (*)(void));
+void consoleintr(int(*)(void));
 
 void panic(char *) __attribute__((noreturn));
 
@@ -88,9 +88,13 @@ int readFromSwapFile(struct proc *p, char *buffer, uint placeOnFile, uint size);
 int writeToSwapFile(struct proc *p, char *buffer, uint placeOnFile, uint size);
 
 int removeSwapFile(struct proc *p);
-int writePageToFile(struct proc *p, int pageVaddr, pde_t *pgdir);                       //added
-int readPageFromFile(struct proc *p, int ramCtrlrIndex, int userPageVAddr, char *buff); //added
-void copySwapFile(struct proc *fromP, struct proc *toP);                                //added
+
+int writePageToFile(struct proc *p, int pageVaddr, pde_t *pgdir);
+
+int readPageFromFile(struct proc *p, int ramCtrlrIndex, int userPageVAddr, char *buff);
+
+void copySwapFile(struct proc *fromP, struct proc *toP);
+
 
 // ide.c
 void ideinit(void);
@@ -305,13 +309,11 @@ int copyout(pde_t *, uint, void *, uint);
 
 void clearpteu(pde_t *pgdir, char *uva);
 
-int getPageFromFile(int vAddr); //added
+int pageIsInFile(int vAddr, pde_t *pgdir);
 
-int pageIsInFile(int vAddr, pde_t *pgdir); //added
+int getPageFromFile(int vAddr);
 
-void updateAccessCounters(); //added
-
-int isNONEpolicy(); //added
+void updateAccessCounters();
 
 // number of elements in fixed-size array
-#define NELEM(x) (sizeof(x) / sizeof((x)[0]))
+#define NELEM(x) (sizeof(x)/sizeof((x)[0]))

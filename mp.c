@@ -16,8 +16,7 @@ int ncpu;
 uchar ioapicid;
 
 static uchar
-sum(uchar *addr, int len)
-{
+sum(uchar *addr, int len) {
 	int i, sum;
 
 	sum = 0;
@@ -28,8 +27,7 @@ sum(uchar *addr, int len)
 
 // Look for an MP structure in the len bytes at addr.
 static struct mp *
-mpsearch1(uint a, int len)
-{
+mpsearch1(uint a, int len) {
 	uchar *e, *p, *addr;
 
 	addr = P2V(a);
@@ -46,19 +44,16 @@ mpsearch1(uint a, int len)
 // 2) in the last KB of system base memory;
 // 3) in the BIOS ROM between 0xE0000 and 0xFFFFF.
 static struct mp *
-mpsearch(void)
-{
+mpsearch(void) {
 	uchar *bda;
 	uint p;
 	struct mp *mp;
 
 	bda = (uchar *) P2V(0x400);
-	if ((p = ((bda[0x0F] << 8) | bda[0x0E]) << 4))
-	{
+	if ((p = ((bda[0x0F] << 8) | bda[0x0E]) << 4)) {
 		if ((mp = mpsearch1(p, 1024)))
 			return mp;
-	} else
-	{
+	} else {
 		p = ((bda[0x14] << 8) | bda[0x13]) * 1024;
 		if ((mp = mpsearch1(p - 1024, 1024)))
 			return mp;
@@ -72,8 +67,7 @@ mpsearch(void)
 // if correct, check the version.
 // To do: check extended table checksum.
 static struct mpconf *
-mpconfig(struct mp **pmp)
-{
+mpconfig(struct mp **pmp) {
 	struct mpconf *conf;
 	struct mp *mp;
 
@@ -91,8 +85,7 @@ mpconfig(struct mp **pmp)
 }
 
 void
-mpinit(void)
-{
+mpinit(void) {
 	uchar *p, *e;
 	int ismp;
 	struct mp *mp;
@@ -104,14 +97,11 @@ mpinit(void)
 		panic("Expect to run on an SMP");
 	ismp = 1;
 	lapic = (uint *) conf->lapicaddr;
-	for (p = (uchar *) (conf + 1), e = (uchar *) conf + conf->length; p < e;)
-	{
-		switch (*p)
-		{
+	for (p = (uchar *) (conf + 1), e = (uchar *) conf + conf->length; p < e;) {
+		switch (*p) {
 			case MPPROC:
 				proc = (struct mpproc *) p;
-				if (ncpu < NCPU)
-				{
+				if (ncpu < NCPU) {
 					cpus[ncpu].apicid = proc->apicid;  // apicid may differ from ncpu
 					ncpu++;
 				}
@@ -135,8 +125,7 @@ mpinit(void)
 	if (!ismp)
 		panic("Didn't find a suitable machine");
 
-	if (mp->imcrp)
-	{
+	if (mp->imcrp) {
 		// Bochs doesn't support IMCR, so this doesn't run on Bochs.
 		// But it would on real hardware.
 		outb(0x22, 0x70);   // Select IMCR

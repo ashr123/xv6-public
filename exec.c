@@ -8,8 +8,7 @@
 #include "elf.h"
 
 int
-exec(char *path, char **argv)
-{
+exec(char *path, char **argv) {
 	char *s, *last;
 	int i, off;
 	uint argc, sz, sp, ustack[3 + MAXARG + 1];
@@ -21,8 +20,7 @@ exec(char *path, char **argv)
 
 	begin_op();
 
-	if ((ip = namei(path)) == 0)
-	{
+	if ((ip = namei(path)) == 0) {
 		end_op();
 		cprintf("exec: fail\n");
 		return -1;
@@ -41,8 +39,7 @@ exec(char *path, char **argv)
 
 	// Load program into memory.
 	sz = 0;
-	for (i = 0, off = elf.phoff; i < elf.phnum; i++, off += sizeof(ph))
-	{
+	for (i = 0, off = elf.phoff; i < elf.phnum; i++, off += sizeof(ph)) {
 		if (readi(ip, (char *) &ph, off, sizeof(ph)) != sizeof(ph))
 			goto bad;
 		if (ph.type != ELF_PROG_LOAD)
@@ -71,8 +68,7 @@ exec(char *path, char **argv)
 	sp = sz;
 
 	// Push argument strings, prepare rest of stack in ustack.
-	for (argc = 0; argv[argc]; argc++)
-	{
+	for (argc = 0; argv[argc]; argc++) {
 		if (argc >= MAXARG)
 			goto bad;
 		sp = (sp - (strlen(argv[argc]) + 1)) & ~3;
@@ -109,8 +105,7 @@ exec(char *path, char **argv)
 	bad:
 	if (pgdir)
 		freevm(pgdir);
-	if (ip)
-	{
+	if (ip) {
 		iunlockput(ip);
 		end_op();
 	}

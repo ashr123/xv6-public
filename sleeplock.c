@@ -11,8 +11,7 @@
 #include "sleeplock.h"
 
 void
-initsleeplock(struct sleeplock *lk, char *name)
-{
+initsleeplock(struct sleeplock *lk, char *name) {
 	initlock(&lk->lk, "sleep lock");
 	lk->name = name;
 	lk->locked = 0;
@@ -20,11 +19,9 @@ initsleeplock(struct sleeplock *lk, char *name)
 }
 
 void
-acquiresleep(struct sleeplock *lk)
-{
+acquiresleep(struct sleeplock *lk) {
 	acquire(&lk->lk);
-	while (lk->locked)
-	{
+	while (lk->locked) {
 		sleep(lk, &lk->lk);
 	}
 	lk->locked = 1;
@@ -33,8 +30,7 @@ acquiresleep(struct sleeplock *lk)
 }
 
 void
-releasesleep(struct sleeplock *lk)
-{
+releasesleep(struct sleeplock *lk) {
 	acquire(&lk->lk);
 	lk->locked = 0;
 	lk->pid = 0;
@@ -43,8 +39,7 @@ releasesleep(struct sleeplock *lk)
 }
 
 int
-holdingsleep(struct sleeplock *lk)
-{
+holdingsleep(struct sleeplock *lk) {
 	int r;
 
 	acquire(&lk->lk);

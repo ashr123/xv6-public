@@ -9,22 +9,18 @@ char buf[1024];
 int match(char *, char *);
 
 void
-grep(char *pattern, int fd)
-{
+grep(char *pattern, int fd) {
 	int n, m;
 	char *p, *q;
 
 	m = 0;
-	while ((n = read(fd, buf + m, sizeof(buf) - m - 1)) > 0)
-	{
+	while ((n = read(fd, buf + m, sizeof(buf) - m - 1)) > 0) {
 		m += n;
 		buf[m] = '\0';
 		p = buf;
-		while ((q = strchr(p, '\n')) != 0)
-		{
+		while ((q = strchr(p, '\n')) != 0) {
 			*q = 0;
-			if (match(pattern, p))
-			{
+			if (match(pattern, p)) {
 				*q = '\n';
 				write(1, p, q + 1 - p);
 			}
@@ -32,8 +28,7 @@ grep(char *pattern, int fd)
 		}
 		if (p == buf)
 			m = 0;
-		if (m > 0)
-		{
+		if (m > 0) {
 			m -= p - buf;
 			memmove(buf, p, m);
 		}
@@ -41,28 +36,23 @@ grep(char *pattern, int fd)
 }
 
 int
-main(int argc, char *argv[])
-{
+main(int argc, char *argv[]) {
 	int fd, i;
 	char *pattern;
 
-	if (argc <= 1)
-	{
+	if (argc <= 1) {
 		printf(2, "usage: grep pattern [file ...]\n");
 		exit();
 	}
 	pattern = argv[1];
 
-	if (argc <= 2)
-	{
+	if (argc <= 2) {
 		grep(pattern, 0);
 		exit();
 	}
 
-	for (i = 2; i < argc; i++)
-	{
-		if ((fd = open(argv[i], 0)) < 0)
-		{
+	for (i = 2; i < argc; i++) {
+		if ((fd = open(argv[i], 0)) < 0) {
 			printf(1, "grep: cannot open %s\n", argv[i]);
 			exit();
 		}
@@ -80,12 +70,10 @@ int matchhere(char *, char *);
 int matchstar(int, char *, char *);
 
 int
-match(char *re, char *text)
-{
+match(char *re, char *text) {
 	if (re[0] == '^')
 		return matchhere(re + 1, text);
-	do
-	{  // must look at empty string
+	do {  // must look at empty string
 		if (matchhere(re, text))
 			return 1;
 	} while (*text++ != '\0');
@@ -93,8 +81,7 @@ match(char *re, char *text)
 }
 
 // matchhere: search for re at beginning of text
-int matchhere(char *re, char *text)
-{
+int matchhere(char *re, char *text) {
 	if (re[0] == '\0')
 		return 1;
 	if (re[1] == '*')
@@ -107,10 +94,8 @@ int matchhere(char *re, char *text)
 }
 
 // matchstar: search for c*re at beginning of text
-int matchstar(int c, char *re, char *text)
-{
-	do
-	{  // a * matches zero or more instances
+int matchstar(int c, char *re, char *text) {
+	do {  // a * matches zero or more instances
 		if (matchhere(re, text))
 			return 1;
 	} while (*text != '\0' && (*text++ == c || c == '.'));
