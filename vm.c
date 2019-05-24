@@ -7,13 +7,223 @@
 #include "proc.h"
 #include "elf.h"
 
-extern char data[];  // defined by kernel.ld
-pde_t *kpgdir;  // for use in scheduler()
+extern char data[]; // defined by kernel.ld
+pde_t *kpgdir;		// for use in scheduler()
+
+int isNONEpolicy()
+{
+#if NONE
+	return 1;
+#else
+	return 0;
+#endif
+}
+
+// Return the address of the PTE in page table pgdir
+// that corresponds to virtual address va.  If alloc!=0,
+// create any required page table pages.
+static pte_t *
+walkpgdir(pde_t *pgdir, const void *va, int alloc)
+{
+	pde_t *pde;
+	pte_t *pgtab;
+
+	pde = &pgdir[PDX(va)];
+	if (*pde & PTE_P)
+	{
+		pgtab = (pte_t *)P2V(PTE_ADDR(*pde));
+	}
+	else
+	{
+		if (!alloc || (pgtab = (pte_t *)kalloc()) == 0)
+			return 0;
+		// Make sure all those PTE_P bits are zero.
+		memset(pgtab, 0, PGSIZE);
+		// The permissions here are overly generous, but they can
+		// be further restricted by the permissions in the page table
+		// entries, if necessary.
+		*pde = V2P(pgtab) | PTE_P | PTE_W | PTE_U;
+	}
+	return &pgtab[PTX(va)];
+}
+
+void updateAccessCounters(struct proc *p)
+{
+	pte_t *pte;
+	int i;
+	for (i = 0; i < MAX_PYSC_PAGES; i++)
+	{
+		if (p->ramCtrlr[i].state == USED)
+		{
+			pte = walkpgdir(p->ramCtrlr[i].pgdir, (char *)p->ramCtrlr[i].userPageVAddr, 0);
+			if (*pte & PTE_A)
+			{
+				*pte &= ~PTE_A; // turn off PTE_A flag
+				p->ramCtrlr[i].accessCount++;
+			}
+		}
+	}
+}
+
+int getFreeRamCtrlrIndex()
+{
+	if (myproc() == 0)
+		return -1;
+	int i;
+	for (i = 0; i < MAX_PYSC_PAGES; i++)
+	{
+		if (myproc()->ramCtrlr[i].state == NOTUSED)
+			return i;
+	}
+	return -1; //NO ROOM IN RAMCTRLR
+}
+
+int getPageOutIndex()
+{
+#if LIFO
+	return getLIFO();
+#endif
+#if SCFIFO
+	return getSCFIFO();
+#endif
+	panic("Unrecognized paging machanism");
+
+}
+
+//This method cannot be replaced with mappages because mappages cannot turn off PTE_PG bit
+void fixPagedInPTE(int userPageVAddr, int pagePAddr, pde_t *pgdir)
+{
+	pte_t *pte;
+	pte = walkpgdir(pgdir, (int *)userPageVAddr, 0);
+	if (!pte)
+		panic("PTE of swapped page is missing");
+	if (*pte & PTE_P)
+		panic("PAGE IN REMAP!");
+	*pte |= PTE_P | PTE_W | PTE_U; //Turn on needed bits
+	*pte &= ~PTE_PG;			   //Turn off inFile bit
+	*pte |= pagePAddr;			   //Map PTE to the new Page
+	lcr3(V2P(myproc()->pgdir));	//refresh CR3 register
+}
+
+int getPagePAddr(int userPageVAddr, pde_t *pgdir)
+{
+	pte_t *pte = walkpgdir(pgdir, (int *)userPageVAddr, 0);
+	if (!pte) //uninitialized page table
+		return -1;
+	return PTE_ADDR(*pte);
+}
+
+void fixPagedOutPTE(int userPageVAddr, pde_t *pgdir)
+{
+	pte_t *pte = walkpgdir(pgdir, (int *)userPageVAddr, 0);
+	if (!pte)
+		panic("PTE of swapped page is missing");
+	*pte |= PTE_PG;
+	*pte &= ~PTE_P;
+	*pte &= PTE_FLAGS(*pte);	//clear junk physical address
+	lcr3(V2P(myproc()->pgdir)); //refresh CR3 register
+}
+
+int getPageFromFile(int cr2)
+{
+	static char buff[PGSIZE]; //buffer used to store swapped page in getPageFromFile method
+	myproc()->faultCounter++;
+	int userPageVAddr = PGROUNDDOWN(cr2);
+	char *newPg = kalloc();
+	memset(newPg, 0, PGSIZE);
+	int outIndex = getFreeRamCtrlrIndex();
+	lcr3(V2P(myproc()->pgdir)); //refresh CR3 register
+	if (outIndex >= 0)
+	{ //Free location in RamCtrlr is available, no need for swapping
+		fixPagedInPTE(userPageVAddr, V2P(newPg), myproc()->pgdir);
+		readPageFromFile(myproc(), outIndex, userPageVAddr, (char *)userPageVAddr);
+		return 1; //Operation was successful
+	}
+	myproc()->countOfPagedOut++;
+	//If reached here - Swapping is needed.
+	outIndex = getPageOutIndex(); //select a page to swap to file
+	struct page outPage = myproc()->ramCtrlr[outIndex];
+	fixPagedInPTE(userPageVAddr, V2P(newPg), myproc()->pgdir);
+	readPageFromFile(myproc(), outIndex, userPageVAddr, buff); //automatically adds to ramctrlr
+	int outPagePAddr = getPagePAddr(outPage.userPageVAddr, outPage.pgdir);
+	memmove(newPg, buff, PGSIZE);
+	writePageToFile(myproc(), outPage.userPageVAddr, outPage.pgdir);
+	fixPagedOutPTE(outPage.userPageVAddr, outPage.pgdir);
+	char *v = P2V(outPagePAddr);
+	kfree(v); //free swapped page
+	return 1;
+}
+
+void addToRamCtrlr(pde_t *pgdir, uint userPageVAddr)
+{
+	int freeLocation = getFreeRamCtrlrIndex();
+	myproc()->ramCtrlr[freeLocation].state = USED;
+	myproc()->ramCtrlr[freeLocation].pgdir = pgdir;
+	myproc()->ramCtrlr[freeLocation].userPageVAddr = userPageVAddr;
+	myproc()->ramCtrlr[freeLocation].loadOrder = myproc()->loadOrderCounter++;
+	myproc()->ramCtrlr[freeLocation].accessCount = 0;
+}
+
+void swap(pde_t *pgdir, uint userPageVAddr)
+{
+	myproc()->countOfPagedOut++;
+	int outIndex = getPageOutIndex();
+	int outPagePAddr = getPagePAddr(myproc()->ramCtrlr[outIndex].userPageVAddr, myproc()->ramCtrlr[outIndex].pgdir);
+	writePageToFile(myproc(), myproc()->ramCtrlr[outIndex].userPageVAddr, myproc()->ramCtrlr[outIndex].pgdir);
+	char *v = P2V(outPagePAddr);
+	kfree(v); //free swapped page
+	myproc()->ramCtrlr[outIndex].state = NOTUSED;
+	fixPagedOutPTE(myproc()->ramCtrlr[outIndex].userPageVAddr, myproc()->ramCtrlr[outIndex].pgdir);
+	addToRamCtrlr(pgdir, userPageVAddr);
+}
+
+int getLIFO()
+{
+	int i;
+	int pageIndex = -1;
+	uint loadOrder = 0;
+
+	for (i = 0; i < MAX_PYSC_PAGES; i++)
+	{
+		if (myproc()->ramCtrlr[i].state == USED && myproc()->ramCtrlr[i].loadOrder > loadOrder)
+		{
+			loadOrder = myproc()->ramCtrlr[i].loadOrder;
+			pageIndex = i;
+		}
+	}
+	return pageIndex;
+}
+
+int getSCFIFO()
+{
+	pte_t *pte;
+	int i = 0;
+	int pageIndex;
+	uint loadOrder;
+recheck:
+	pageIndex = -1;
+	loadOrder = 0xFFFFFFFF;
+	for (i = 0; i < MAX_PYSC_PAGES; i++)
+	{
+		if (myproc()->ramCtrlr[i].state == USED && myproc()->ramCtrlr[i].loadOrder <= loadOrder)
+		{
+			pageIndex = i;
+			loadOrder = myproc()->ramCtrlr[i].loadOrder;
+		}
+	}
+	pte = walkpgdir(myproc()->ramCtrlr[pageIndex].pgdir, (char *)myproc()->ramCtrlr[pageIndex].userPageVAddr, 0);
+	if (*pte & PTE_A)
+	{
+		*pte &= ~PTE_A; // turn off PTE_A flag
+		myproc()->ramCtrlr[pageIndex].loadOrder = myproc()->loadOrderCounter++;
+		goto recheck;
+	}
+	return pageIndex;
+}
 
 // Set up CPU's kernel segment descriptors.
 // Run once on entry on each CPU.
-void
-seginit(void)
+void seginit(void)
 {
 	struct cpu *c;
 
@@ -29,33 +239,6 @@ seginit(void)
 	lgdt(c->gdt, sizeof(c->gdt));
 }
 
-// Return the address of the PTE in page table pgdir
-// that corresponds to virtual address va.  If alloc!=0,
-// create any required page table pages.
-static pte_t *
-walkpgdir(pde_t *pgdir, const void *va, int alloc)
-{
-	pde_t *pde;
-	pte_t *pgtab;
-
-	pde = &pgdir[PDX(va)];
-	if (*pde & PTE_P)
-	{
-		pgtab = (pte_t *) P2V(PTE_ADDR(*pde));
-	} else
-	{
-		if (!alloc || (pgtab = (pte_t *) kalloc()) == 0)
-			return 0;
-		// Make sure all those PTE_P bits are zero.
-		memset(pgtab, 0, PGSIZE);
-		// The permissions here are overly generous, but they can
-		// be further restricted by the permissions in the page table
-		// entries, if necessary.
-		*pde = V2P(pgtab) | PTE_P | PTE_W | PTE_U;
-	}
-	return &pgtab[PTX(va)];
-}
-
 // Create PTEs for virtual addresses starting at va that refer to
 // physical addresses starting at pa. va and size might not
 // be page-aligned.
@@ -65,8 +248,8 @@ mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
 	char *a, *last;
 	pte_t *pte;
 
-	a = (char *) PGROUNDDOWN((uint) va);
-	last = (char *) PGROUNDDOWN(((uint) va) + size - 1);
+	a = (char *)PGROUNDDOWN((uint)va);
+	last = (char *)PGROUNDDOWN(((uint)va) + size - 1);
 	for (;;)
 	{
 		if ((pte = walkpgdir(pgdir, a, 1)) == 0)
@@ -112,10 +295,10 @@ static struct kmap
 	uint phys_end;
 	int perm;
 } kmap[] = {
-		{(void *) KERNBASE, 0,             EXTMEM,  PTE_W}, // I/O space
-		{(void *) KERNLINK, V2P(KERNLINK), V2P(data), 0},     // kern text+rodata
-		{(void *) data,     V2P(data),     PHYSTOP, PTE_W}, // kern data+memory
-		{(void *) DEVSPACE, DEVSPACE, 0,            PTE_W}, // more devices
+	{(void *)KERNBASE, 0, EXTMEM, PTE_W},			 // I/O space
+	{(void *)KERNLINK, V2P(KERNLINK), V2P(data), 0}, // kern text+rodata
+	{(void *)data, V2P(data), PHYSTOP, PTE_W},		 // kern data+memory
+	{(void *)DEVSPACE, DEVSPACE, 0, PTE_W},			 // more devices
 };
 
 // Set up kernel part of a page table.
@@ -125,26 +308,23 @@ setupkvm(void)
 	pde_t *pgdir;
 	struct kmap *k;
 
-	if ((pgdir = (pde_t *) kalloc()) == 0)
+	if ((pgdir = (pde_t *)kalloc()) == 0)
 		return 0;
 	memset(pgdir, 0, PGSIZE);
-	if (P2V(PHYSTOP) > (void *) DEVSPACE)
+	if (P2V(PHYSTOP) > (void *)DEVSPACE)
 		panic("PHYSTOP too high");
-	for (k = kmap; k < &kmap[NELEM(kmap)];
-	k++)
-	if (mappages(pgdir, k->virt, k->phys_end - k->phys_start,
-	             (uint) k->phys_start, k->perm) < 0)
-	{
-		freevm(pgdir);
-		return 0;
-	}
+	for (k = kmap; k < &kmap[NELEM(kmap)]; k++)
+		if (mappages(pgdir, k->virt, k->phys_end - k->phys_start, (uint)k->phys_start, k->perm) < 0)
+		{
+			freevm(pgdir);
+			return 0;
+		}
 	return pgdir;
 }
 
 // Allocate one page table for the machine for the kernel address
 // space for scheduler processes.
-void
-kvmalloc(void)
+void kvmalloc(void)
 {
 	kpgdir = setupkvm();
 	switchkvm();
@@ -152,15 +332,13 @@ kvmalloc(void)
 
 // Switch h/w page table register to the kernel-only page table,
 // for when no process is running.
-void
-switchkvm(void)
+void switchkvm(void)
 {
-	lcr3(V2P(kpgdir));   // switch to the kernel page table
+	lcr3(V2P(kpgdir)); // switch to the kernel page table
 }
 
 // Switch TSS and h/w page table to correspond to process p.
-void
-switchuvm(struct proc *p)
+void switchuvm(struct proc *p)
 {
 	if (p == 0)
 		panic("switchuvm: no process");
@@ -171,22 +349,21 @@ switchuvm(struct proc *p)
 
 	pushcli();
 	mycpu()->gdt[SEG_TSS] = SEG16(STS_T32A, &mycpu()->ts,
-	                              sizeof(mycpu()->ts) - 1, 0);
+								  sizeof(mycpu()->ts) - 1, 0);
 	mycpu()->gdt[SEG_TSS].s = 0;
 	mycpu()->ts.ss0 = SEG_KDATA << 3;
-	mycpu()->ts.esp0 = (uint) p->kstack + KSTACKSIZE;
+	mycpu()->ts.esp0 = (uint)p->kstack + KSTACKSIZE;
 	// setting IOPL=0 in eflags *and* iomb beyond the tss segment limit
 	// forbids I/O instructions (e.g., inb and outb) from user space
-	mycpu()->ts.iomb = (ushort) 0xFFFF;
+	mycpu()->ts.iomb = (ushort)0xFFFF;
 	ltr(SEG_TSS << 3);
-	lcr3(V2P(p->pgdir));  // switch to process's address space
+	lcr3(V2P(p->pgdir)); // switch to process's address space
 	popcli();
 }
 
 // Load the initcode into address 0 of pgdir.
 // sz must be less than a page.
-void
-inituvm(pde_t *pgdir, char *init, uint sz)
+void inituvm(pde_t *pgdir, char *init, uint sz)
 {
 	char *mem;
 
@@ -200,13 +377,12 @@ inituvm(pde_t *pgdir, char *init, uint sz)
 
 // Load a program segment into pgdir.  addr must be page-aligned
 // and the pages from addr to addr+sz must already be mapped.
-int
-loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
+int loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
 {
 	uint i, pa, n;
 	pte_t *pte;
 
-	if ((uint) addr % PGSIZE != 0)
+	if ((uint)addr % PGSIZE != 0)
 		panic("loaduvm: addr must be page aligned");
 	for (i = 0; i < sz; i += PGSIZE)
 	{
@@ -225,8 +401,7 @@ loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
 
 // Allocate page tables and physical memory to grow process from oldsz to
 // newsz, which need not be page aligned.  Returns new size or 0 on error.
-int
-allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
+int allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 {
 	char *mem;
 	uint a;
@@ -236,34 +411,67 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 	if (newsz < oldsz)
 		return oldsz;
 
+	if (!isNONEpolicy())
+	{
+		if (PGROUNDUP(newsz) / PGSIZE > MAX_TOTAL_PAGES && myproc()->pid > 2)
+		{
+			cprintf("proc is too big\n", PGROUNDUP(newsz) / PGSIZE);
+			return 0;
+		}
+	}
+
 	a = PGROUNDUP(oldsz);
+	int i = 0; //debugging
 	for (; a < newsz; a += PGSIZE)
 	{
 		mem = kalloc();
+		i++;
 		if (mem == 0)
 		{
 			cprintf("allocuvm out of memory\n");
 			deallocuvm(pgdir, newsz, oldsz);
 			return 0;
 		}
+
 		memset(mem, 0, PGSIZE);
-		if (mappages(pgdir, (char *) a, PGSIZE, V2P(mem), PTE_W | PTE_U) < 0)
+		if (mappages(pgdir, (char *)a, PGSIZE, V2P(mem), PTE_W | PTE_U) < 0)
 		{
 			cprintf("allocuvm out of memory (2)\n");
 			deallocuvm(pgdir, newsz, oldsz);
 			kfree(mem);
 			return 0;
 		}
+		if (!isNONEpolicy() && myproc()->pid > 2)
+		{
+			if (PGROUNDUP(oldsz) / PGSIZE + i > MAX_PYSC_PAGES)
+				swap(pgdir, a);
+			else //there's room
+				addToRamCtrlr(pgdir, a);
+		}
 	}
 	return newsz;
+}
+
+void removeFromRamCtrlr(uint userPageVAddr, pde_t *pgdir)
+{
+	if (myproc() == 0)
+		return;
+	int i;
+	for (i = 0; i < MAX_PYSC_PAGES; i++)
+	{
+		if (myproc()->ramCtrlr[i].state == USED && myproc()->ramCtrlr[i].userPageVAddr == userPageVAddr && myproc()->ramCtrlr[i].pgdir == pgdir)
+		{
+			myproc()->ramCtrlr[i].state = NOTUSED;
+			return;
+		}
+	}
 }
 
 // Deallocate user pages to bring the process size from oldsz to
 // newsz.  oldsz and newsz need not be page-aligned, nor does newsz
 // need to be less than oldsz.  oldsz can be larger than the actual
 // process size.  Returns the new process size.
-int
-deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
+int deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 {
 	pte_t *pte;
 	uint a, pa;
@@ -274,7 +482,7 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 	a = PGROUNDUP(newsz);
 	for (; a < oldsz; a += PGSIZE)
 	{
-		pte = walkpgdir(pgdir, (char *) a, 0);
+		pte = walkpgdir(pgdir, (char *)a, 0);
 		if (!pte)
 			a = PGADDR(PDX(a) + 1, 0, 0) - PGSIZE;
 		else if ((*pte & PTE_P) != 0)
@@ -284,16 +492,25 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 				panic("kfree");
 			char *v = P2V(pa);
 			kfree(v);
+			if (!isNONEpolicy())
+				removeFromRamCtrlr(a, pgdir);
+
 			*pte = 0;
 		}
 	}
 	return newsz;
 }
 
+int pageIsInFile(int userPageVAddr, pde_t *pgdir)
+{
+	pte_t *pte;
+	pte = walkpgdir(pgdir, (char *)userPageVAddr, 0);
+	return (*pte & PTE_PG); //PAGE IS IN FILE
+}
+
 // Free a page table and all the physical memory pages
 // in the user part.
-void
-freevm(pde_t *pgdir)
+void freevm(pde_t *pgdir)
 {
 	uint i;
 
@@ -308,13 +525,12 @@ freevm(pde_t *pgdir)
 			kfree(v);
 		}
 	}
-	kfree((char *) pgdir);
+	kfree((char *)pgdir);
 }
 
 // Clear PTE_U on a page. Used to create an inaccessible
 // page beneath the user stack.
-void
-clearpteu(pde_t *pgdir, char *uva)
+void clearpteu(pde_t *pgdir, char *uva)
 {
 	pte_t *pte;
 
@@ -338,7 +554,7 @@ copyuvm(pde_t *pgdir, uint sz)
 		return 0;
 	for (i = 0; i < sz; i += PGSIZE)
 	{
-		if ((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
+		if ((pte = walkpgdir(pgdir, (void *)i, 0)) == 0)
 			panic("copyuvm: pte should exist");
 		if (!(*pte & PTE_P))
 			panic("copyuvm: page not present");
@@ -346,13 +562,13 @@ copyuvm(pde_t *pgdir, uint sz)
 		flags = PTE_FLAGS(*pte);
 		if ((mem = kalloc()) == 0)
 			goto bad;
-		memmove(mem, (char *) P2V(pa), PGSIZE);
-		if (mappages(d, (void *) i, PGSIZE, V2P(mem), flags) < 0)
+		memmove(mem, (char *)P2V(pa), PGSIZE);
+		if (mappages(d, (void *)i, PGSIZE, V2P(mem), flags) < 0)
 			goto bad;
 	}
 	return d;
 
-	bad:
+bad:
 	freevm(d);
 	return 0;
 }
@@ -369,23 +585,22 @@ uva2ka(pde_t *pgdir, char *uva)
 		return 0;
 	if ((*pte & PTE_U) == 0)
 		return 0;
-	return (char *) P2V(PTE_ADDR(*pte));
+	return (char *)P2V(PTE_ADDR(*pte));
 }
 
 // Copy len bytes from p to user address va in page table pgdir.
 // Most useful when pgdir is not the current page table.
 // uva2ka ensures this only works for PTE_U pages.
-int
-copyout(pde_t *pgdir, uint va, void *p, uint len)
+int copyout(pde_t *pgdir, uint va, void *p, uint len)
 {
 	char *buf, *pa0;
 	uint n, va0;
 
-	buf = (char *) p;
+	buf = (char *)p;
 	while (len > 0)
 	{
-		va0 = (uint) PGROUNDDOWN(va);
-		pa0 = uva2ka(pgdir, (char *) va0);
+		va0 = (uint)PGROUNDDOWN(va);
+		pa0 = uva2ka(pgdir, (char *)va0);
 		if (pa0 == 0)
 			return -1;
 		n = PGSIZE - (va - va0);
@@ -405,4 +620,3 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
 // Blank page.
 //PAGEBREAK!
 // Blank page.
-

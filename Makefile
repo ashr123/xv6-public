@@ -30,10 +30,10 @@ OBJS = \
 
 # Cross-compiling (e.g., on Mac OS X)
 # TOOLPREFIX = i386-jos-elf
-TOOLPREFIX = i386-elf-  # <- for ubuntu users needs to be deleted!!!
+TOOLPREFIX = i386-elf-
 
 # Using native tools (e.g., on X86 Linux)
-#TOOLPREFIX = 
+#TOOLPREFIX =
 
 # Try to infer the correct TOOLPREFIX if not set
 ifndef TOOLPREFIX
@@ -58,10 +58,10 @@ endif
 ifndef QEMU
 QEMU = $(shell if which qemu > /dev/null; \
 	then echo qemu; exit; \
+	elif which qemu-system-x86_64 > /dev/null; \
+    then echo qemu-system-x86_64; exit; \
 	elif which qemu-system-i386 > /dev/null; \
 	then echo qemu-system-i386; exit; \
-	elif which qemu-system-x86_64 > /dev/null; \
-	then echo qemu-system-x86_64; exit; \
 	else \
 	qemu=/Applications/Q.app/Contents/MacOS/i386-softmmu.app/Contents/MacOS/i386-softmmu; \
 	if test -x $$qemu; then echo $$qemu; exit; fi; fi; \
@@ -72,7 +72,17 @@ QEMU = $(shell if which qemu > /dev/null; \
 	echo "***" 1>&2; exit 1)
 endif
 
-CC = $(TOOLPREFIX)gcc
+
+
+ifndef SELECTION
+	SELECTION = SCFIFO
+endif
+
+# ifndef VERBOSE_PRINT
+# 	VERBOSE_PRINT = FALSE
+# endif
+
+CC = $(TOOLPREFIX)gcc -std=gnu18
 AS = $(TOOLPREFIX)gas
 LD = $(TOOLPREFIX)ld
 OBJCOPY = $(TOOLPREFIX)objcopy
@@ -181,7 +191,7 @@ fs.img: mkfs README $(UPROGS)
 
 -include *.d
 
-clean: 
+clean:
 	rm -f *.tex *.dvi *.idx *.aux *.log *.ind *.ilg \
 	*.o *.d *.asm *.sym vectors.S bootblock entryother \
 	initcode initcode.out kernel xv6.img fs.img kernelmemfs mkfs \

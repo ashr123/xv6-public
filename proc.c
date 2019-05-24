@@ -23,15 +23,20 @@ extern void trapret(void);
 
 static void wakeup1(void *chan);
 
-void
-pinit(void)
+void initSwapStructs(struct proc *p)
+{
+	int i;
+	for (i = 0; i < MAX_TOTAL_PAGES - MAX_PYSC_PAGES; i++)
+		p->fileCtrlr[i].state = NOTUSED;
+}
+
+void pinit(void)
 {
 	initlock(&ptable.lock, "ptable");
 }
 
 // Must be called with interrupts disabled
-int
-cpuid()
+int cpuid()
 {
 	return mycpu() - cpus;
 }
@@ -91,7 +96,7 @@ allocproc(void)
 	release(&ptable.lock);
 	return 0;
 
-	found:
+found:
 	p->state = EMBRYO;
 	p->pid = nextpid++;
 
@@ -107,25 +112,30 @@ allocproc(void)
 
 	// Leave room for trap frame.
 	sp -= sizeof *p->tf;
-	p->tf = (struct trapframe *) sp;
+	p->tf = (struct trapframe *)sp;
+	p->loadOrderCounter = 0;
+	p->faultCounter = 0;
+	p->countOfPagedOut = 0;
+
+	if (p->pid > 2)
+		createSwapFile(p);
 
 	// Set up new context to start executing at forkret,
 	// which returns to trapret.
 	sp -= 4;
-	*(uint *) sp = (uint) trapret;
+	*(uint *)sp = (uint)trapret;
 
 	sp -= sizeof *p->context;
-	p->context = (struct context *) sp;
+	p->context = (struct context *)sp;
 	memset(p->context, 0, sizeof *p->context);
-	p->context->eip = (uint) forkret;
+	p->context->eip = (uint)forkret;
 
 	return p;
 }
 
 //PAGEBREAK: 32
 // Set up first user process.
-void
-userinit(void)
+void userinit(void)
 {
 	struct proc *p;
 	extern char _binary_initcode_start[], _binary_initcode_size[];
@@ -135,7 +145,7 @@ userinit(void)
 	initproc = p;
 	if ((p->pgdir = setupkvm()) == 0)
 		panic("userinit: out of memory?");
-	inituvm(p->pgdir, _binary_initcode_start, (int) _binary_initcode_size);
+	inituvm(p->pgdir, _binary_initcode_start, (int)_binary_initcode_size);
 	p->sz = PGSIZE;
 	memset(p->tf, 0, sizeof(*p->tf));
 	p->tf->cs = (SEG_UCODE << 3) | DPL_USER;
@@ -144,7 +154,7 @@ userinit(void)
 	p->tf->ss = p->tf->ds;
 	p->tf->eflags = FL_IF;
 	p->tf->esp = PGSIZE;
-	p->tf->eip = 0;  // beginning of initcode.S
+	p->tf->eip = 0; // beginning of initcode.S
 
 	safestrcpy(p->name, "initcode", sizeof(p->name));
 	p->cwd = namei("/");
@@ -162,8 +172,7 @@ userinit(void)
 
 // Grow current process's memory by n bytes.
 // Return 0 on success, -1 on failure.
-int
-growproc(int n)
+int growproc(int n)
 {
 	uint sz;
 	struct proc *curproc = myproc();
@@ -173,7 +182,8 @@ growproc(int n)
 	{
 		if ((sz = allocuvm(curproc->pgdir, sz, sz + n)) == 0)
 			return -1;
-	} else if (n < 0)
+	}
+	else if (n < 0)
 	{
 		if ((sz = deallocuvm(curproc->pgdir, sz, sz + n)) == 0)
 			return -1;
@@ -186,8 +196,7 @@ growproc(int n)
 // Create a new process copying p as the parent.
 // Sets up stack to return as if from system call.
 // Caller must set state of returned proc to RUNNABLE.
-int
-fork(void)
+int fork(void)
 {
 	int i, pid;
 	struct proc *np;
@@ -209,6 +218,23 @@ fork(void)
 	}
 	np->sz = curproc->sz;
 	np->parent = curproc;
+
+	if (myproc()->pid > 2)
+	{
+		copySwapFile(myproc(), np);
+		np->loadOrderCounter = myproc()->loadOrderCounter;
+		for (i = 0; i < MAX_PYSC_PAGES; i++)
+		{
+			np->ramCtrlr[i] = myproc()->ramCtrlr[i]; //deep copies ramCtrlr list
+			np->ramCtrlr[i].pgdir = np->pgdir;		 //replace parent pgdir with child new pgdir
+		}
+		for (i = 0; i < MAX_TOTAL_PAGES - MAX_PYSC_PAGES; i++)
+		{
+			np->fileCtrlr[i] = myproc()->fileCtrlr[i]; //deep copies fileCtrlr list
+			np->fileCtrlr[i].pgdir = np->pgdir;		   //replace parent pgdir with child new pgdir
+		}
+	}
+
 	*np->tf = *curproc->tf;
 
 	// Clear %eax so that fork returns 0 in the child.
@@ -222,6 +248,8 @@ fork(void)
 	safestrcpy(np->name, curproc->name, sizeof(curproc->name));
 
 	pid = np->pid;
+	np->faultCounter = 0;
+	np->countOfPagedOut = 0;
 
 	acquire(&ptable.lock);
 
@@ -235,8 +263,7 @@ fork(void)
 // Exit the current process.  Does not return.
 // An exited process remains in the zombie state
 // until its parent calls wait() to find out it exited.
-void
-exit(void)
+void exit(void)
 {
 	struct proc *curproc = myproc();
 	struct proc *p;
@@ -254,6 +281,8 @@ exit(void)
 			curproc->ofile[fd] = 0;
 		}
 	}
+	if (myproc()->pid > 2)
+		removeSwapFile(myproc());
 
 	begin_op();
 	iput(curproc->cwd);
@@ -284,8 +313,7 @@ exit(void)
 
 // Wait for a child process to exit and return its pid.
 // Return -1 if this process has no children.
-int
-wait(void)
+int wait(void)
 {
 	struct proc *p;
 	int havekids, pid;
@@ -309,8 +337,14 @@ wait(void)
 				p->kstack = 0;
 				freevm(p->pgdir);
 				p->pid = 0;
+
 				p->parent = 0;
 				p->name[0] = 0;
+
+				for (int i = 0; i < MAX_PYSC_PAGES; i++)
+					p->ramCtrlr[i].state = NOTUSED;
+				for (int i = 0; i < MAX_TOTAL_PAGES - MAX_PYSC_PAGES; i++)
+					p->fileCtrlr[i].state = NOTUSED;
 				p->killed = 0;
 				p->state = UNUSED;
 				release(&ptable.lock);
@@ -326,7 +360,7 @@ wait(void)
 		}
 
 		// Wait for children to exit.  (See wakeup1 call in proc_exit.)
-		sleep(curproc, &ptable.lock);  //DOC: wait-sleep
+		sleep(curproc, &ptable.lock); //DOC: wait-sleep
 	}
 }
 
@@ -338,8 +372,7 @@ wait(void)
 //  - swtch to start running that process
 //  - eventually that process transfers control
 //      via swtch back to the scheduler.
-void
-scheduler(void)
+void scheduler(void)
 {
 	struct proc *p;
 	struct cpu *c = mycpu();
@@ -372,7 +405,6 @@ scheduler(void)
 			c->proc = 0;
 		}
 		release(&ptable.lock);
-
 	}
 }
 
@@ -383,8 +415,7 @@ scheduler(void)
 // be proc->intena and proc->ncli, but that would
 // break in the few places where a lock is held but
 // there's no process.
-void
-sched(void)
+void sched(void)
 {
 	int intena;
 	struct proc *p = myproc();
@@ -403,10 +434,9 @@ sched(void)
 }
 
 // Give up the CPU for one scheduling round.
-void
-yield(void)
+void yield(void)
 {
-	acquire(&ptable.lock);  //DOC: yieldlock
+	acquire(&ptable.lock); //DOC: yieldlock
 	myproc()->state = RUNNABLE;
 	sched();
 	release(&ptable.lock);
@@ -414,8 +444,7 @@ yield(void)
 
 // A fork child's very first scheduling by scheduler()
 // will swtch here.  "Return" to user space.
-void
-forkret(void)
+void forkret(void)
 {
 	static int first = 1;
 	// Still holding ptable.lock from scheduler.
@@ -436,8 +465,7 @@ forkret(void)
 
 // Atomically release lock and sleep on chan.
 // Reacquires lock when awakened.
-void
-sleep(void *chan, struct spinlock *lk)
+void sleep(void *chan, struct spinlock *lk)
 {
 	struct proc *p = myproc();
 
@@ -454,8 +482,8 @@ sleep(void *chan, struct spinlock *lk)
 	// (wakeup runs with ptable.lock locked),
 	// so it's okay to release lk.
 	if (lk != &ptable.lock)
-	{  //DOC: sleeplock0
-		acquire(&ptable.lock);  //DOC: sleeplock1
+	{						   //DOC: sleeplock0
+		acquire(&ptable.lock); //DOC: sleeplock1
 		release(lk);
 	}
 	// Go to sleep.
@@ -469,7 +497,7 @@ sleep(void *chan, struct spinlock *lk)
 
 	// Reacquire original lock.
 	if (lk != &ptable.lock)
-	{  //DOC: sleeplock2
+	{ //DOC: sleeplock2
 		release(&ptable.lock);
 		acquire(lk);
 	}
@@ -489,8 +517,7 @@ wakeup1(void *chan)
 }
 
 // Wake up all processes sleeping on chan.
-void
-wakeup(void *chan)
+void wakeup(void *chan)
 {
 	acquire(&ptable.lock);
 	wakeup1(chan);
@@ -500,8 +527,7 @@ wakeup(void *chan)
 // Kill the process with the given pid.
 // Process won't exit until it returns
 // to user space (see trap in trap.c).
-int
-kill(int pid)
+int kill(int pid)
 {
 	struct proc *p;
 
@@ -526,17 +552,15 @@ kill(int pid)
 // Print a process listing to console.  For debugging.
 // Runs when user types ^P on console.
 // No lock to avoid wedging a stuck machine further.
-void
-procdump(void)
+void procdump(void)
 {
 	static char *states[] = {
-			[UNUSED]    "unused",
-			[EMBRYO]    "embryo",
-			[SLEEPING]  "sleep ",
-			[RUNNABLE]  "runble",
-			[RUNNING]   "run   ",
-			[ZOMBIE]    "zombie"
-	};
+		[UNUSED] "unused",
+		[EMBRYO] "embryo",
+		[SLEEPING] "sleep ",
+		[RUNNABLE] "runble",
+		[RUNNING] "run   ",
+		[ZOMBIE] "zombie"};
 	int i;
 	struct proc *p;
 	char *state;
@@ -553,7 +577,7 @@ procdump(void)
 		cprintf("%d %s %s", p->pid, state, p->name);
 		if (p->state == SLEEPING)
 		{
-			getcallerpcs((uint *) p->context->ebp + 2, pc);
+			getcallerpcs((uint *)p->context->ebp + 2, pc);
 			for (i = 0; i < 10 && pc[i] != 0; i++)
 				cprintf(" %p", pc[i]);
 		}
