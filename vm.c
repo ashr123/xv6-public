@@ -125,7 +125,7 @@ setupkvm(void) {
 	for (k = kmap; k < &kmap[NELEM(kmap)];
 	k++)
 	if (mappages(pgdir, k->virt, k->phys_end - k->phys_start,
-	             (uint) k->phys_start, k->perm) < 0) {
+							 (uint) k->phys_start, k->perm) < 0) {
 		freevm(pgdir);
 		return 0;
 	}
@@ -159,7 +159,7 @@ switchuvm(struct proc *p) {
 
 	pushcli();
 	mycpu()->gdt[SEG_TSS] = SEG16(STS_T32A, &mycpu()->ts,
-	                              sizeof(mycpu()->ts) - 1, 0);
+																sizeof(mycpu()->ts) - 1, 0);
 	mycpu()->gdt[SEG_TSS].s = 0;
 	mycpu()->ts.ss0 = SEG_KDATA << 3;
 	mycpu()->ts.esp0 = (uint) p->kstack + KSTACKSIZE;
@@ -167,7 +167,7 @@ switchuvm(struct proc *p) {
 	// forbids I/O instructions (e.g., inb and outb) from user space
 	mycpu()->ts.iomb = (ushort) 0xFFFF;
 	ltr(SEG_TSS << 3);
-	lcr3(V2P(p->pgdir));  // switch to process's address space
+	lcr3(v2p(p->pgdir));  // switch to process's address space
 	popcli();
 }
 
@@ -181,7 +181,7 @@ inituvm(pde_t *pgdir, char *init, uint sz) {
 		panic("inituvm: more than a page");
 	mem = kalloc();
 	memset(mem, 0, PGSIZE);
-	mappages(pgdir, 0, PGSIZE, V2P(mem), PTE_W | PTE_U);
+	mappages(pgdir, 0, PGSIZE, v2p(mem), PTE_W | PTE_U);
 	memmove(mem, init, sz);
 }
 
@@ -202,13 +202,199 @@ loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz) {
 			n = sz - i;
 		else
 			n = PGSIZE;
-		if (readi(ip, P2V(pa), offset + i, n) != n)
+		if (readi(ip, p2v(pa), offset + i, n) != n)
 			return -1;
 	}
 	return 0;
 }
 
+//ADDED
+int getPagePAddr(int userPageVAddr, pde_t *pgdir) {
+	pte_t *pte = walkpgdir(pgdir, (int *) userPageVAddr, 0);
+	if (!pte) //uninitialized page table
+		return -1;
+	return PTE_ADDR(*pte);
+}
+//ADDED
+void fixPagedOutPTE(int userPageVAddr, pde_t *pgdir) {
+	pte_t *pte = walkpgdir(pgdir, (int *) userPageVAddr, 0);
+	if (!pte)
+		panic("PTE of swapped page is missing");
+	*pte |= PTE_PG;
+	*pte &= ~PTE_P;
+	*pte &= PTE_FLAGS(*pte); //clear junk physical address
+	lcr3(v2p(myproc()->pgdir)); //refresh CR3 register
+}
+//ADDED
+//This method cannot be replaced with mappages because mappages cannot turn off PTE_PG bit
+void fixPagedInPTE(int userPageVAddr, int pagePAddr, pde_t *pgdir) {
+	pte_t *pte = walkpgdir(pgdir, (int *) userPageVAddr, 0);
+	if (!pte)
+		panic("PTE of swapped page is missing");
+	if (*pte & PTE_P)
+		panic("PAGE IN REMAP!");
+	*pte |= PTE_P | PTE_W | PTE_U;      //Turn on needed bits
+	*pte &= ~PTE_PG;                                    //Turn off inFile bit
+	*pte |= pagePAddr;                                //Map PTE to the new Page
+	lcr3(v2p(myproc()->pgdir)); //refresh CR3 register
+}
+//ADDED
+int pageIsInFile(int userPageVAddr, pde_t *pgdir) {
+	return walkpgdir(pgdir, (char *) userPageVAddr, 0) & PTE_PG; //PAGE IS IN FILE
+}
 
+
+//added
+int getLIFO(){
+  struct proc *proc = myproc();
+  int i; 
+  int pageIndex = -1;
+  uint loadOrder = 0;
+
+  for (i = 0; i < MAX_PYSC_PAGES; i++) {
+    if (proc->ramCtrlr[i].state == USED && proc->ramCtrlr[i].loadOrder > loadOrder) {
+        loadOrder = proc->ramCtrlr[i].loadOrder;
+        pageIndex = i;          
+    }
+  }
+  return pageIndex;
+}
+//added
+int getSCFIFO(){
+	struct proc *proc = myproc();
+    pte_t * pte;
+    int i = 0;
+    int pageIndex;
+    uint loadOrder;
+  recheck:
+    pageIndex = -1;
+    loadOrder = 0xFFFFFFFF;
+    for (i = 0; i < MAX_PYSC_PAGES; i++) {
+      if (proc->ramCtrlr[i].state == USED && proc->ramCtrlr[i].loadOrder <= loadOrder){
+        pageIndex = i;
+        loadOrder = proc->ramCtrlr[i].loadOrder;
+      }
+    }
+    pte = walkpgdir(proc->ramCtrlr[pageIndex].pgdir, (char*)proc->ramCtrlr[pageIndex].userPageVAddr,0);
+    if (*pte & PTE_A) {
+      *pte &= ~PTE_A; // turn off PTE_A flag
+       proc->ramCtrlr[pageIndex].loadOrder = proc->loadOrderCounter++;
+       goto recheck;
+    }
+    return pageIndex;
+  }
+
+//added
+int getPageOutIndex(){
+  #if LIFO
+    return getLIFO();
+  #endif
+  #if SCFIFO
+    return getSCFIFO();
+  #endif
+  panic("Unrecognized paging machanism");
+}
+
+//added
+void updateAccessCounters(struct proc * p){
+  struct proc *proc = myproc();
+  pte_t * pte;
+  int i;
+  for (i = 0; i < MAX_PYSC_PAGES; i++) {
+    if (p->ramCtrlr[i].state == USED){
+      pte = walkpgdir(p->ramCtrlr[i].pgdir, (char*)p->ramCtrlr[i].userPageVAddr,0);
+      if (*pte & PTE_A) {
+        *pte &= ~PTE_A; // turn off PTE_A flag
+         p->ramCtrlr[i].accessCount++;
+      }
+    } 
+  }
+}
+
+//added
+int getFreeRamCtrlrIndex() {
+  struct proc *proc = myproc();
+  if (proc == 0)
+    return -1;
+  int i;
+  for (i = 0; i < MAX_PYSC_PAGES; i++) {
+    if (proc->ramCtrlr[i].state == NOTUSED)
+      return i;
+  }
+  return -1; //NO ROOM IN RAMCTRLR
+}
+
+//added
+static char buff[PGSIZE]; //buffer used to store swapped page in getPageFromFile method
+ 
+//added
+int getPageFromFile(int cr2) {
+	struct proc *proc = myproc();
+	proc->faultCounter++;
+	int userPageVAddr = PGROUNDDOWN(cr2);
+	char *newPg = kalloc();
+	memset(newPg, 0, PGSIZE);
+	int outIndex = getFreeRamCtrlrIndex();
+	lcr3(v2p(proc->pgdir)); //refresh CR3 register
+	if (outIndex >= 0) { //Free location in RamCtrlr is available, no need for swapping
+		fixPagedInPTE(userPageVAddr, v2p(newPg), proc->pgdir);
+		readPageFromFile(proc, outIndex, userPageVAddr, (char *) userPageVAddr);
+		return 1; //Operation was successful
+	}
+	proc->countOfPagedOut++;
+	//If reached here - Swapping is needed.
+	// outIndex = getPageOutIndex(); //select a page to swap to file
+	// struct pagecontroller outPage = proc->ramCtrlr[outIndex];
+	// fixPagedInPTE(userPageVAddr, v2p(newPg), proc->pgdir);
+
+	//tmp::::::::::;;;
+	outIndex = 0;
+	struct pagecontroller outPage = proc->ramCtrlr[outIndex];
+	fixPagedInPTE(userPageVAddr, v2p(newPg), proc->pgdir);
+
+	readPageFromFile(proc, outIndex, userPageVAddr, buff); //automatically adds to ramctrlr
+	int outPagePAddr = getPagePAddr(outPage.userPageVAddr, outPage.pgdir);
+	memmove(newPg, buff, PGSIZE);
+	writePageToFile(proc, outPage.userPageVAddr, outPage.pgdir);
+	fixPagedOutPTE(outPage.userPageVAddr, outPage.pgdir);
+	char *v = p2v(outPagePAddr);
+	kfree(v); //free swapped page
+	return 1;
+}
+
+
+//added
+void addToRamCtrlr(pde_t *pgdir, uint userPageVAddr) {
+  struct proc *proc = myproc();
+  int freeLocation = getFreeRamCtrlrIndex();
+  proc->ramCtrlr[freeLocation].state = USED;
+  proc->ramCtrlr[freeLocation].pgdir = pgdir;
+  proc->ramCtrlr[freeLocation].userPageVAddr = userPageVAddr;
+  proc->ramCtrlr[freeLocation].loadOrder = proc->loadOrderCounter++;
+  proc->ramCtrlr[freeLocation].accessCount = 0;
+}
+
+//added
+void swap(pde_t *pgdir, uint userPageVAddr){
+  struct proc *proc = myproc();
+  proc->countOfPagedOut++;
+  int outIndex = getPageOutIndex();
+  int outPagePAddr = getPagePAddr(proc->ramCtrlr[outIndex].userPageVAddr, proc->ramCtrlr[outIndex].pgdir);
+  writePageToFile(proc, proc->ramCtrlr[outIndex].userPageVAddr, proc->ramCtrlr[outIndex].pgdir);
+  char *v = p2v(outPagePAddr);
+  kfree(v); //free swapped page
+  proc->ramCtrlr[outIndex].state = NOTUSED;
+  fixPagedOutPTE(proc->ramCtrlr[outIndex].userPageVAddr, proc->ramCtrlr[outIndex].pgdir);
+  addToRamCtrlr(pgdir, userPageVAddr);
+}
+
+//added
+int isNONEpolicy(){
+	#if NONE
+		return 1;
+	#endif
+	return 0;
+}
 // Allocate page tables and physical memory to grow process from oldsz to
 // newsz, which need not be page aligned.  Returns new size or 0 on error.
 int
@@ -239,6 +425,63 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz) {
 	}
 	return newsz;
 }
+
+
+
+// Copy len bytes from p to user address va in page table pgdir.
+// Most useful when pgdir is not the current page table.
+// uva2ka ensures this only works for PTE_U pages.
+
+
+
+int getFreeRamCtrlrIndex() {
+	struct proc *proc = myproc();
+	if (proc == 0)
+		return -1;
+	int i;
+	for (i = 0; i < MAX_PYSC_PAGES; i++) {
+		if (proc->ramCtrlr[i].state == NOTUSED)
+			return i;
+	}
+	return -1; //NO ROOM IN RAMCTRLR
+}
+
+
+
+//added
+//This must use userVaddress+pgdir addresses!
+//(The proc has identical vAddresses on different page directories until exec finish executing)
+void removeFromRamCtrlr(uint userPageVAddr, pde_t *pgdir){
+	struct proc *proc = myproc();
+	if (proc == 0)
+		return;
+	int i;
+	for (i = 0; i < MAX_PYSC_PAGES; i++) {
+		if (proc->ramCtrlr[i].state == USED 
+				&& proc->ramCtrlr[i].userPageVAddr == userPageVAddr
+				&& proc->ramCtrlr[i].pgdir == pgdir){
+			proc->ramCtrlr[i].state = NOTUSED;
+			return;
+		}
+	}
+}
+//added
+void removeFromFileCtrlr(uint userPageVAddr, pde_t *pgdir){
+	struct proc *proc = myproc();
+	if (proc == 0)
+		return;
+	int i;
+	for (i = 0; i < MAX_TOTAL_PAGES-MAX_PYSC_PAGES; i++) {
+		if (proc->fileCtrlr[i].state == USED 
+				&& proc->fileCtrlr[i].userPageVAddr == userPageVAddr
+				&& proc->fileCtrlr[i].pgdir == pgdir){
+			proc->fileCtrlr[i].state = NOTUSED;
+			return;
+		}
+	}
+}
+
+
 
 // Deallocate user pages to bring the process size from oldsz to
 // newsz.  oldsz and newsz need not be page-aligned, nor does newsz
@@ -344,9 +587,8 @@ uva2ka(pde_t *pgdir, char *uva) {
 	return (char *) P2V(PTE_ADDR(*pte));
 }
 
-// Copy len bytes from p to user address va in page table pgdir.
-// Most useful when pgdir is not the current page table.
-// uva2ka ensures this only works for PTE_U pages.
+
+
 int
 copyout(pde_t *pgdir, uint va, void *p, uint len) {
 	char *buf, *pa0;
@@ -368,96 +610,6 @@ copyout(pde_t *pgdir, uint va, void *p, uint len) {
 	}
 	return 0;
 }
-
-
-//ADDED
-int getPagePAddr(int userPageVAddr, pde_t *pgdir) {
-	pte_t *pte;
-	pte = walkpgdir(pgdir, (int *) userPageVAddr, 0);
-	if (!pte) //uninitialized page table
-		return -1;
-	return PTE_ADDR(*pte);
-}
-
-void fixPagedOutPTE(int userPageVAddr, pde_t *pgdir) {
-	pte_t *pte;
-	pte = walkpgdir(pgdir, (int *) userPageVAddr, 0);
-	if (!pte)
-		panic("PTE of swapped page is missing");
-	*pte |= PTE_PG;
-	*pte &= ~PTE_P;
-	*pte &= PTE_FLAGS(*pte); //clear junk physical address
-	lcr3(v2p(myproc()->pgdir)); //refresh CR3 register
-}
-
-//This method cannot be replaced with mappages because mappages cannot turn off PTE_PG bit
-void fixPagedInPTE(int userPageVAddr, int pagePAddr, pde_t *pgdir) {
-	pte_t *pte;
-	pte = walkpgdir(pgdir, (int *) userPageVAddr, 0);
-	if (!pte)
-		panic("PTE of swapped page is missing");
-	if (*pte & PTE_P)
-		panic("PAGE IN REMAP!");
-	*pte |= PTE_P | PTE_W | PTE_U;      //Turn on needed bits
-	*pte &= ~PTE_PG;                                    //Turn off inFile bit
-	*pte |= pagePAddr;                                //Map PTE to the new Page
-	lcr3(v2p(myproc()->pgdir)); //refresh CR3 register
-}
-
-int pageIsInFile(int userPageVAddr, pde_t *pgdir) {
-	pte_t *pte;
-	pte = walkpgdir(pgdir, (char *) userPageVAddr, 0);
-	return (*pte & PTE_PG); //PAGE IS IN FILE
-}
-
-int getFreeRamCtrlrIndex() {
-	struct proc *proc = myproc();
-	if (proc == 0)
-		return -1;
-	int i;
-	for (i = 0; i < MAX_PYSC_PAGES; i++) {
-		if (proc->ramCtrlr[i].state == NOTUSED)
-			return i;
-	}
-	return -1; //NO ROOM IN RAMCTRLR
-}
-
-static char buff[PGSIZE]; //buffer used to store swapped page in getPageFromFile method
-
-int getPageFromFile(int cr2) {
-	struct proc *proc = myproc();
-	proc->faultCounter++;
-	int userPageVAddr = PGROUNDDOWN(cr2);
-	char *newPg = kalloc();
-	memset(newPg, 0, PGSIZE);
-	int outIndex = getFreeRamCtrlrIndex();
-	lcr3(v2p(proc->pgdir)); //refresh CR3 register
-	if (outIndex >= 0) { //Free location in RamCtrlr is available, no need for swapping
-		fixPagedInPTE(userPageVAddr, v2p(newPg), proc->pgdir);
-		readPageFromFile(proc, outIndex, userPageVAddr, (char *) userPageVAddr);
-		return 1; //Operation was successful
-	}
-	proc->countOfPagedOut++;
-	//If reached here - Swapping is needed.
-	// outIndex = getPageOutIndex(); //select a page to swap to file
-	// struct pagecontroller outPage = proc->ramCtrlr[outIndex];
-	// fixPagedInPTE(userPageVAddr, v2p(newPg), proc->pgdir);
-
-	//tmp::::::::::;;;
-	outIndex = 0;
-	struct pagecontroller outPage = proc->ramCtrlr[outIndex];
-	fixPagedInPTE(userPageVAddr, v2p(newPg), proc->pgdir);
-
-	readPageFromFile(proc, outIndex, userPageVAddr, buff); //automatically adds to ramctrlr
-	int outPagePAddr = getPagePAddr(outPage.userPageVAddr, outPage.pgdir);
-	memmove(newPg, buff, PGSIZE);
-	writePageToFile(proc, outPage.userPageVAddr, outPage.pgdir);
-	fixPagedOutPTE(outPage.userPageVAddr, outPage.pgdir);
-	char *v = p2v(outPagePAddr);
-	kfree(v); //free swapped page
-	return 1;
-}
-
 
 //PAGEBREAK!
 // Blank page.

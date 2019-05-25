@@ -749,7 +749,7 @@ int writeToSwapFile(struct proc *p, char *buffer, uint placeOnFile, uint size) {
 	p->swapFile->off = placeOnFile;
 	return filewrite(p->swapFile, buffer, size);
 }
-
+//added
 int getFreeSlot(struct proc *p) {
 	int maxStructCount = (MAX_TOTAL_PAGES - MAX_PYSC_PAGES);
 	int i;
@@ -760,6 +760,7 @@ int getFreeSlot(struct proc *p) {
 	return -1; //file is full
 }
 
+//added
 int writePageToFile(struct proc *p, int userPageVAddr, pde_t *pgdir) {
 	int freePlace = getFreeSlot(p);
 	int retInt = writeToSwapFile(p, (char *) userPageVAddr, PGSIZE * freePlace, PGSIZE);
@@ -773,14 +774,21 @@ int writePageToFile(struct proc *p, int userPageVAddr, pde_t *pgdir) {
 	p->fileCtrlr[freePlace].loadOrder = 0;
 	return retInt;
 }
-
+//added
 int readPageFromFile(struct proc *p, int ramCtrlrIndex, int userPageVAddr, char *buff) {
-	int maxStructCount = (MAX_TOTAL_PAGES - MAX_PYSC_PAGES);
-	int i;
-	int retInt;
-	for (i = 0; i < maxStructCount; i++) {
+	// for (struct pagecontroller *fc = p->fileCtrlr; fc < &p->fileCtrlr[MAX_TOTAL_PAGES - MAX_PYSC_PAGES]; fc++)
+	// 	if (fc->userPageVAddr == userPageVAddr) {
+	// 		int retInt = readFromSwapFile(p, buff, i * PGSIZE, PGSIZE);
+	// 		if (retInt == -1)
+	// 			break; //error in read
+	// 		p->ramCtrlr[ramCtrlrIndex] = p->fileCtrlr[i];
+	// 		p->ramCtrlr[ramCtrlrIndex].loadOrder = myproc()->loadOrderCounter++;
+	// 		fc->state = NOTUSED;
+	// 		return retInt;
+	// 	}
+	for (int i = 0; i < MAX_TOTAL_PAGES - MAX_PYSC_PAGES; i++) {
 		if (p->fileCtrlr[i].userPageVAddr == userPageVAddr) {
-			retInt = readFromSwapFile(p, buff, i * PGSIZE, PGSIZE);
+			int retInt = readFromSwapFile(p, buff, i * PGSIZE, PGSIZE);
 			if (retInt == -1)
 				break; //error in read
 			p->ramCtrlr[ramCtrlrIndex] = p->fileCtrlr[i];
@@ -793,11 +801,8 @@ int readPageFromFile(struct proc *p, int ramCtrlrIndex, int userPageVAddr, char 
 	return -1;
 }
 
-
 //return 0 on success
-int
-createSwapFile(struct proc *p) {
-
+int createSwapFile(struct proc *p) {
 	char path[DIGITS];
 	memmove(path, "/.swap", 6);
 	itoa(p->pid, path + 6);
@@ -820,14 +825,12 @@ createSwapFile(struct proc *p) {
 	return 0;
 }
 
-
+//added
 void copySwapFile(struct proc *fromP, struct proc *toP) {
 	if (fromP->pid < 3)
 		return;
-	char buff[PGSIZE];
-	int i;
-	for (i = 0; i < MAX_TOTAL_PAGES - MAX_PYSC_PAGES; i++) {
-		if (myproc()->fileCtrlr[i].state == USED) {
+	for (char buff[PGSIZE], struct proc *p = myproc(), int i = 0; i < MAX_TOTAL_PAGES - MAX_PYSC_PAGES; i++) {
+		if (p->fileCtrlr[i].state == USED) {
 			if (readFromSwapFile(fromP, buff, PGSIZE * i, PGSIZE) != PGSIZE)
 				panic("CopySwapFile error");
 			if (writeToSwapFile(toP, buff, PGSIZE * i, PGSIZE) != PGSIZE)
