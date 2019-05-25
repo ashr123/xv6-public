@@ -1,3 +1,5 @@
+#pragma once
+
 struct buf;
 struct context;
 struct file;
@@ -169,7 +171,7 @@ int pipewrite(struct pipe *, char *, int);
 // proc.c
 int cpuid(void);
 
-void exit(void);
+void exit(void) __attribute__((noreturn));
 
 int fork(void);
 

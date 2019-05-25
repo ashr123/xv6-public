@@ -457,6 +457,7 @@ void stati(struct inode *ip, struct stat *st)
 // Caller must hold ip->lock.
 int readi(struct inode *ip, char *dst, uint off, uint n)
 {
+
 	if (ip->type == T_DEV)
 	{
 		if (ip->major < 0 || ip->major >= NDEV || !devsw[ip->major].read)
@@ -469,10 +470,10 @@ int readi(struct inode *ip, char *dst, uint off, uint n)
 	if (off + n > ip->size)
 		n = ip->size - off;
 
-	for (uint tot = 0; tot < n; tot += m, off += m, dst += m)
+	for (uint tot = 0, m; tot < n; tot += m, off += m, dst += m)
 	{
 		struct buf *bp = bread(ip->dev, bmap(ip, off / BSIZE));
-		uint m = min(n - tot, BSIZE - off % BSIZE);
+		m = min(n - tot, BSIZE - off % BSIZE);
 		memmove(dst, bp->data + off % BSIZE, m);
 		brelse(bp);
 	}
@@ -496,10 +497,10 @@ int writei(struct inode *ip, char *src, uint off, uint n)
 	if (off + n > MAXFILE * BSIZE)
 		return -1;
 
-	for (uint tot = 0; tot < n; tot += m, off += m, src += m)
+	for (uint tot = 0, m; tot < n; tot += m, off += m, src += m)
 	{
 		struct buf *bp = bread(ip->dev, bmap(ip, off / BSIZE));
-		uint m = min(n - tot, BSIZE - off % BSIZE);
+		m = min(n - tot, BSIZE - off % BSIZE);
 		memmove(bp->data + off % BSIZE, src, m);
 		log_write(bp);
 		brelse(bp);
@@ -563,7 +564,8 @@ int dirlink(struct inode *dp, char *name, uint inum)
 	}
 
 	// Look for an empty dirent.
-	for (int off = 0; off < dp->size; off += sizeof(de))
+	int off;
+	for (off = 0; off < dp->size; off += sizeof(de))
 	{
 		if (readi(dp, (char *)&de, off, sizeof(de)) != sizeof(de))
 			panic("dirlink read");
