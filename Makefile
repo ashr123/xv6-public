@@ -30,6 +30,7 @@ OBJS = \
 
 # Cross-compiling (e.g., on Mac OS X)
 # TOOLPREFIX = i386-jos-elf
+TOOLPREFIX = i386-elf-
 
 # Using native tools (e.g., on X86 Linux)
 #TOOLPREFIX = 
@@ -81,7 +82,7 @@ ifndef VERBOSE_PRINT
 endif
 
 
-CC = $(TOOLPREFIX)gcc
+CC = $(TOOLPREFIX)gcc -std=gnu11
 AS = $(TOOLPREFIX)gas
 LD = $(TOOLPREFIX)ld
 OBJCOPY = $(TOOLPREFIX)objcopy

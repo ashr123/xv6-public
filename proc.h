@@ -1,5 +1,6 @@
 // Per-CPU state
-struct cpu {
+struct cpu
+{
 	uchar apicid;                // Local APIC ID
 	struct context *scheduler;   // swtch() here to enter scheduler
 	struct taskstate ts;         // Used by x86 to find stack for interrupt
@@ -24,7 +25,8 @@ extern int ncpu;
 // The layout of the context matches the layout of the stack in swtch.S
 // at the "Switch stacks" comment. Switch doesn't save eip explicitly,
 // but it is on the stack and allocproc() manipulates it.
-struct context {
+struct context
+{
 	uint edi;
 	uint esi;
 	uint ebx;
@@ -32,12 +34,14 @@ struct context {
 	uint eip;
 };
 
-enum page_struct_state {
+enum page_struct_state
+{
 	NOTUSED, USED
 };
 
 // pages struct
-struct pagecontroller {
+struct pagecontroller
+{
 	enum page_struct_state state;
 	pde_t *pgdir;
 	uint userPageVAddr;
@@ -46,12 +50,14 @@ struct pagecontroller {
 };
 
 
-enum procstate {
+enum procstate
+{
 	UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE
 };
 
 // Per-process state
-struct proc {
+struct proc
+{
 	uint sz;                     // Size of process memory (bytes)
 	pde_t *pgdir;                // Page table
 	char *kstack;                // Bottom of kernel stack for this process

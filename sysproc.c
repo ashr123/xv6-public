@@ -8,29 +8,34 @@
 #include "proc.h"
 
 
-int sys_yield(void) {
+int sys_yield(void)
+{
 	yield();
 	return 0;
 }
 
 int
-sys_fork(void) {
+sys_fork(void)
+{
 	return fork();
 }
 
 int
-sys_exit(void) {
+sys_exit(void)
+{
 	exit();
 	return 0;  // not reached
 }
 
 int
-sys_wait(void) {
+sys_wait(void)
+{
 	return wait();
 }
 
 int
-sys_kill(void) {
+sys_kill(void)
+{
 	int pid;
 
 	if (argint(0, &pid) < 0)
@@ -39,12 +44,14 @@ sys_kill(void) {
 }
 
 int
-sys_getpid(void) {
+sys_getpid(void)
+{
 	return myproc()->pid;
 }
 
 int
-sys_sbrk(void) {
+sys_sbrk(void)
+{
 	int addr;
 	int n;
 
@@ -57,7 +64,8 @@ sys_sbrk(void) {
 }
 
 int
-sys_sleep(void) {
+sys_sleep(void)
+{
 	int n;
 	uint ticks0;
 
@@ -65,8 +73,10 @@ sys_sleep(void) {
 		return -1;
 	acquire(&tickslock);
 	ticks0 = ticks;
-	while (ticks - ticks0 < n) {
-		if (myproc()->killed) {
+	while (ticks - ticks0 < n)
+	{
+		if (myproc()->killed)
+		{
 			release(&tickslock);
 			return -1;
 		}
@@ -79,7 +89,8 @@ sys_sleep(void) {
 // return how many clock tick interrupts have occurred
 // since start.
 int
-sys_uptime(void) {
+sys_uptime(void)
+{
 	uint xticks;
 
 	acquire(&tickslock);
