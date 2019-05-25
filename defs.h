@@ -93,7 +93,9 @@ int writePageToFile(struct proc *p, int pageVaddr, pde_t *pgdir);
 
 int readPageFromFile(struct proc *p, int ramCtrlrIndex, int userPageVAddr, char *buff);
 
-void copySwapFile(struct proc *fromP, struct proc *toP);
+
+
+//void copySwapFile(struct proc *fromP, struct proc *toP);
 
 
 // ide.c
@@ -313,7 +315,11 @@ int pageIsInFile(int vAddr, pde_t *pgdir);
 
 int getPageFromFile(int vAddr);
 
-void updateAccessCounters();
+//void updateAccessCounters();
+
+
+
+//int isNONEpolicy();
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
