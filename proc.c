@@ -14,6 +14,9 @@ struct {
 
 static struct proc *initproc;
 
+//ADDED
+
+
 int nextpid = 1;
 
 extern void forkret(void);
@@ -87,7 +90,6 @@ allocproc(void) {
 	found:
 	p->state = EMBRYO;
 	p->pid = nextpid++;
-
 	release(&ptable.lock);
 
 	// Allocate kernel stack.
@@ -100,10 +102,11 @@ allocproc(void) {
 	// Leave room for trap frame.
 	sp -= sizeof *p->tf;
 	p->tf = (struct trapframe *) sp;
-
+	//added
 	p->loadOrderCounter = 0;
 	p->faultCounter = 0;
 	p->countOfPagedOut = 0;
+	p->protected = 0;
 
 	if (p->pid > 2)
 		createSwapFile(p);
@@ -179,6 +182,21 @@ growproc(int n) {
 	return 0;
 }
 
+
+//added
+void copySwapFile(struct proc* fromP, struct proc* toP){
+  char buff[PGSIZE];
+  for (int i = 0; i < MAX_TOTAL_PAGES-MAX_PYSC_PAGES; i++){
+    if (myproc()->fileCtrlr[i].state == USED){
+      if (readFromSwapFile(fromP, buff, PGSIZE*i, PGSIZE) != PGSIZE)
+        panic("CopySwapFile error");
+      if (writeToSwapFile(toP, buff, PGSIZE*i, PGSIZE) != PGSIZE)
+        panic("CopySwapFile error");
+    }
+  }
+}
+
+
 // Create a new process copying p as the parent.
 // Sets up stack to return as if from system call.
 // Caller must set state of returned proc to RUNNABLE.
@@ -206,15 +224,14 @@ fork(void) {
 
 	if (curproc->pid > 2) {
 		copySwapFile(curproc, np);
-		np->loadOrderCounter = curproc->loadOrderCounter;
 		for (i = 0; i < MAX_PYSC_PAGES; i++) {
-			np->ramCtrlr[i] = curproc->ramCtrlr[i]; //deep copies ramCtrlr list
-			np->ramCtrlr[i].pgdir = np->pgdir;  //replace parent pgdir with child new pgdir
+			np->ramCtrlr[i] = myproc()->ramCtrlr[i];
+			np->fileCtrlr[i] = myproc()->fileCtrlr[i];
+			np->ramCtrlr[i].pgdir = np->pgdir;
+			np->fileCtrlr[i].pgdir = np->pgdir;
 		}
-		for (i = 0; i < MAX_TOTAL_PAGES - MAX_PYSC_PAGES; i++) {
-			np->fileCtrlr[i] = curproc->fileCtrlr[i]; //deep copies fileCtrlr list
-			np->fileCtrlr[i].pgdir = np->pgdir;   //replace parent pgdir with child new pgdir
-		}
+		np->loadOrderCounter = curproc->loadOrderCounter;
+	
 	}
 
 	// Clear %eax so that fork returns 0 in the child.
@@ -261,8 +278,8 @@ exit(void) {
 			curproc->ofile[fd] = 0;
 		}
 	}
-	if (curproc->pid > 2)
-		removeSwapFile(curproc);
+	// if (curproc->pid > 2)
+	// 	removeSwapFile(curproc);
 
 
 	begin_op();
@@ -286,6 +303,11 @@ exit(void) {
 
 	// Jump into the scheduler, never to return.
 	curproc->state = ZOMBIE;
+
+
+	// #if TRUE
+    // 	procdump();
+    // #endif
 	sched();
 	panic("zombie exit");
 }
@@ -307,6 +329,7 @@ wait(void) {
 				continue;
 			havekids = 1;
 			if (p->state == ZOMBIE) {
+				
 				// Found one.
 				pid = p->pid;
 				kfree(p->kstack);
@@ -315,10 +338,12 @@ wait(void) {
 				p->pid = 0;
 				p->parent = 0;
 				int i;
-				for (i = 0; i < MAX_PYSC_PAGES; i++)
-					p->ramCtrlr[i].state = NOTUSED;
-				for (i = 0; i < MAX_TOTAL_PAGES - MAX_PYSC_PAGES; i++)
-					p->fileCtrlr[i].state = NOTUSED;
+				for (i = 0; i < MAX_PYSC_PAGES; i++){
+						p->ramCtrlr[i].state = NOTUSED;
+						p->fileCtrlr[i].state = NOTUSED;
+				}
+					
+				
 
 				p->name[0] = 0;
 				p->killed = 0;
@@ -516,38 +541,120 @@ kill(int pid) {
 	return -1;
 }
 
+//added
+int getPagedOutAmout(struct proc* p){
+ 
+  int i;
+  int amout = 0;
+
+  for (i=0;i < MAX_PYSC_PAGES; i++){
+    if (p->fileCtrlr[i].state == USED){
+		// cprintf("\n NOOOOOOOOOOOOOOOOO");
+		amout++;
+	}
+      
+  }
+  return amout;
+}
+
+
 //PAGEBREAK: 36
 // Print a process listing to console.  For debugging.
 // Runs when user types ^P on console.
 // No lock to avoid wedging a stuck machine further.
 void
-procdump(void) {
-	static char *states[] = {
-			[UNUSED]    "unused",
-			[EMBRYO]    "embryo",
-			[SLEEPING]  "sleep ",
-			[RUNNABLE]  "runble",
-			[RUNNING]   "run   ",
-			[ZOMBIE]    "zombie"
-	};
-	int i;
-	struct proc *p;
-	char *state;
-	uint pc[10];
+procdump(void)
+{
+  static char *states[] = {
+  [UNUSED]    "unused",
+  [EMBRYO]    "embryo",
+  [SLEEPING]  "sleep ",
+  [RUNNABLE]  "runble",
+  [RUNNING]   "run   ",
+  [ZOMBIE]    "zombie"
+  };
+  int i;
+  struct proc *p;
+  char *state;
+  uint pc[10];
+  int allocatedPages;
+  int pagedOutAmount = 0;
 
-	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-		if (p->state == UNUSED)
-			continue;
-		if (p->state >= 0 && p->state < NELEM(states) && states[p->state])
-			state = states[p->state];
-		else
-			state = "???";
-		cprintf("%d %s %s", p->pid, state, p->name);
-		if (p->state == SLEEPING) {
-			getcallerpcs((uint *) p->context->ebp + 2, pc);
-			for (i = 0; i < 10 && pc[i] != 0; i++)
-				cprintf(" %p", pc[i]);
-		}
-		cprintf("\n");
-	}
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(p->state == UNUSED)
+      continue;
+    if(p->state >= 0 && p->state < NELEM(states) && states[p->state])
+      state = states[p->state];
+    else
+      state = "???";
+
+//    cprintf("%d %s %s", p->pid, state, p->name);
+
+    allocatedPages = PGROUNDUP(p->sz)/PGSIZE;
+
+    for (int i=0; i < MAX_PYSC_PAGES; i++){
+      if (p->fileCtrlr[i].state == USED)
+        pagedOutAmount++;
+    }
+
+    p->protected = 0;
+    cprintf("%d %s %d %d %d %d %d %s", p->pid, state, allocatedPages,
+            pagedOutAmount, p->protected , p->faultCounter , p->countOfPagedOut, p->name);
+
+    if(p->state == SLEEPING){
+      getcallerpcs((uint*)p->context->ebp+2, pc);
+      for(i=0; i<10 && pc[i] != 0; i++)
+        cprintf(" %p", pc[i]);
+    }
+    cprintf("\n");
+  }
 }
+
+
+//PAGEBREAK: 36
+// Print a process listing to console.  For debugging.
+// Runs when user types ^P on console.
+// No lock to avoid wedging a stuck machine further.
+// void
+// procdump(void) {
+// 	static char *states[] = {
+// 			[UNUSED]    "unused",
+// 			[EMBRYO]    "embryo",
+// 			[SLEEPING]  "sleep ",
+// 			[RUNNABLE]  "runble",
+// 			[RUNNING]   "run   ",
+// 			[ZOMBIE]    "zombie"
+// 	};
+// 	int i;
+// 	struct proc *p;
+// 	char *state;
+// 	uint pc[10];
+
+// 	//added
+// 	int allocatedPages;
+//     int pagedOutAmount;
+
+// 	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+// 		if (p->state == UNUSED)
+// 			continue;
+// 		if (p->state >= 0 && p->state < NELEM(states) && states[p->state])
+// 			state = states[p->state];
+// 		else
+// 			state = "???";
+
+// 		//added
+// 		allocatedPages = PGROUNDUP(p->sz)/PGSIZE;
+//     	pagedOutAmount = getPagedOutAmout(p);
+// 	    cprintf("\n %s", state);
+//         cprintf("\n%d %d %d %d %d %s\n",allocatedPages, pagedOutAmount,
+// 		  p->protected,p->faultCounter, p->countOfPagedOut,  p->name);
+
+// 		// cprintf("%d %s %s", p->pid, state, p->name);
+// 		if (p->state == SLEEPING) {
+// 			getcallerpcs((uint *) p->context->ebp + 2, pc);
+// 			for (i = 0; i < 10 && pc[i] != 0; i++)
+// 				cprintf(" %p", pc[i]);
+// 		}
+// 		cprintf("\n");
+// 	}
+// }

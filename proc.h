@@ -69,6 +69,8 @@ struct proc {
 	//added
 	int faultCounter;
 	int countOfPagedOut;
+	//for task 1
+	int protected;
 
 	//Swap file. must initiate with create swap file
 	struct file *swapFile;            //page file
