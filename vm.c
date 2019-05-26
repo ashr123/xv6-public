@@ -244,7 +244,7 @@ int loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
 //   return retInt;
 // }
 
-//aadded
+//added
 // int readPageFromFile(struct proc * p, int ramCtrlrIndex, int userPageVAddr, char* buff) {
 //   int i;
 //   int retInt;
@@ -314,13 +314,11 @@ int getLIFO()
 	uint loadOrder = 0;
 
 	for (int i = 0; i < MAX_PYSC_PAGES; i++)
-	{
 		if (proc->ramCtrlr[i].state == USED && proc->ramCtrlr[i].loadOrder > loadOrder)
 		{
 			loadOrder = proc->ramCtrlr[i].loadOrder;
 			pageIndex = i;
 		}
-	}
 	return pageIndex;
 }
 
@@ -334,13 +332,11 @@ recheck:
 	pageIndex = -1;
 	loadOrder = 0xFFFFFFFF;
 	for (int i = 0; i < MAX_PYSC_PAGES; i++)
-	{
 		if (proc->ramCtrlr[i].state == USED && proc->ramCtrlr[i].loadOrder <= loadOrder)
 		{
 			pageIndex = i;
 			loadOrder = proc->ramCtrlr[i].loadOrder;
 		}
-	}
 	pte_t *pte = walkpgdir(proc->ramCtrlr[pageIndex].pgdir, (char *)proc->ramCtrlr[pageIndex].userPageVAddr, 0);
 	if (*pte & PTE_A)
 	{
