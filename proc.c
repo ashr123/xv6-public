@@ -113,7 +113,7 @@ allocproc(void)
 	//added
 	p->loadOrderCounter = 0;
 	p->faultCounter = 0;
-	p->countOfPagedOut = 0;
+	p->pagedOutCounter = 0;
 	p->protected = 0;
 
 	if (p->pid > 2)
@@ -201,7 +201,7 @@ void copySwapFile(struct proc *fromP, struct proc *toP)
 	char buff[PGSIZE];
 	for (int i = 0; i < MAX_TOTAL_PAGES - MAX_PYSC_PAGES; i++)
 	{
-		if (myproc()->fileCtrlr[i].state == USED)
+		if (myproc()->disk_pages[i].state == USED)
 		{
 			if (readFromSwapFile(fromP, buff, PGSIZE * i, PGSIZE) != PGSIZE)
 				panic("CopySwapFile error");
@@ -245,10 +245,10 @@ fork(void)
 		copySwapFile(curproc, np);
 		for (i = 0; i < MAX_PYSC_PAGES; i++)
 		{
-			np->ramCtrlr[i] = myproc()->ramCtrlr[i];
-			np->fileCtrlr[i] = myproc()->fileCtrlr[i];
-			np->ramCtrlr[i].pgdir = np->pgdir;
-			np->fileCtrlr[i].pgdir = np->pgdir;
+			np->ram_pages[i] = myproc()->ram_pages[i];
+			np->disk_pages[i] = myproc()->disk_pages[i];
+			np->ram_pages[i].pgdir = np->pgdir;
+			np->disk_pages[i].pgdir = np->pgdir;
 		}
 		np->loadOrderCounter = curproc->loadOrderCounter;
 
@@ -268,7 +268,7 @@ fork(void)
 
 
 	np->faultCounter = 0;
-	np->countOfPagedOut = 0;
+	np->pagedOutCounter = 0;
 
 	acquire(&ptable.lock);
 
@@ -369,8 +369,8 @@ wait(void)
 				int i;
 				for (i = 0; i < MAX_PYSC_PAGES; i++)
 				{
-					p->ramCtrlr[i].state = NOTUSED;
-					p->fileCtrlr[i].state = NOTUSED;
+					p->ram_pages[i].state = NOTUSED;
+					p->disk_pages[i].state = NOTUSED;
 				}
 
 
@@ -595,7 +595,7 @@ int getPagedOutAmout(struct proc *p)
 
 	for (i = 0; i < MAX_PYSC_PAGES; i++)
 	{
-		if (p->fileCtrlr[i].state == USED)
+		if (p->disk_pages[i].state == USED)
 		{
 			// cprintf("\n NOOOOOOOOOOOOOOOOO");
 			amout++;
@@ -643,13 +643,13 @@ procdump(void)
 
 		for (int i = 0; i < MAX_PYSC_PAGES; i++)
 		{
-			if (p->fileCtrlr[i].state == USED)
+			if (p->disk_pages[i].state == USED)
 				pagedOutAmount++;
 		}
 
 		p->protected = 0;
 		cprintf("%d %s %d %d %d %d %d %s", p->pid, state, allocatedPages,
-		        pagedOutAmount, p->protected, p->faultCounter, p->countOfPagedOut, p->name);
+		        pagedOutAmount, p->protected, p->faultCounter, p->pagedOutCounter, p->name);
 
 		if (p->state == SLEEPING)
 		{

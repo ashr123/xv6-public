@@ -74,15 +74,15 @@ struct proc
 
 	//added
 	int faultCounter;
-	int countOfPagedOut;
+	int pagedOutCounter;
 	//for task 1
 	int protected;
 
 	//Swap file. must initiate with create swap file
 	struct file *swapFile;            //page file
 	//added
-	struct pagecontroller fileCtrlr[MAX_TOTAL_PAGES - MAX_PYSC_PAGES];
-	struct pagecontroller ramCtrlr[MAX_PYSC_PAGES];
+	struct pagecontroller disk_pages[MAX_TOTAL_PAGES - MAX_PYSC_PAGES];
+	struct pagecontroller ram_pages[MAX_PYSC_PAGES];
 	uint loadOrderCounter; //load/creation
 };
 

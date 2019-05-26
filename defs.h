@@ -91,7 +91,7 @@ int removeSwapFile(struct proc *p);
 
 int writePageToFile(struct proc *p, int pageVaddr, pde_t *pgdir);
 
-int readPageFromFile(struct proc *p, int ramCtrlrIndex, int userPageVAddr, char *buff);
+int readPageFromFile(struct proc *p, int ram_pages_index, int userPageVAddr, char *buff);
 
 
 
