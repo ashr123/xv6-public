@@ -822,35 +822,33 @@ int writeToSwapFile(struct proc *p, char *buffer, uint placeOnFile, uint size)
 
 
 //added
-int getFreeSlot(struct proc *p)
+int findSpaceOnFile(struct proc *p)
 {
 	for (int i = 0; i < MAX_PYSC_PAGES; i++)
-	{
 		if (p->disk_pages[i].state == NOTUSED)
 			return i;
-	}
 	return -1; //file is full
 }
 
 //added
-int writePageToFile(struct proc *p, int userPageVAddr, pde_t *pgdir)
+int writeToFile(struct proc *p, int userPageVAddr, pde_t *pgdir)
 {
-	int freePlace = getFreeSlot(p);
-	int retInt = writeToSwapFile(p, (char *) userPageVAddr, PGSIZE * freePlace, PGSIZE);
+	int spaceInFile = findSpaceOnFile(p);
+	int retInt = writeToSwapFile(p, (char *) userPageVAddr, PGSIZE * spaceInFile, PGSIZE);
 	if (retInt == -1)
 		return -1;
-	//if reached here - data was successfully placed in file
-	p->disk_pages[freePlace].state = USED;
-	p->disk_pages[freePlace].userPageVAddr = userPageVAddr;
-	p->disk_pages[freePlace].pgdir = pgdir;
-	p->disk_pages[freePlace].accessCount = 0;
-	p->disk_pages[freePlace].loadOrder = 0;
+	//placed in file, changing stats
+	p->disk_pages[spaceInFile].state = USED;
+	p->disk_pages[spaceInFile].userPageVAddr = userPageVAddr;
+	p->disk_pages[spaceInFile].pgdir = pgdir;
+	p->disk_pages[spaceInFile].accessCount = 0;
+	p->disk_pages[spaceInFile].loadOrder = 0;
 	return retInt;
 }
 
 
-//aadded
-int readPageFromFile(struct proc *p, int ram_pages_index, int userPageVAddr, char *buff)
+//added
+int readFromFile(struct proc *p, int ram_page_index, int userPageVAddr, char *buff)
 {
 	for (int i = 0; i < MAX_TOTAL_PAGES - MAX_PYSC_PAGES; i++)
 	{
@@ -859,13 +857,13 @@ int readPageFromFile(struct proc *p, int ram_pages_index, int userPageVAddr, cha
 			int retInt = readFromSwapFile(p, buff, i * PGSIZE, PGSIZE);
 			if (retInt == -1)
 				break; //error in read
-			p->ram_pages[ram_pages_index] = p->disk_pages[i];
-			p->ram_pages[ram_pages_index].loadOrder = myproc()->loadOrderCounter++;
+			p->ram_pages[ram_page_index] = p->disk_pages[i];
+			p->ram_pages[ram_page_index].loadOrder = myproc()->loadOrderCounter++;
 			p->disk_pages[i].state = NOTUSED;
 			return retInt;
 		}
 	}
-	//if reached here - physical address given is not paged out (not found)
+	//physical address not found
 	return -1;
 }
 

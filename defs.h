@@ -89,9 +89,9 @@ int writeToSwapFile(struct proc *p, char *buffer, uint placeOnFile, uint size);
 
 int removeSwapFile(struct proc *p);
 
-int writePageToFile(struct proc *p, int pageVaddr, pde_t *pgdir);
+int writeToFile(struct proc *p, int pageVaddr, pde_t *pgdir);
 
-int readPageFromFile(struct proc *p, int ram_pages_index, int userPageVAddr, char *buff);
+int readFromFile(struct proc *p, int ram_pages_index, int userPageVAddr, char *buff);
 
 
 
@@ -311,7 +311,7 @@ int copyout(pde_t *, uint, void *, uint);
 
 void clearpteu(pde_t *pgdir, char *uva);
 
-int pageIsInFile(int vAddr, pde_t *pgdir);
+int isPageInFile(int vAddr, pde_t *pgdir);
 
 int getPageFromFile(int vAddr);
 

@@ -220,7 +220,7 @@ int loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
 
 
 //ADDED
-int getPagePAddr(int userPageVAddr, pde_t *pgdir)
+int getPagePhysicalAddr(int userPageVAddr, pde_t *pgdir)
 {
 	pte_t *pte = walkpgdir(pgdir, (int *)userPageVAddr, 0);
 	if (!pte) // -> uninitialized pgt
@@ -229,7 +229,7 @@ int getPagePAddr(int userPageVAddr, pde_t *pgdir)
 }
 
 //ADDED
-void fixPagedOutPTE(int userPageVAddr, pde_t *pgdir)
+void setPTEOutOfRAM(int userPageVAddr, pde_t *pgdir)
 {
 	pte_t *pte = walkpgdir(pgdir, (int *)userPageVAddr, 0);
 	if (!pte)
@@ -241,7 +241,7 @@ void fixPagedOutPTE(int userPageVAddr, pde_t *pgdir)
 }
 
 //ADDED
-void fixPagedInPTE(int userPageVAddr, int pagePAddr, pde_t *pgdir)
+void setPTEIntoRAM(int userPageVAddr, int pagePAddr, pde_t *pgdir)
 {
 	pte_t *pte = walkpgdir(pgdir, (int *)userPageVAddr, 0);
 	if (!pte)
@@ -255,14 +255,14 @@ void fixPagedInPTE(int userPageVAddr, int pagePAddr, pde_t *pgdir)
 }
 
 //ADDED
-int pageIsInFile(int userPageVAddr, pde_t *pgdir)
+int isPageInFile(int userPageVAddr, pde_t *pgdir)
 {
 	pte_t *pte = walkpgdir(pgdir, (char *)userPageVAddr, 0);
 	return (*pte & PTE_PG); //PAGE IS IN FILE
 }
 
 //added
-int getLIFO()
+int getPageIndexByLIFO()
 {
 	struct proc *proc = myproc();
 	int pageIndex = -1;
@@ -278,7 +278,7 @@ int getLIFO()
 }
 
 //added
-int getSCFIFO()
+int getPageIndexByCSFIFO()
 {
 	struct proc *proc = myproc();
 	int pageIndex;
@@ -306,16 +306,16 @@ recheck:
 int getPageOutIndexByPolicy()
 {
 #if LIFO
-	return getLIFO();
+	return getPageIndexByLIFO();
 #elif SCFIFO
-	return getSCFIFO();
+	return getPageIndexByCSFIFO();
 #else
 	panic("Unrecognized paging machanism");
 #endif
 }
 
 //added
-int nexrRAMfreePage()
+int nextRAMfreePage()
 {
 	struct proc *proc = myproc();
 	if (proc == 0)
@@ -323,46 +323,39 @@ int nexrRAMfreePage()
 	for (int i = 0; i < MAX_PYSC_PAGES; i++)
 		if (proc->ram_pages[i].state == NOTUSED)
 			return i;
-	return -1; //NO ROOM IN RAMCTRLR
+	return -1; //if no space in ram
 }
 
 //added
-static char buff[PGSIZE]; //buffer used to store swapped page in getPageFromFile method
+static char buff[PGSIZE]; //buffer for swaped pages
 
 //added
 int getPageFromFile(int cr2)
 {
 	struct proc *proc = myproc();
 	proc->faultCounter++;
-	int userPageVAddr = PGROUNDDOWN(cr2);
-	char *newPg = kalloc();
-	memset(newPg, 0, PGSIZE);
-	int outIndex = nexrRAMfreePage();
+	int userPageVAddr = PGROUNDDOWN(cr2),
+		outIndex = nextRAMfreePage();
+	char *newPage = kalloc();
+	memset(newPage, 0, PGSIZE);
 	lcr3(V2P(proc->pgdir)); //refresh CR3 register
 	if (outIndex >= 0)
 	{ 
-		fixPagedInPTE(userPageVAddr, V2P(newPg), proc->pgdir);
-		readPageFromFile(proc, outIndex, userPageVAddr, (char *)userPageVAddr);
-		return 1; //Operation was successful
+		setPTEIntoRAM(userPageVAddr, V2P(newPage), proc->pgdir);
+		readFromFile(proc, outIndex, userPageVAddr, (char *)userPageVAddr);
+		return 1;
 	}
 	proc->pagedOutCounter++;
-	outIndex = getPageOutIndexByPolicy(); //select a page to swap to file
-	//cprintf("\npolicy:          %d",outIndex);
+	outIndex = getPageOutIndexByPolicy(); // find a page to swap
 	struct pagecontroller outPage = proc->ram_pages[outIndex];
-	fixPagedInPTE(userPageVAddr, V2P(newPg), proc->pgdir);
+	setPTEIntoRAM(userPageVAddr, V2P(newPage), proc->pgdir);
 
-	// //tmp::::::::::;;;
-	// outIndex = 0;
-	// struct pagecontroller outPage = proc->ram_pages[outIndex];
-	// fixPagedInPTE(userPageVAddr, v2p(newPg), proc->pgdir);
-
-	readPageFromFile(proc, outIndex, userPageVAddr, buff); //automatically adds to ramctrlr
-	int outPagePAddr = getPagePAddr(outPage.userPageVAddr, outPage.pgdir);
-	memmove(newPg, buff, PGSIZE);
-	writePageToFile(proc, outPage.userPageVAddr, outPage.pgdir);
-	fixPagedOutPTE(outPage.userPageVAddr, outPage.pgdir);
-	char *v = P2V(outPagePAddr);
-	kfree(v); 
+	readFromFile(proc, outIndex, userPageVAddr, buff); // adds to rampage
+	int outPagePAddr = getPagePhysicalAddr(outPage.userPageVAddr, outPage.pgdir);
+	memmove(newPage, buff, PGSIZE);
+	writeToFile(proc, outPage.userPageVAddr, outPage.pgdir);
+	setPTEOutOfRAM(outPage.userPageVAddr, outPage.pgdir);
+	kfree(P2V(outPagePAddr)); 
 	return 1;
 }
 
@@ -371,17 +364,16 @@ void swap(pde_t *pgdir, uint userPageVAddr)
 {
 	struct proc *proc = myproc();
 	proc->pagedOutCounter++;
-	int outIndex = getPageOutIndexByPolicy();
-	int outPagePAddr = getPagePAddr(proc->ram_pages[outIndex].userPageVAddr, proc->ram_pages[outIndex].pgdir);
-	writePageToFile(proc, proc->ram_pages[outIndex].userPageVAddr, proc->ram_pages[outIndex].pgdir);
-	char *v = P2V(outPagePAddr);
-	kfree(v); //free swapped page
+	int outIndex = getPageOutIndexByPolicy(),
+		outPagePAddr = getPagePhysicalAddr(proc->ram_pages[outIndex].userPageVAddr, proc->ram_pages[outIndex].pgdir);
+	writeToFile(proc, proc->ram_pages[outIndex].userPageVAddr, proc->ram_pages[outIndex].pgdir);
+	kfree(P2V(outPagePAddr)); //free swapped page
 	proc->ram_pages[outIndex].state = NOTUSED;
-	fixPagedOutPTE(proc->ram_pages[outIndex].userPageVAddr, proc->ram_pages[outIndex].pgdir);
-	int freeLocation = nexrRAMfreePage();
-	proc->ram_pages[freeLocation].state = USED;
+	setPTEOutOfRAM(proc->ram_pages[outIndex].userPageVAddr, proc->ram_pages[outIndex].pgdir);
+	int freeLocation = nextRAMfreePage();
 	proc->ram_pages[freeLocation].pgdir = pgdir;
 	proc->ram_pages[freeLocation].userPageVAddr = userPageVAddr;
+	proc->ram_pages[freeLocation].state = USED;
 	proc->ram_pages[freeLocation].loadOrder = proc->loadOrderCounter++;
 	proc->ram_pages[freeLocation].accessCount = 0;
 }
@@ -443,7 +435,7 @@ int allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 				swap(pgdir, a);
 			else
 			{ //there's room
-				int ramIdx = nexrRAMfreePage();
+				int ramIdx = nextRAMfreePage();
 				myproc()->ram_pages[ramIdx].state = USED;
 				myproc()->ram_pages[ramIdx].pgdir = pgdir;
 				myproc()->ram_pages[ramIdx].userPageVAddr = a;
@@ -455,43 +447,38 @@ int allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 	return newsz;
 }
 
-/////////////////////////FR: UNTIL HERE
-
 // Deallocate user pages to bring the process size from oldsz to
 // newsz.  oldsz and newsz need not be page-aligned, nor does newsz
 // need to be less than oldsz.  oldsz can be larger than the actual
 // process size.  Returns the new process size.
 int deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 {
-	pte_t *pte;
-	uint a, pa;
-
 	if (newsz >= oldsz)
 		return oldsz;
-
-	a = PGROUNDUP(newsz);
-	int i = 0; //debugging
-	for (; a < oldsz; a += PGSIZE)
+	for (uint a = PGROUNDUP(newsz); a < oldsz; a += PGSIZE)
 	{
-		pte = walkpgdir(pgdir, (char *)a, 0);
-		if (!pte)							//uninitialized page table
-			a += (NPTENTRIES - 1) * PGSIZE; //jump to next page table
+		pte_t *pte = walkpgdir(pgdir, (char *)a, 0);
+		if (!pte)
+			a += (NPTENTRIES - 1) * PGSIZE;
 		else if ((*pte & PTE_P) != 0)
-		{						 //page table exists and page is present
-			pa = PTE_ADDR(*pte); //pa = beginning of page physical address
+		{
+			uint pa = PTE_ADDR(*pte);
 			if (pa == 0)
 				panic("kfree");
-			char *v = P2V(pa);
-			kfree(v); //free page
-
-			for (int i = 0; i < MAX_PYSC_PAGES; i++)
-			{
-				if (myproc()->ram_pages[i].state == USED && myproc()->ram_pages[i].pgdir == pgdir &&
-					myproc()->ram_pages[i].userPageVAddr == a)
-				{
-					myproc()->ram_pages[i].state = NOTUSED;
-				}
-			}
+			kfree(P2V(pa));
+			
+			struct proc *p=myproc();
+			for (struct pagecontroller *rp = p->ram_pages; rp < &p->ram_pages[MAX_PYSC_PAGES]; rp++)
+				if (rp->state == USED && rp->pgdir == pgdir && rp->userPageVAddr == a)  // clean the pages from proc
+					rp->state = NOTUSED;
+			// for (int i = 0; i < MAX_PYSC_PAGES; i++)
+			// {
+			// 	if (myproc()->ram_pages[i].state == USED && myproc()->ram_pages[i].pgdir == pgdir &&
+			// 		myproc()->ram_pages[i].userPageVAddr == a)
+			// 	{
+			// 		myproc()->ram_pages[i].state = NOTUSED;
+			// 	}
+			// }
 
 			//if (!isNONEpolicy()) { //FR: changed - check 3.3 none policy
 			// for (int i = 0; i < MAX_PYSC_PAGES; i++) {
@@ -500,8 +487,6 @@ int deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 			//   }
 			// }
 			//}
-
-			i++;
 			*pte = 0;
 		}
 	}
@@ -559,7 +544,7 @@ copyuvm(pde_t *pgdir, uint sz)
 			panic("copyuvm: pte should exist");
 		if (*pte & PTE_PG)
 		{
-			fixPagedOutPTE(i, d);
+			setPTEOutOfRAM(i, d);
 			continue;
 		}
 

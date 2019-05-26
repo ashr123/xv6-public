@@ -589,19 +589,14 @@ kill(int pid)
 //added
 int getPagedOutAmout(struct proc *p)
 {
-
-	int i;
 	int amout = 0;
 
-	for (i = 0; i < MAX_PYSC_PAGES; i++)
-	{
-		if (p->disk_pages[i].state == USED)
-		{
-			// cprintf("\n NOOOOOOOOOOOOOOOOO");
+	for (struct pagecontroller *dp = p->disk_pages; dp < &p->disk_pages[MAX_PYSC_PAGES]; dp++)
+		if (dp->state == USED)
 			amout++;
-		}
-
-	}
+	// for (int i = 0; i < MAX_PYSC_PAGES; i++)
+	// 	if (p->disk_pages[i].state == USED)
+	// 		amout++;
 	return amout;
 }
 

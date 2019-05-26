@@ -83,7 +83,7 @@ trap(struct trapframe *tf)
 
 		case T_PGFLT:
 			//cprintf("\nunexp99999777777777777777777999999999ected");
-			if (myproc() != 0 && (tf->cs & 3) == DPL_USER && pageIsInFile(rcr2(), myproc()->pgdir))
+			if (myproc() != 0 && (tf->cs & 3) == DPL_USER && isPageInFile(rcr2(), myproc()->pgdir))
 			{
 				if (getPageFromFile(rcr2()))
 				{
