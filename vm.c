@@ -356,11 +356,11 @@ int getPageOutIndex()
 {
 #if LIFO
 	return getLIFO();
-#endif
-#if SCFIFO
+#elif SCFIFO
 	return getSCFIFO();
-#endif
+#else
 	panic("Unrecognized paging machanism");
+#endif
 }
 
 //added
