@@ -46,6 +46,14 @@ int uptime(void);
 
 int yield(void);
 
+int pgon(void *);
+int checkpg(void *);
+int proton(void *);
+int checkprot(void *);
+void freepm(void *);
+
+
+
 // ulib.c
 int stat(char *, struct stat *);
 
@@ -70,3 +78,10 @@ void *malloc(uint);
 void free(void *);
 
 int atoi(const char *);
+
+
+//added
+
+int pfree(void *);
+int protect_page(void *);
+void *pmalloc();

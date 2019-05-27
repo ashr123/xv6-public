@@ -3,6 +3,8 @@
 #include "user.h"
 #include "param.h"
 
+
+#define PAGE_SIZE 4096
 // Memory allocator by Kernighan and Ritchie,
 // The C programming Language, 2nd ed.  Section 8.7.
 
@@ -18,14 +20,25 @@ union header
 	Align x;
 };
 
+//added
+typedef struct pg_hdr{
+	struct pg_hdr *next;
+}pg_header;
+
 typedef union header Header;
 
 static Header base;
 static Header *freep;
 
+//added
+static pg_header *first_head;
+
 void
 free(void *ap)
 {
+	if(checkpg(ap)){
+		pfree(ap);
+	}
 	Header *bp, *p;
 
 	bp = (Header *) ap - 1;
@@ -45,6 +58,38 @@ free(void *ap)
 	} else
 		p->s.ptr = bp;
 	freep = p;
+}
+
+
+
+int pfree(void * ap){
+	
+	if(!checkpg(ap)){
+		return -1;
+	}
+	freepm(ap);
+	pg_header * head= (pg_header*)ap;
+	if(!first_head){
+		//printf(1,"69\n");
+		head->next =0;
+		//printf(1,"71\n");
+	}else{
+		//printf(1,"73\n");
+		head->next = first_head;
+		//printf(1,"75\n");
+	}
+	first_head =head;
+	return 1;
+}
+
+
+int protect_page(void * ap){
+	//THIS PAGE CREATED USING PMALLOC AND ITS ALIGND
+	if(checkpg(ap)  && (uint)ap%PAGE_SIZE ==0 ){
+		proton(ap);
+		return 1;
+	}
+	return -1;
 }
 
 static Header *
@@ -95,4 +140,20 @@ malloc(uint nbytes)
 			if ((p = morecore(nunits)) == 0)
 				return 0;
 	}
+}
+
+void * pmalloc(){
+	void * p;
+	if(!first_head){
+		p = sbrk(PAGE_SIZE);
+	}else{
+
+		p =(void*)first_head;
+			
+		first_head = first_head->next;
+
+	}
+
+	pgon(p);
+	return p;
 }

@@ -9,6 +9,7 @@ struct spinlock;
 struct sleeplock;
 struct stat;
 struct superblock;
+typedef uint pte_t;
 
 // bio.c
 void binit(void);
@@ -203,6 +204,15 @@ void wakeup(void *);
 
 void yield(void);
 
+//added to proc.c
+int pgon(void *);
+int checkpg(void *);
+int proton(void *);
+int checkprot(void *);
+void freepm(void *);
+
+
+
 // swtch.S
 void swtch(struct context **, struct context *);
 
@@ -315,7 +325,9 @@ int isPageInFile(int vAddr, pde_t *pgdir);
 
 int getPageFromFile(int vAddr);
 
-//void updateAccessCounters();
+pte_t *
+walkpgdir(pde_t *, const void *, int )
+;//void updateAccessCounters();
 
 
 

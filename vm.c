@@ -31,7 +31,7 @@ void seginit(void)
 // Return the address of the PTE in page table pgdir
 // that corresponds to virtual address va.  If alloc!=0,
 // create any required page table pages.
-static pte_t *
+pte_t *
 walkpgdir(pde_t *pgdir, const void *va, int alloc)
 {
 	pde_t *pde;
@@ -379,14 +379,12 @@ void swap(pde_t *pgdir, uint userPageVAddr)
 }
 
 //added
-// int isNONEpolicy()
-// {
-// #if NONE
-// 	return 1;
-// #else
-// 	return 0;
-// #endif
-// }
+int isNONEpolicy(){
+	#if NONE
+		return 1;
+	#endif
+	return 0;
+}
 
 // Allocate page tables and physical memory to grow process from oldsz to
 // newsz, which need not be page aligned.  Returns new size or 0 on error.
@@ -400,18 +398,13 @@ int allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 	if (newsz < oldsz)
 		return oldsz;
 
-	// if (!isNONEpolicy()){
-	//    if (PGROUNDUP(newsz)/PGSIZE > MAX_TOTAL_PAGES && myproc()->pid > 2) {
-	// 	    cprintf("proc is too big\n", PGROUNDUP(newsz)/PGSIZE);
-	// 	    return 0;
-	// 	  }
-	// }
-
-	if (PGROUNDUP(newsz) / PGSIZE > MAX_TOTAL_PAGES && myproc()->pid > 2)
-	{
-		cprintf("proc is too big\n", PGROUNDUP(newsz) / PGSIZE);
-		return 0;
+	if (!isNONEpolicy()){
+	   if (PGROUNDUP(newsz)/PGSIZE > MAX_TOTAL_PAGES && myproc()->pid > 2) {
+		    cprintf("proc is f too big: %d\n", PGROUNDUP(newsz)/PGSIZE);
+		    return 0;
+		  }
 	}
+
 
 	a = PGROUNDUP(oldsz);
 	int i = 0; //debugging
@@ -428,9 +421,7 @@ int allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 		memset(mem, 0, PGSIZE);
 		mappages(pgdir, (char *)a, PGSIZE, V2P(mem), PTE_W | PTE_U);
 
-		//if (myproc()->pid > 2 && !isNONEpolicy()) {
-		if (myproc()->pid > 2)
-		{
+		if (myproc()->pid > 2 && !isNONEpolicy()) {
 			if (PGROUNDUP(oldsz) / PGSIZE + i > MAX_PYSC_PAGES)
 				swap(pgdir, a);
 			else
@@ -453,40 +444,45 @@ int allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 // process size.  Returns the new process size.
 int deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 {
+	pte_t *pte;
+	uint a, pa;
+
 	if (newsz >= oldsz)
 		return oldsz;
-	for (uint a = PGROUNDUP(newsz); a < oldsz; a += PGSIZE)
+
+	a = PGROUNDUP(newsz);
+	int i = 0; //debugging
+	for (; a < oldsz; a += PGSIZE)
 	{
-		pte_t *pte = walkpgdir(pgdir, (char *)a, 0);
-		if (!pte)
-			a += (NPTENTRIES - 1) * PGSIZE;
+		pte = walkpgdir(pgdir, (char *)a, 0);
+		if (!pte)							//uninitialized page table
+			a += (NPTENTRIES - 1) * PGSIZE; //jump to next page table
 		else if ((*pte & PTE_P) != 0)
-		{
-			uint pa = PTE_ADDR(*pte);
+		{						 //page table exists and page is present
+			pa = PTE_ADDR(*pte); //pa = beginning of page physical address
 			if (pa == 0)
 				panic("kfree");
-			kfree(P2V(pa));
-			
-			struct proc *p=myproc();
-			for (struct pagecontroller *rp = p->ram_pages; rp < &p->ram_pages[MAX_PYSC_PAGES]; rp++)
-				if (rp->state == USED && rp->pgdir == pgdir && rp->userPageVAddr == a)  // clean the pages from proc
-					rp->state = NOTUSED;
-			// for (int i = 0; i < MAX_PYSC_PAGES; i++)
-			// {
-			// 	if (myproc()->ram_pages[i].state == USED && myproc()->ram_pages[i].pgdir == pgdir &&
-			// 		myproc()->ram_pages[i].userPageVAddr == a)
-			// 	{
-			// 		myproc()->ram_pages[i].state = NOTUSED;
-			// 	}
-			// }
+			char *v = P2V(pa);
+			kfree(v); //free page
 
-			//if (!isNONEpolicy()) { //FR: changed - check 3.3 none policy
-			// for (int i = 0; i < MAX_PYSC_PAGES; i++) {
-			//   if (myproc()->ram_pages[i].state = USED && myproc()->ram_pages[i].pgdir == pgdir && myproc()->ram_pages[i].userPageVAddr == a){
-			//     myproc()->ram_pages[i].state = NOTUSED;
-			//   }
-			// }
-			//}
+			for (int i = 0; i < MAX_PYSC_PAGES; i++)
+			{
+				if (myproc()->ram_pages[i].state == USED && myproc()->ram_pages[i].pgdir == pgdir &&
+					myproc()->ram_pages[i].userPageVAddr == a)
+				{
+					myproc()->ram_pages[i].state = NOTUSED;
+				}
+			}
+
+			if (!isNONEpolicy()) { 
+				for (int i = 0; i < MAX_PYSC_PAGES; i++) {
+					if (myproc()->ram_pages[i].state == USED && myproc()->ram_pages[i].pgdir == pgdir && myproc()->ram_pages[i].userPageVAddr == a){
+						myproc()->ram_pages[i].state = NOTUSED;
+					}
+				}
+			}
+
+			i++;
 			*pte = 0;
 		}
 	}

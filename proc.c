@@ -657,6 +657,62 @@ procdump(void)
 }
 
 
+//added task1 
+int pgon(void * va){
+	pte_t * pte = walkpgdir(myproc()->pgdir ,va,0);
+	*pte |= PTE_PM;
+	lcr3(V2P(myproc()->pgdir));
+	return 1;
+}
+
+int checkpg(void * va){
+	int bit;
+	pte_t * pte = walkpgdir(myproc()->pgdir ,va,0);
+	bit = *pte & PTE_PM;
+	if(bit == PTE_PM){
+		return 1;
+	}
+	return 0;
+}
+
+
+int proton(void * va){
+	pte_t * pte = walkpgdir(myproc()->pgdir ,va,0);
+	*pte |= PTE_PROT;
+	*pte &= ~PTE_W;
+	lcr3(V2P(myproc()->pgdir));
+	return 1;
+}
+
+int checkprot(void * va){
+	int bit;
+	pte_t * pte = walkpgdir(myproc()->pgdir ,va,0);
+	bit = *pte & PTE_PROT;
+	if(bit == PTE_PROT){
+		return 1;
+	}
+	return 0;
+}
+
+void freepm(void * va){
+	pte_t * pte = walkpgdir(myproc()->pgdir ,va,0);
+	*pte |= PTE_W;
+	*pte &= ~PTE_PROT;
+	*pte &= ~PTE_PM;
+	lcr3(V2P(myproc()->pgdir));
+	pte = walkpgdir(myproc()->pgdir ,va,0);
+	
+}
+
+
+
+
+
+
+
+
+
+
 //PAGEBREAK: 36
 // Print a process listing to console.  For debugging.
 // Runs when user types ^P on console.
