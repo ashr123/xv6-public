@@ -269,6 +269,8 @@ fork(void)
 
 	np->faultCounter = 0;
 	np->pagedOutCounter = 0;
+	np->protected = 0;
+
 
 	acquire(&ptable.lock);
 
@@ -304,6 +306,8 @@ exit(void)
 	// if (curproc->pid > 2)
 	// 	removeSwapFile(curproc);
 
+	if (curproc->pid > 2) 
+		removeSwapFile(curproc);
 
 	begin_op();
 	iput(curproc->cwd);
@@ -329,6 +333,10 @@ exit(void)
 	// Jump into the scheduler, never to return.
 	curproc->state = ZOMBIE;
 
+	#if TRUE
+		procdump();
+	#endif
+    
 
 	// #if TRUE
 	// 	procdump();
@@ -642,7 +650,7 @@ procdump(void)
 				pagedOutAmount++;
 		}
 
-		p->protected = 0;
+	
 		cprintf("%d %s %d %d %d %d %d %s", p->pid, state, allocatedPages,
 		        pagedOutAmount, p->protected, p->faultCounter, p->pagedOutCounter, p->name);
 
@@ -681,6 +689,9 @@ int proton(void * va){
 	*pte |= PTE_PROT;
 	*pte &= ~PTE_W;
 	lcr3(V2P(myproc()->pgdir));
+
+	myproc()->protected++;
+
 	return 1;
 }
 
@@ -701,6 +712,7 @@ void freepm(void * va){
 	*pte &= ~PTE_PM;
 	lcr3(V2P(myproc()->pgdir));
 	pte = walkpgdir(myproc()->pgdir ,va,0);
+	myproc()->protected--;
 	
 }
 

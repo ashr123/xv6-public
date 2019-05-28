@@ -333,7 +333,7 @@ static char buff[PGSIZE]; //buffer for swaped pages
 int getPageFromFile(int cr2)
 {
 	struct proc *proc = myproc();
-	proc->faultCounter++;
+	//proc->faultCounter++;
 	int userPageVAddr = PGROUNDDOWN(cr2),
 		outIndex = nextRAMfreePage();
 	char *newPage = kalloc();

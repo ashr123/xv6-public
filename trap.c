@@ -46,6 +46,10 @@ trap(struct trapframe *tf)
 			exit();
 		return;
 	}
+	/////added
+	uint vd;
+	pte_t * pte;
+	/////////
 
 	switch (tf->trapno)
 	{
@@ -82,7 +86,13 @@ trap(struct trapframe *tf)
 			break;
 
 		case T_PGFLT:
+		 	myproc()->faultCounter++;
 			//cprintf("\nunexp99999777777777777777777999999999ected");
+			vd = rcr2();
+			pte = walkpgdir(myproc()->pgdir,(void *)vd,0);
+			if((*pte & PTE_PM) && !(*pte & PTE_W)){
+				tf->trapno =13;
+			}
 			if (myproc() != 0 && (tf->cs & 3) == DPL_USER && isPageInFile(rcr2(), myproc()->pgdir))
 			{
 				if (getPageFromFile(rcr2()))

@@ -67,6 +67,7 @@ int pfree(void * ap){
 	if(!checkpg(ap)){
 		return -1;
 	}
+	
 	freepm(ap);
 	pg_header * head= (pg_header*)ap;
 	if(!first_head){
