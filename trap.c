@@ -36,18 +36,18 @@ idtinit(void)
 void
 trap(struct trapframe *tf)
 {
+	struct proc *p = myproc();
 	if (tf->trapno == T_SYSCALL)
 	{
-		if (myproc()->killed)
+		if (p->killed)
 			exit();
-		myproc()->tf = tf;
+		p->tf = tf;
 		syscall();
-		if (myproc()->killed)
+		if (p->killed)
 			exit();
 		return;
 	}
 	/////added
-	uint vd;
 	pte_t * pte;
 	/////////
 
@@ -86,24 +86,18 @@ trap(struct trapframe *tf)
 			break;
 
 		case T_PGFLT:
-		 	myproc()->faultCounter++;
+		 	p->faultCounter++;
 			//cprintf("\nunexp99999777777777777777777999999999ected");
-			vd = rcr2();
-			pte = walkpgdir(myproc()->pgdir,(void *)vd,0);
-			if((*pte & PTE_PM) && !(*pte & PTE_W)){
-				tf->trapno =13;
-			}
-			if (myproc() != 0 && (tf->cs & 3) == DPL_USER && isPageInFile(rcr2(), myproc()->pgdir))
-			{
+			pte = walkpgdir(p->pgdir,(void *)rcr2(),0);
+			if((*pte & PTE_PM) && !(*pte & PTE_W))
+				tf->trapno =T_GPFLT;
+			if (p != 0 && (tf->cs & 3) == DPL_USER && isPageInFile(rcr2(), p->pgdir))
 				if (getPageFromFile(rcr2()))
-				{
 					break;
-				}
-			}
 
 			//PAGEBREAK: 13
 		default:
-			if (myproc() == 0 || (tf->cs & 3) == 0)
+			if (p == 0 || (tf->cs & 3) == 0)
 			{
 				// In kernel, it must be our mistake.
 				cprintf("unexpected trap %d from cpu %d eip %x (cr2=0x%x)\n",
@@ -113,24 +107,24 @@ trap(struct trapframe *tf)
 			// In user space, assume process misbehaved.
 			cprintf("pid %d %s: trap %d err %d on cpu %d "
 			        "eip 0x%x addr 0x%x--kill proc\n",
-			        myproc()->pid, myproc()->name, tf->trapno,
+			        p->pid, p->name, tf->trapno,
 			        tf->err, cpuid(), tf->eip, rcr2());
-			myproc()->killed = 1;
+			p->killed = 1;
 	}
 
 	// Force process exit if it has been killed and is in user space.
 	// (If it is still executing in the kernel, let it keep running
 	// until it gets to the regular system call return.)
-	if (myproc() && myproc()->killed && (tf->cs & 3) == DPL_USER)
+	if (p && p->killed && (tf->cs & 3) == DPL_USER)
 		exit();
 
 	// Force process to give up CPU on clock tick.
 	// If interrupts were on while locks held, would need to check nlock.
-	if (myproc() && myproc()->state == RUNNING &&
+	if (p && p->state == RUNNING &&
 	    tf->trapno == T_IRQ0 + IRQ_TIMER)
 		yield();
 
 	// Check if the process has been killed since we yielded
-	if (myproc() && myproc()->killed && (tf->cs & 3) == DPL_USER)
+	if (p && p->killed && (tf->cs & 3) == DPL_USER)
 		exit();
 }

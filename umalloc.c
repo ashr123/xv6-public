@@ -143,16 +143,16 @@ malloc(uint nbytes)
 	}
 }
 
-void * pmalloc(){
-	void * p;
-	if(!first_head){
+void *pmalloc()
+{
+	void *p;
+	
+	if(!first_head)
 		p = sbrk(PAGE_SIZE);
-	}else{
-
+	else
+	{
 		p =(void*)first_head;
-			
 		first_head = first_head->next;
-
 	}
 
 	pgon(p);
