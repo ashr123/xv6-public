@@ -306,7 +306,7 @@ exit(void)
 	// if (curproc->pid > 2)
 	// 	removeSwapFile(curproc);
 
-	if (curproc->pid > 2) 
+	if (curproc->pid > 2)
 		removeSwapFile(curproc);
 
 	begin_op();
@@ -336,7 +336,7 @@ exit(void)
 	#if TRUE
 		procdump();
 	#endif
-    
+
 
 	// #if TRUE
 	// 	procdump();
@@ -650,7 +650,7 @@ procdump(void)
 				pagedOutAmount++;
 		}
 
-	
+
 		cprintf("%d %s %d %d %d %d %d %s", p->pid, state, allocatedPages,
 		        pagedOutAmount, p->protected, p->faultCounter, p->pagedOutCounter, p->name);
 
@@ -665,7 +665,7 @@ procdump(void)
 }
 
 
-//added task1 
+//added task1
 int pgon(void * va){
 	pte_t * pte = walkpgdir(myproc()->pgdir ,va,0);
 	*pte |= PTE_PM;
@@ -674,13 +674,14 @@ int pgon(void * va){
 }
 
 int checkpg(void * va){
-	int bit;
-	pte_t * pte = walkpgdir(myproc()->pgdir ,va,0);
-	bit = *pte & PTE_PM;
-	if(bit == PTE_PM){
-		return 1;
-	}
-	return 0;
+	return (*walkpgdir(myproc()->pgdir, va, 0) & PTE_PM) == PTE_PM;
+	// int bit;
+	// pte_t * pte = walkpgdir(myproc()->pgdir ,va,0);
+	// bit = *pte & PTE_PM;
+	// if(bit == PTE_PM){
+	// 	return 1;
+	// }
+	// return 0;
 }
 
 
@@ -696,13 +697,14 @@ int proton(void * va){
 }
 
 int checkprot(void * va){
-	int bit;
-	pte_t * pte = walkpgdir(myproc()->pgdir ,va,0);
-	bit = *pte & PTE_PROT;
-	if(bit == PTE_PROT){
-		return 1;
-	}
-	return 0;
+	return (*walkpgdir(myproc()->pgdir, va, 0) & PTE_PROT) == PTE_PROT;
+	// int bit;
+	// pte_t * pte = walkpgdir(myproc()->pgdir ,va,0);
+	// bit = *pte & PTE_PROT;
+	// if(bit == PTE_PROT){
+	// 	return 1;
+	// }
+	// return 0;
 }
 
 void freepm(void * va){
@@ -713,7 +715,7 @@ void freepm(void * va){
 	lcr3(V2P(myproc()->pgdir));
 	pte = walkpgdir(myproc()->pgdir ,va,0);
 	myproc()->protected--;
-	
+
 }
 
 

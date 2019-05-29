@@ -1,3 +1,5 @@
+#pragma once
+
 // This file contains definitions for the
 // x86 memory management unit (MMU).
 
@@ -142,7 +144,7 @@ struct segdesc
 #define PTE_D           0x040   // Dirty
 #define PTE_PS          0x080   // Page Size
 #define PTE_MBZ         0x180   // Bits must be zero
-#define PTE_PG          0x200   // Paged out to secondary storage 
+#define PTE_PG          0x200   // Paged out to secondary storage
 //added
 #define PTE_PROT         0x400   // protected bit
 #define PTE_PM          0x800   // pmaloc bit
