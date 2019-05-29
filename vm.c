@@ -485,6 +485,18 @@ int deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 			i++;
 			*pte = 0;
 		}
+		else
+		{
+			for (int i = 0; i < MAX_TOTAL_PAGES - MAX_PYSC_PAGES; i++)
+			{
+				if (myproc()->disk_pages[i].state == USED && myproc()->disk_pages[i].pgdir == pgdir &&
+					myproc()->disk_pages[i].userPageVAddr == a)
+				{
+					myproc()->disk_pages[i].state = NOTUSED;
+				}
+			}
+		}
+		
 	}
 	return newsz;
 }
