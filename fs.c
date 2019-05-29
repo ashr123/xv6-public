@@ -20,6 +20,7 @@
 #include "fs.h"
 #include "buf.h"
 #include "file.h"
+#include "fcntl.h"
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
@@ -894,6 +895,3 @@ createSwapFile(struct proc *p)
 
 	return 0;
 }
-
-
-

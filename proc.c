@@ -251,7 +251,6 @@ fork(void)
 			np->disk_pages[i].pgdir = np->pgdir;
 		}
 		np->loadOrderCounter = curproc->loadOrderCounter;
-
 	}
 
 	// Clear %eax so that fork returns 0 in the child.

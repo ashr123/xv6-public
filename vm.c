@@ -218,7 +218,6 @@ int loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
 	return 0;
 }
 
-
 //ADDED
 int getPagePhysicalAddr(int userPageVAddr, pde_t *pgdir)
 {
@@ -257,8 +256,8 @@ void setPTEIntoRAM(int userPageVAddr, int pagePAddr, pde_t *pgdir)
 //ADDED
 int isPageInFile(int userPageVAddr, pde_t *pgdir)
 {
-	pte_t *pte = walkpgdir(pgdir, (char *)userPageVAddr, 0);
-	return (*pte & PTE_PG); //PAGE IS IN FILE
+	// pte_t *pte = walkpgdir(pgdir, (char *)userPageVAddr, 0);
+	return (*walkpgdir(pgdir, (char *)userPageVAddr, 0) & PTE_PG); //PAGE IS IN FILE
 }
 
 //added
@@ -340,7 +339,7 @@ int getPageFromFile(int cr2)
 	memset(newPage, 0, PGSIZE);
 	lcr3(V2P(proc->pgdir)); //refresh CR3 register
 	if (outIndex >= 0)
-	{ 
+	{
 		setPTEIntoRAM(userPageVAddr, V2P(newPage), proc->pgdir);
 		readFromFile(proc, outIndex, userPageVAddr, (char *)userPageVAddr);
 		return 1;
@@ -355,7 +354,7 @@ int getPageFromFile(int cr2)
 	memmove(newPage, buff, PGSIZE);
 	writeToFile(proc, outPage.userPageVAddr, outPage.pgdir);
 	setPTEOutOfRAM(outPage.userPageVAddr, outPage.pgdir);
-	kfree(P2V(outPagePAddr)); 
+	kfree(P2V(outPagePAddr));
 	return 1;
 }
 
@@ -379,11 +378,13 @@ void swap(pde_t *pgdir, uint userPageVAddr)
 }
 
 //added
-int isNONEpolicy(){
-	#if NONE
-		return 1;
-	#endif
+int isNONEpolicy()
+{
+#if NONE
+	return 1;
+#else
 	return 0;
+#endif
 }
 
 // Allocate page tables and physical memory to grow process from oldsz to
@@ -398,13 +399,14 @@ int allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 	if (newsz < oldsz)
 		return oldsz;
 
-	if (!isNONEpolicy()){
-	   if (PGROUNDUP(newsz)/PGSIZE > MAX_TOTAL_PAGES && myproc()->pid > 2) {
-		    cprintf("proc is f too big: %d\n", PGROUNDUP(newsz)/PGSIZE);
-		    return 0;
-		  }
+	if (!isNONEpolicy())
+	{
+		if (PGROUNDUP(newsz) / PGSIZE > MAX_TOTAL_PAGES && myproc()->pid > 2)
+		{
+			cprintf("proc is f too big: %d\n", PGROUNDUP(newsz) / PGSIZE);
+			return 0;
+		}
 	}
-
 
 	a = PGROUNDUP(oldsz);
 	int i = 0; //debugging
@@ -421,7 +423,8 @@ int allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 		memset(mem, 0, PGSIZE);
 		mappages(pgdir, (char *)a, PGSIZE, V2P(mem), PTE_W | PTE_U);
 
-		if (myproc()->pid > 2 && !isNONEpolicy()) {
+		if (myproc()->pid > 2 && !isNONEpolicy())
+		{
 			if (PGROUNDUP(oldsz) / PGSIZE + i > MAX_PYSC_PAGES)
 				swap(pgdir, a);
 			else
@@ -451,7 +454,7 @@ int deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 		return oldsz;
 
 	a = PGROUNDUP(newsz);
-	int i = 0; //debugging
+	// int i = 0; //debugging
 	for (; a < oldsz; a += PGSIZE)
 	{
 		pte = walkpgdir(pgdir, (char *)a, 0);
@@ -474,15 +477,18 @@ int deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 				}
 			}
 
-			if (!isNONEpolicy()) { 
-				for (int i = 0; i < MAX_PYSC_PAGES; i++) {
-					if (myproc()->ram_pages[i].state == USED && myproc()->ram_pages[i].pgdir == pgdir && myproc()->ram_pages[i].userPageVAddr == a){
+			if (!isNONEpolicy())
+			{
+				for (int i = 0; i < MAX_PYSC_PAGES; i++)
+				{
+					if (myproc()->ram_pages[i].state == USED && myproc()->ram_pages[i].pgdir == pgdir && myproc()->ram_pages[i].userPageVAddr == a)
+					{
 						myproc()->ram_pages[i].state = NOTUSED;
 					}
 				}
 			}
 
-			i++;
+			// i++;
 			*pte = 0;
 		}
 		else
@@ -496,7 +502,6 @@ int deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 				}
 			}
 		}
-		
 	}
 	return newsz;
 }
@@ -545,7 +550,7 @@ copyuvm(pde_t *pgdir, uint sz)
 
 	if ((d = setupkvm()) == 0)
 		return 0;
-	int j = 0;
+	// int j = 0;
 	for (i = 0; i < sz; i += PGSIZE)
 	{
 		if ((pte = walkpgdir(pgdir, (void *)i, 0)) == 0)
@@ -563,7 +568,7 @@ copyuvm(pde_t *pgdir, uint sz)
 		if ((mem = kalloc()) == 0)
 			goto bad;
 		memmove(mem, (char *)P2V(pa), PGSIZE);
-		j++;
+		// j++;
 		if (mappages(d, (void *)i, PGSIZE, V2P(mem), flags) < 0)
 			goto bad;
 	}
@@ -576,8 +581,7 @@ bad:
 
 //PAGEBREAK!
 // Map user virtual address to kernel address.
-char *
-uva2ka(pde_t *pgdir, char *uva)
+char *uva2ka(pde_t *pgdir, char *uva)
 {
 	pte_t *pte;
 
