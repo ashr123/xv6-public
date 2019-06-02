@@ -3,15 +3,13 @@
 #include "user.h"
 #include "param.h"
 
-
 #define PAGE_SIZE 4096
 // Memory allocator by Kernighan and Ritchie,
 // The C programming Language, 2nd ed.  Section 8.7.
 
 typedef long Align;
 
-union header
-{
+union header {
 	struct
 	{
 		union header *ptr;
@@ -21,9 +19,10 @@ union header
 };
 
 //added
-typedef struct pg_hdr{
+typedef struct pg_hdr
+{
 	struct pg_hdr *next;
-}pg_header;
+} pg_header;
 
 typedef union header Header;
 
@@ -33,60 +32,70 @@ static Header *freep;
 //added
 static pg_header *first_head;
 
-void
-free(void *ap)
+void free(void *ap)
 {
-	if(checkpg(ap)){
+	if (checkpg(ap))
+	{
 		pfree(ap);
 	}
-	Header *bp, *p;
+	else
+	{
+		Header *bp, *p;
 
-	bp = (Header *) ap - 1;
-	for (p = freep; !(bp > p && bp < p->s.ptr); p = p->s.ptr)
-		if (p >= p->s.ptr && (bp > p || bp < p->s.ptr))
-			break;
-	if (bp + bp->s.size == p->s.ptr)
-	{
-		bp->s.size += p->s.ptr->s.size;
-		bp->s.ptr = p->s.ptr->s.ptr;
-	} else
-		bp->s.ptr = p->s.ptr;
-	if (p + p->s.size == bp)
-	{
-		p->s.size += bp->s.size;
-		p->s.ptr = bp->s.ptr;
-	} else
-		p->s.ptr = bp;
-	freep = p;
+		bp = (Header *)ap - 1;
+		for (p = freep; !(bp > p && bp < p->s.ptr); p = p->s.ptr)
+			if (p >= p->s.ptr && (bp > p || bp < p->s.ptr))
+				break;
+		if (bp + bp->s.size == p->s.ptr)
+		{
+			bp->s.size += p->s.ptr->s.size;
+			bp->s.ptr = p->s.ptr->s.ptr;
+		}
+		else
+			bp->s.ptr = p->s.ptr;
+		if (p + p->s.size == bp)
+		{
+			p->s.size += bp->s.size;
+			p->s.ptr = bp->s.ptr;
+		}
+		else
+			p->s.ptr = bp;
+		freep = p;
+	}
 }
 
+int pfree(void *ap)
+{
 
-
-int pfree(void * ap){
-	
-	if(!checkpg(ap)){
+	if (!checkpg(ap) || !checkprot(ap))
+	{
 		return -1;
 	}
-	
+
 	freepm(ap);
-	pg_header * head= (pg_header*)ap;
-	if(!first_head){
+	pg_header *head = (pg_header *)ap;
+	if (!first_head)
+	{
 		//printf(1,"69\n");
-		head->next =0;
+		head->next = 0;
 		//printf(1,"71\n");
-	}else{
+	}
+	else
+	{
 		//printf(1,"73\n");
 		head->next = first_head;
 		//printf(1,"75\n");
 	}
-	first_head =head;
+	first_head = head;
 	return 1;
 }
 
-
-int protect_page(void * ap){
+int protect_page(void *ap)
+{
 	//THIS PAGE CREATED USING PMALLOC AND ITS ALIGND
-	if(checkpg(ap)  && (uint)ap%PAGE_SIZE ==0 ){
+	//printf(1,"%d\n",(uint)ap%PAGE_SIZE);
+	if (checkpg(ap) && (uint)ap % PAGE_SIZE == 0)
+	{
 		proton(ap);
 		return 1;
 	}
@@ -101,12 +110,16 @@ morecore(uint nu)
 
 	if (nu < 4096)
 		nu = 4096;
+	// else if(nu > 4096){
+	// 	int modo = (nu % 512);
+	// 	nu = nu + 512 - modo;
+	// }
 	p = sbrk(nu * sizeof(Header));
-	if (p == (char *) -1)
+	if (p == (char *)-1)
 		return 0;
-	hp = (Header *) p;
+	hp = (Header *)p;
 	hp->s.size = nu;
-	free((void *) (hp + 1));
+	free((void *)(hp + 1));
 	return freep;
 }
 
@@ -135,7 +148,7 @@ malloc(uint nbytes)
 				p->s.size = nunits;
 			}
 			freep = prevp;
-			return (void *) (p + 1);
+			return (void *)(p + 1);
 		}
 		if (p == freep)
 			if ((p = morecore(nunits)) == 0)
@@ -146,12 +159,23 @@ malloc(uint nbytes)
 void *pmalloc()
 {
 	void *p;
-	
-	if(!first_head)
+
+	if (!first_head)
+	{
 		p = sbrk(PAGE_SIZE);
+		if (((int)p) % PAGE_SIZE)
+		{
+			int diff = PAGE_SIZE - (((int)p) % PAGE_SIZE);
+			sbrk(diff);
+			Header *h = (Header *)p;
+			h->s.size = diff / sizeof(Header);
+			p += diff;
+			free((void *)(h + 1));
+		}
+	}
 	else
 	{
-		p =(void*)first_head;
+		p = (void *)first_head;
 		first_head = first_head->next;
 	}
 
