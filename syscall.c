@@ -125,16 +125,6 @@ extern int sys_write(void);
 
 extern int sys_uptime(void);
 
-extern int sys_yield(void);
-
-//added
-extern int sys_pgon(void);
-extern int sys_checkpg(void);
-extern int sys_proton(void);
-extern int sys_checkprot(void);
-extern int sys_freepm(void);
-
-
 static int (*syscalls[])(void) = {
 		[SYS_fork]    sys_fork,
 		[SYS_exit]    sys_exit,
@@ -157,13 +147,6 @@ static int (*syscalls[])(void) = {
 		[SYS_link]    sys_link,
 		[SYS_mkdir]   sys_mkdir,
 		[SYS_close]   sys_close,
-		[SYS_yield]   sys_yield,
-		[SYS_pgon]    sys_pgon,
-		[SYS_checkpg]   sys_checkpg,
-		[SYS_proton]    sys_proton,
-		[SYS_checkprot] sys_checkprot,
-		[SYS_freepm]    sys_freepm,
-
 };
 
 void

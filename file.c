@@ -164,3 +164,43 @@ filewrite(struct file *f, char *addr, int n)
 	panic("filewrite");
 }
 
+
+//new 
+void
+get_open_file_info(int result[])
+{ //get info about open files
+	acquire(&ftable.lock);
+	int nu[NINODE];
+	int writable, readable, spicel, refs, ref, fused;
+	ref = writable = readable = spicel = refs = fused = 0;
+	for (struct file *f = ftable.file; f < ftable.file + NFILE; f++)
+	{
+		if (f->ref == 0)
+			ref++;
+		else
+			fused++;
+		int is = 0;
+		refs += f->ref;
+		for (int i = 0; i < spicel; i++)
+			if (nu[i] == f->ip->inum)
+			{
+				is = 1;
+				break;
+			}
+		if (is == 0)
+			nu[spicel++] = f->ip->inum;
+
+		if (f->readable)
+			readable++;
+
+		if (f->writable)
+			writable++;
+	}
+	result[0] = ref;
+	result[1] = spicel;
+	result[2] = writable;
+	result[3] = readable;
+	result[4] = refs / fused;
+	release(&ftable.lock);
+}
+

@@ -26,6 +26,7 @@ main(void)
 	seginit();       // segment descriptors
 	picinit();       // disable pic
 	ioapicinit();    // another interrupt controller
+	procfsinit();    // procfs file system
 	consoleinit();   // console hardware
 	uartinit();      // serial port
 	pinit();         // process table
@@ -86,7 +87,7 @@ startothers(void)
 		// is running in low  memory, so we use entrypgdir for the APs too.
 		stack = kalloc();
 		*(void **) (code - 4) = stack + KSTACKSIZE;
-		*(void **) (code - 8) = mpenter;
+		*(void (**)(void)) (code - 8) = mpenter;
 		*(int **) (code - 12) = (void *) V2P(entrypgdir);
 
 		lapicstartap(c->apicid, V2P(code));

@@ -1,7 +1,3 @@
-#pragma once
-
-#include "types.h"
-
 struct stat;
 struct rtcdate;
 
@@ -14,7 +10,7 @@ int wait(void);
 
 int pipe(int *);
 
-int write(int, void *, int);
+int write(int, const void *, int);
 
 int read(int, void *, int);
 
@@ -24,19 +20,19 @@ int kill(int);
 
 int exec(char *, char **);
 
-int open(char *, int);
+int open(const char *, int);
 
-int mknod(char *, short, short);
+int mknod(const char *, short, short);
 
-int unlink(char *);
+int unlink(const char *);
 
 int fstat(int fd, struct stat *);
 
-int link(char *, char *);
+int link(const char *, const char *);
 
-int mkdir(char *);
+int mkdir(const char *);
 
-int chdir(char *);
+int chdir(const char *);
 
 int dup(int);
 
@@ -48,32 +44,22 @@ int sleep(int);
 
 int uptime(void);
 
-int yield(void);
-
-int pgon(void *);
-int checkpg(void *);
-int proton(void *);
-int checkprot(void *);
-void freepm(void *);
-
-
-
 // ulib.c
-int stat(char *, struct stat *);
+int stat(const char *, struct stat *);
 
-char *strcpy(char *, char *);
+char *strcpy(char *, const char *);
 
-void *memmove(void *, void *, int);
+void *memmove(void *, const void *, int);
 
 char *strchr(const char *, char c);
 
 int strcmp(const char *, const char *);
 
-void printf(int, char *, ...);
+void printf(int, const char *, ...);
 
 char *gets(char *, int max);
 
-uint strlen(char *);
+uint strlen(const char *);
 
 void *memset(void *, int, uint);
 
@@ -82,10 +68,3 @@ void *malloc(uint);
 void free(void *);
 
 int atoi(const char *);
-
-
-//added
-
-int pfree(void *);
-int protect_page(void *);
-void *pmalloc();

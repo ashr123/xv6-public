@@ -7,13 +7,6 @@
 #include "mmu.h"
 #include "proc.h"
 
-
-int sys_yield(void)
-{
-	yield();
-	return 0;
-}
-
 int
 sys_fork(void)
 {
@@ -98,64 +91,3 @@ sys_uptime(void)
 	release(&tickslock);
 	return xticks;
 }
-
-
-//added
-
-int
-sys_pgon(void)
-{
-	void *va;
-	if(argint(0,(int *)&va)<0){
-		return -1;
-	}
-	pgon(va);
-	return 0;
-}
-
-int
-sys_checkpg(void)
-{
-	void *va;
-	if(argint(0,(int *)&va)<0){
-		return -1;
-	}
-	return checkpg(va);
-
-}
-
-
-
-int
-sys_proton(void)
-{
-	void *va;
-	if(argint(0,(int *)&va)<0){
-		return -1;
-	}
-	proton(va);
-	return 0;
-}
-
-int
-sys_checkprot(void)
-{
-	void *va;
-	if(argint(0,(int *)&va)<0){
-		return -1;
-	}
-	return checkprot(va);
-
-}
-
-int sys_freepm(void){
-	void *va;
-	if(argint(0,(int *)&va)<0){
-		return -1;
-	}
-	freepm(va);
-	return 1;
-}
-
-
-

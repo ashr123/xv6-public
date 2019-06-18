@@ -34,22 +34,6 @@ struct context
 	uint eip;
 };
 
-enum page_struct_state
-{
-	NOTUSED, USED
-};
-
-// pages struct
-struct pagecontroller
-{
-	enum page_struct_state state;
-	pde_t *pgdir;
-	uint userPageVAddr;
-	uint accessCount;
-	uint loadOrder;
-};
-
-
 enum procstate
 {
 	UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE
@@ -70,20 +54,7 @@ struct proc
 	int killed;                  // If non-zero, have been killed
 	struct file *ofile[NOFILE];  // Open files
 	struct inode *cwd;           // Current directory
-	char name[16];    // Process name (debugging)
-
-	//added
-	int faultCounter;
-	int pagedOutCounter;
-	//for task 1
-	int protected;
-
-	//Swap file. must initiate with create swap file
-	struct file *swapFile;            //page file
-	//added
-	struct pagecontroller disk_pages[MAX_TOTAL_PAGES - MAX_PYSC_PAGES];
-	struct pagecontroller ram_pages[MAX_PYSC_PAGES];
-	uint loadOrderCounter; //load/creation
+	char name[16];               // Process name (debugging)
 };
 
 // Process memory is laid out contiguously, low addresses first:

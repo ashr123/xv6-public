@@ -34,7 +34,11 @@ struct inode
 // device functions
 struct devsw
 {
-	int (*read)(struct inode *, char *, int);
+	int (*isdir)(struct inode *);
+
+	void (*iread)(struct inode *, struct inode *);
+
+	int (*read)(struct inode *, char *, int, int);
 
 	int (*write)(struct inode *, char *, int);
 };
@@ -42,3 +46,5 @@ struct devsw
 extern struct devsw devsw[];
 
 #define CONSOLE 1
+#define PROCFS  2
+#define IS_DEV_DIR(ip) (ip->type == T_DEV && devsw[ip->major].isdir && devsw[ip->major].isdir(ip))

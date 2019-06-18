@@ -112,14 +112,11 @@ sys_fstat(void)
 	struct stat *st;
 
 	if (argfd(0, 0, &f) < 0 || argptr(1, (void *) &st, sizeof(*st)) < 0)
+	{
 		return -1;
+	}
 	return filestat(f, st);
 }
-
-
-
-
-
 
 // Create the path new as a link to the same inode as old.
 int
@@ -175,7 +172,7 @@ sys_link(void)
 }
 
 // Is the directory dp empty except for "." and ".." ?
-int
+static int
 isdirempty(struct inode *dp)
 {
 	int off;
@@ -252,7 +249,7 @@ sys_unlink(void)
 	return -1;
 }
 
-struct inode *
+static struct inode *
 create(char *path, short type, short major, short minor)
 {
 	uint off;
@@ -407,7 +404,7 @@ sys_chdir(void)
 		return -1;
 	}
 	ilock(ip);
-	if (ip->type != T_DIR)
+	if (ip->type != T_DIR && ip->type != T_DEV)
 	{
 		iunlockput(ip);
 		end_op();

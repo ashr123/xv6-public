@@ -9,7 +9,6 @@ struct spinlock;
 struct sleeplock;
 struct stat;
 struct superblock;
-typedef uint pte_t;
 
 // bio.c
 void binit(void);
@@ -47,6 +46,9 @@ int filestat(struct file *, struct stat *);
 
 int filewrite(struct file *, char *, int n);
 
+void get_open_file_info(int result[]);
+
+
 // fs.c
 void readsb(int dev, struct superblock *sb);
 
@@ -82,22 +84,11 @@ void stati(struct inode *, struct stat *);
 
 int writei(struct inode *, char *, uint, uint);
 
-int createSwapFile(struct proc *p);
+int usedInodes(struct inode *[]);//
 
-int readFromSwapFile(struct proc *p, char *buffer, uint placeOnFile, uint size);
+int get_indexes_of_inodes(int ans[]);
 
-int writeToSwapFile(struct proc *p, char *buffer, uint placeOnFile, uint size);
-
-int removeSwapFile(struct proc *p);
-
-int writeToFile(struct proc *p, int pageVaddr, pde_t *pgdir);
-
-int readFromFile(struct proc *p, int ram_pages_index, int userPageVAddr, char *buff);
-
-
-
-//void copySwapFile(struct proc *fromP, struct proc *toP);
-
+struct inode *get_inode_by_index(int index);
 
 // ide.c
 void ideinit(void);
@@ -105,6 +96,10 @@ void ideinit(void);
 void ideintr(void);
 
 void iderw(struct buf *);
+
+void get_idinfo_in_text(char *result);
+
+void get_idinfo_in_num(int result[]);
 
 // ioapic.c
 void ioapicenable(int irq, int cpu);
@@ -172,7 +167,7 @@ int pipewrite(struct pipe *, char *, int);
 // proc.c
 int cpuid(void);
 
-void exit(void) __attribute__((noreturn));
+void exit(void);
 
 int fork(void);
 
@@ -204,22 +199,15 @@ void wakeup(void *);
 
 void yield(void);
 
-//added to proc.c
-int pgon(void *);
-int checkpg(void *);
-int proton(void *);
-int checkprot(void *);
-void freepm(void *);
+int get_all_running_proceess(int[]);
 
+struct proc *get_proc(int pid);
 
+// procfs.c
+void procfsinit(void);
 
 // swtch.S
 void swtch(struct context **, struct context *);
-
-// sysfile
-struct inode *create(char *path, short type, short major, short minor);
-
-int isdirempty(struct inode *dp);
 
 // spinlock.c
 void acquire(struct spinlock *);
@@ -320,18 +308,6 @@ void switchkvm(void);
 int copyout(pde_t *, uint, void *, uint);
 
 void clearpteu(pde_t *pgdir, char *uva);
-
-int isPageInFile(int vAddr, pde_t *pgdir);
-
-int getPageFromFile(int vAddr);
-
-pte_t *
-walkpgdir(pde_t *, const void *, int )
-;//void updateAccessCounters();
-
-
-
-//int isNONEpolicy();
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))

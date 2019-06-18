@@ -20,10 +20,3 @@
 #define SYS_link   19
 #define SYS_mkdir  20
 #define SYS_close  21
-#define SYS_yield  22
-#define SYS_pgon  23
-#define SYS_checkpg  24
-#define SYS_proton  25
-#define SYS_checkprot  26
-#define SYS_freepm  27
-

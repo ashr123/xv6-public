@@ -36,6 +36,74 @@ static int havedisk1;
 static void idestart(struct buf *);
 
 // Wait for IDE disk to become ready.
+
+//new
+void itoa2(char *s, int n)
+{
+	int i, len;
+	i = len = 0;
+	if (n == 0)
+	{
+		s[0] = '0';
+		s[1] = '\0';
+		return;
+	}
+	while (n != 0)
+	{
+		s[len] = n % 10 + '0';
+		n = n / 10;
+		len++;
+	}
+	for (i = 0; i < len / 2; i++)
+	{
+		char tmp = s[i];
+		s[i] = s[len - 1 - i];
+		s[len - 1 - i] = tmp;
+	}
+	s[len] = 0;
+
+}
+
+//new 
+void
+get_idinfo_in_num(int result[])
+{
+	acquire(&idelock);
+	int waiting, writing, reading;
+	waiting = writing = reading = 0;
+	for (struct buf *p = idequeue; p; p = p->next)
+	{
+		if ((p)->flags & B_DIRTY)
+			writing++;
+		if (!((p)->flags & B_VALID))
+			reading++;
+		waiting++;
+	}
+	result[0] = waiting;
+	result[1] = reading;
+	result[2] = writing;
+	release(&idelock);
+}
+
+//new 
+void
+get_idinfo_in_text(char *result)
+{
+
+
+	acquire(&idelock);
+	*result = '\0';
+	for (struct buf *p = idequeue; p; p = p->next)
+	{
+		itoa2(result + strlen(result), (p)->dev);
+		*(result + strlen(result)) = ',';
+		itoa2(result + strlen(result), (p)->blockno);
+		*(result + strlen(result)) = ';';
+	}
+	release(&idelock);
+}
+
+
 static int
 idewait(int checkerr)
 {

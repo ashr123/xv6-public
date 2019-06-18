@@ -20,7 +20,6 @@
 #include "fs.h"
 #include "buf.h"
 #include "file.h"
-#include "fcntl.h"
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
@@ -482,7 +481,7 @@ readi(struct inode *ip, char *dst, uint off, uint n)
 	{
 		if (ip->major < 0 || ip->major >= NDEV || !devsw[ip->major].read)
 			return -1;
-		return devsw[ip->major].read(ip, dst, n);
+		return devsw[ip->major].read(ip, dst, off, n);
 	}
 
 	if (off > ip->size || off + n < off)
@@ -554,14 +553,22 @@ dirlookup(struct inode *dp, char *name, uint *poff)
 {
 	uint off, inum;
 	struct dirent de;
+	struct inode *ip;
+	int ridi;
 
-	if (dp->type != T_DIR)
+	if (dp->type != T_DIR && !IS_DEV_DIR(dp))
 		panic("dirlookup not DIR");
 
-	for (off = 0; off < dp->size; off += sizeof(de))
+	for (off = 0; off < dp->size || dp->type == T_DEV; off += sizeof(de))
 	{
-		if (readi(dp, (char *) &de, off, sizeof(de)) != sizeof(de))
+		if ((ridi = readi(dp, (char *) &de, off, sizeof(de))) != sizeof(de))
+		{
+			if (dp->type == T_DEV)
+			{
+				return 0;
+			}
 			panic("dirlookup read");
+		}
 		if (de.inum == 0)
 			continue;
 		if (namecmp(name, de.name) == 0)
@@ -570,7 +577,12 @@ dirlookup(struct inode *dp, char *name, uint *poff)
 			if (poff)
 				*poff = off;
 			inum = de.inum;
-			return iget(dp->dev, inum);
+			ip = iget(dp->dev, inum);
+			if (ip->valid == 0 && dp->type == T_DEV && devsw[dp->major].iread)
+			{
+				devsw[dp->major].iread(dp, ip);
+			}
+			return ip;
 		}
 	}
 
@@ -667,7 +679,7 @@ namex(char *path, int nameiparent, char *name)
 	while ((path = skipelem(path, name)) != 0)
 	{
 		ilock(ip);
-		if (ip->type != T_DIR)
+		if (ip->type != T_DIR && !IS_DEV_DIR(ip))
 		{
 			iunlockput(ip);
 			return 0;
@@ -708,190 +720,65 @@ nameiparent(char *path, char *name)
 }
 
 
-#include "fcntl.h"
-
-#define DIGITS 14
-
-char *itoa(int i, char b[])
-{
-	char const digit[] = "0123456789";
-	char *p = b;
-	if (i < 0)
-	{
-		*p++ = '-';
-		i *= -1;
-	}
-	int shifter = i;
-	do
-	{ //Move to where representation ends
-		++p;
-		shifter = shifter / 10;
-	} while (shifter);
-	*p = '\0';
-	do
-	{ //Move back, inserting digits as u go
-		*--p = digit[i % 10];
-		i = i / 10;
-	} while (i);
-	return b;
-}
-
-//remove swap file of proc p;
+//new 
 int
-removeSwapFile(struct proc *p)
-{
-	//path of proccess
-	char path[DIGITS];
-	memmove(path, "/.swap", 6);
-	itoa(p->pid, path + 6);
+get_indexes_of_inodes(int ans[])
+{ //get all indexes of inodes
+	int count = 0;
+	int index = 0;
+	struct inode *ip;
+	acquire(&icache.lock);
 
-	struct inode *ip, *dp;
-	struct dirent de;
-	char name[DIRSIZ];
-	uint off;
-
-	if (0 == p->swapFile)
+	for (ip = &icache.inode[0]; ip < &icache.inode[NINODE]; ip++)
 	{
-		return -1;
-	}
-	fileclose(p->swapFile);
-
-	begin_op();
-	if ((dp = nameiparent(path, name)) == 0)
-	{
-		end_op();
-		return -1;
-	}
-
-	ilock(dp);
-
-	// Cannot unlink "." or "..".
-	if (namecmp(name, ".") == 0 || namecmp(name, "..") == 0)
-		goto bad;
-
-	if ((ip = dirlookup(dp, name, &off)) == 0)
-		goto bad;
-	ilock(ip);
-
-	if (ip->nlink < 1)
-		panic("unlink: nlink < 1");
-	if (ip->type == T_DIR && !isdirempty(ip))
-	{
-		iunlockput(ip);
-		goto bad;
-	}
-
-	memset(&de, 0, sizeof(de));
-	if (writei(dp, (char *) &de, off, sizeof(de)) != sizeof(de))
-		panic("unlink: writei");
-	if (ip->type == T_DIR)
-	{
-		dp->nlink--;
-		iupdate(dp);
-	}
-	iunlockput(dp);
-
-	ip->nlink--;
-	iupdate(ip);
-	iunlockput(ip);
-
-	end_op();
-
-	return 0;
-
-	bad:
-	iunlockput(dp);
-	end_op();
-	return -1;
-
-}
-
-
-//return as sys_read (-1 when error)
-int readFromSwapFile(struct proc *p, char *buffer, uint placeOnFile, uint size)
-{
-	p->swapFile->off = placeOnFile;
-	return fileread(p->swapFile, buffer, size);
-}
-
-//return as sys_write (-1 when error)
-int writeToSwapFile(struct proc *p, char *buffer, uint placeOnFile, uint size)
-{
-	p->swapFile->off = placeOnFile;
-	return filewrite(p->swapFile, buffer, size);
-}
-
-
-//added
-int findSpaceOnFile(struct proc *p)
-{
-	for (int i = 0; i < MAX_PYSC_PAGES; i++)
-		if (p->disk_pages[i].state == NOTUSED)
-			return i;
-	return -1; //file is full
-}
-
-//added
-int writeToFile(struct proc *p, int userPageVAddr, pde_t *pgdir)
-{
-	int spaceInFile = findSpaceOnFile(p);
-	int retInt = writeToSwapFile(p, (char *) userPageVAddr, PGSIZE * spaceInFile, PGSIZE);
-	if (retInt == -1)
-		return -1;
-	//placed in file, changing stats
-	p->disk_pages[spaceInFile].state = USED;
-	p->disk_pages[spaceInFile].userPageVAddr = userPageVAddr;
-	p->disk_pages[spaceInFile].pgdir = pgdir;
-	p->disk_pages[spaceInFile].accessCount = 0;
-	p->disk_pages[spaceInFile].loadOrder = 0;
-	return retInt;
-}
-
-
-//added
-int readFromFile(struct proc *p, int ram_page_index, int userPageVAddr, char *buff)
-{
-	for (int i = 0; i < MAX_TOTAL_PAGES - MAX_PYSC_PAGES; i++)
-	{
-		if (p->disk_pages[i].userPageVAddr == userPageVAddr)
+		if (ip->ref > 0)
 		{
-			int retInt = readFromSwapFile(p, buff, i * PGSIZE, PGSIZE);
-			if (retInt == -1)
-				break; //error in read
-			p->ram_pages[ram_page_index] = p->disk_pages[i];
-			p->ram_pages[ram_page_index].loadOrder = myproc()->loadOrderCounter++;
-			p->disk_pages[i].state = NOTUSED;
-			return retInt;
+			ans[count++] = index;
+		}
+		index++;
+	}
+
+	release(&icache.lock);
+	return count;
+}
+
+//new 
+struct inode *
+get_inode_by_index(int index)
+{
+	int count = 0;
+	struct inode *ip;
+	acquire(&icache.lock);
+	for (ip = &icache.inode[0]; ip < &icache.inode[NINODE]; ip++)
+	{
+		if (count == index)
+		{
+			release(&icache.lock);
+			return ip;
+		}
+		count++;
+	}
+	release(&icache.lock);
+	return 0;
+}
+
+
+int
+usedInodes(struct inode *ans[])
+{
+	int count = 0;
+	struct inode *ip;
+	acquire(&icache.lock);
+
+	for (ip = &icache.inode[0]; ip < &icache.inode[NINODE]; ip++)
+	{
+		if (ip->ref > 0)
+		{
+			ans[count++] = ip;
 		}
 	}
-	//physical address not found
-	return -1;
+
+	release(&icache.lock);
+	return count;
 }
 
-
-//return 0 on success
-int
-createSwapFile(struct proc *p)
-{
-
-	char path[DIGITS];
-	memmove(path, "/.swap", 6);
-	itoa(p->pid, path + 6);
-
-	begin_op();
-	struct inode *in = create(path, T_FILE, 0, 0);
-	iunlock(in);
-
-	p->swapFile = filealloc();
-	if (p->swapFile == 0)
-		panic("no slot for files on /store");
-
-	p->swapFile->ip = in;
-	p->swapFile->type = FD_INODE;
-	p->swapFile->off = 0;
-	p->swapFile->readable = O_WRONLY;
-	p->swapFile->writable = O_RDWR;
-	end_op();
-
-	return 0;
-}
